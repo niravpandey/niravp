@@ -21,7 +21,7 @@ export default function Header() {
               <Link href="/" className="flex items-center gap-3">
                 {/* optional avatar — replace src with your image or remove */}
                 
-                <span className={`${genos.className} text-3xl text-zinc-900 dark:text-zinc-100`}>
+                <span className={`${genos.className} text-4xl text-zinc-900 dark:text-zinc-100 hover:text-blue-800`}>
                   NIRAVP
                 </span>
               </Link>
@@ -67,7 +67,7 @@ export default function Header() {
                 href="/resume.pdf"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="hidden sm:inline-flex items-center rounded-md border px-3 py-1 text-sm font-medium hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-300 dark:focus:ring-zinc-700"
+                className="hidden sm:inline-flex items-center rounded-md border px-3 py-1.75 text-sm font-medium hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-300 dark:focus:ring-zinc-700"
               >
                 Resume
               </Link>
