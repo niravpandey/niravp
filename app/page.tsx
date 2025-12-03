@@ -41,7 +41,7 @@ export default function Home() {
         
         {/* Currently Reading */}
         
-        <section className="mt-12 border-2">
+        <section className="mt-12">
           <h1 className="text-4xl font-bold">My <span className="text-purple-800">Bookshelf </span></h1>
           <p className="text-gray-500 dark:text-gray-400">
             A curated list of books I'm currently reading or have read recently.
