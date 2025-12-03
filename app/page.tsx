@@ -1,5 +1,8 @@
 import Image from "next/image";
 import RunningStats from "@/components/running/RunningStats";
+import { Button } from "@/components/ui/button";
+import CurrentlyReading from "@/components/reading/CurrentlyReading";
+
 export default function Home() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-zinc-50 dark:bg-black">
@@ -14,14 +17,15 @@ export default function Home() {
             <p>In my free time, I love climbing, painting, writing blogs, and listening to music. If the sun is harsh, I play the piano, cook, and read. If it isn't, I run.</p>
             <p>Stay curious!</p>
           </div>
-          <div className="flex justify-center px-3 py-3 md:items-center">
+          
+          <div className="flex justify-center px-3 py-3 md:items-center mt-4">
             <div className="w-40 h-40 overflow-hidden ">
               <Image
                 src="/headshot.png"
                 alt="Headshot of Nirav Pandey"
                 width={160}
                 height={160}
-                className="w-full h-full  object-cover "
+                className="w-full h-full object-cover "
               />
             </div>
           </div>      
@@ -33,6 +37,16 @@ export default function Home() {
           <h1 className="text-4xl font-bold">My <span className="text-orange-500">Running </span>Stats</h1>
           <p className="text-gray-500 dark:text-gray-400 mb-3">Imported using Strava API, plotted using Recharts</p>
           <RunningStats/>
+        </section>
+        
+        {/* Currently Reading */}
+        
+        <section className="mt-12 border-2">
+          <h1 className="text-4xl font-bold">My <span className="text-purple-800">Bookshelf </span></h1>
+          <p className="text-gray-500 dark:text-gray-400">
+            A curated list of books I'm currently reading or have read recently.
+          </p>
+          <CurrentlyReading/>
         </section>
 
 

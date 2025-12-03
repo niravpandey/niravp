@@ -1,4 +1,3 @@
-// app/api/strava/activities/route.ts
 import { NextResponse } from "next/server";
 import { addWeeks, startOfWeek, formatISO, subWeeks } from "date-fns";
 
