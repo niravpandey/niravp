@@ -43,38 +43,74 @@ export default function CurrentlyReading() {
   if (!books.length) return <p>No books currently reading.</p>;
 
   return (
-    <div className="flex justify-center ">
-      <div className="flex flex-col md:flex-row md:flex-wrap md:justify-center gap-6 mt-6">
-        {books.map((book, index) => (
-          <HoverCard key={book.link || index} openDelay={50} closeDelay={50}>
-            <HoverCardTrigger>
-              <img
-                src={book.cover_image || "/placeholder.png"}
-                alt={book.title}
-                className="
-                  w-40 h-64 sm:w-48 sm:h-72 md:w-52 md:h-80 lg:w-60 lg:h-96
-                  object-contain cursor-pointer
-                  shadow-sm hover:shadow-md transition-shadow duration-150
-                "
-              />
-            </HoverCardTrigger>
-            <HoverCardContent className="w-60 p-3">
-              <h3 className="font-semibold text-sm line-clamp-3">{book.title}</h3>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 truncate">
-                {book.author}
-              </p>
-              <a
-                href={book.link || "#"}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-xs text-blue-600 dark:text-blue-400 hover:underline mt-2 block"
-              >
-                View on Goodreads
-              </a>
-            </HoverCardContent>
-          </HoverCard>
-        ))}
+    <section className="w-full mt-6">
+      {/* Container centers content and constrains width for readability */}
+      <div className="mx-auto max-w-6xl px-4">
+        {/* Using CSS Grid makes the layout fluid and predictable */}
+        <div
+          className="
+            grid
+            gap-6
+            grid-cols-2
+            sm:grid-cols-3
+            md:grid-cols-4
+            lg:grid-cols-5
+            xl:grid-cols-6
+            items-start
+          "
+        >
+          {books.map((book, i) => (
+            <HoverCard key={book.link || i} openDelay={50} closeDelay={50}>
+              {/* Use a button for keyboard accessibility as the trigger */}
+              <HoverCardTrigger asChild>
+                <button
+                  aria-label={`Open details for ${book.title}`}
+                  className="group relative w-full"
+                >
+                  {/* Aspect ratio keeps all covers consistent */}
+                  <div
+                    className="
+                      relative
+                      w-full
+                      aspect-3/4
+                      rounded-lg
+                      overflow-hidden
+                      shadow-sm
+                      group-hover:shadow-md
+                      transition-shadow
+                      duration-150
+                    "
+                  >
+                    <img
+                      src={book.cover_image || "/placeholder.png"}
+                      alt={book.title}
+                      sizes="(max-width: 640px) 40vw, (max-width: 1024px) 25vw, 160px"
+                      style={{ objectFit: "cover" }}
+                      loading="lazy"
+                      className="rounded-lg"
+                    />
+                  </div>
+                </button>
+              </HoverCardTrigger>
+
+              <HoverCardContent className="w-64 p-3">
+                <h3 className="font-semibold text-sm line-clamp-3">{book.title}</h3>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 truncate">
+                  {book.author}
+                </p>
+                <a
+                  href={book.link || "#"}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs mt-2 inline-block underline-offset-2 hover:underline text-blue-600 dark:text-blue-400"
+                >
+                  View on Goodreads
+                </a>
+              </HoverCardContent>
+            </HoverCard>
+          ))}
+        </div>
       </div>
-    </div>
+    </section>
   );
 }

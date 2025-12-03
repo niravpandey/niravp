@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import Header from "@/components/Header";
+import Footer from "@/components/Footer";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Space_Grotesk} from "next/font/google";
 
@@ -27,6 +28,7 @@ export default function RootLayout({
           >
             <Header/>
             {children}
+            <Footer/>
           </ThemeProvider>
       </body>
     </html>
