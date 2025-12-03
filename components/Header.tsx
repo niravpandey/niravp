@@ -48,12 +48,6 @@ export default function Header() {
                 Blog
               </Link>
               <Link
-                href="/projects"
-                className="text-sm hover:underline focus:outline-none focus:ring-2 focus:ring-zinc-300 rounded px-2 py-1 dark:focus:ring-zinc-700"
-              >
-                My Bookshelf
-              </Link>
-              <Link
                 href="/about"
                 className="text-sm hover:underline focus:outline-none focus:ring-2 focus:ring-zinc-300 rounded px-2 py-1 dark:focus:ring-zinc-700"
               >

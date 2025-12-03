@@ -42,11 +42,14 @@ export default function Home() {
         {/* Currently Reading */}
         
         <section className="mt-12">
-          <h1 className="text-4xl font-bold">My <span className="text-purple-800">Bookshelf </span></h1>
+          <h1 className="text-4xl font-bold">My <span className="text-yellow-400 dark:text-yellow-300">Bookshelf </span></h1>
           <p className="text-gray-500 dark:text-gray-400">
-            A curated list of books I'm currently reading or have read recently.
+            Books I am currently reading. Fetched from the Goodreads RSS.
           </p>
           <CurrentlyReading/>
+          <p className="text-gray-500 dark:text-gray-400 mt-4 text-xs text-right">
+            All images and information belong to Goodreads. 
+          </p>
         </section>
 
 

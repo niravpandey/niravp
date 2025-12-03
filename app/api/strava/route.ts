@@ -23,6 +23,10 @@ type StravaActivity = {
   elev_low?: number;
 };
 
+let cachedData: any = null;
+let cacheTime = 0;
+const CACHE_DURATION = 1000*60*5; 
+
 const STRAVA_TOKEN_URL = "https://www.strava.com/oauth/token";
 const STRAVA_ACTIVITIES_URL = "https://www.strava.com/api/v3/athlete/activities";
 
@@ -94,6 +98,12 @@ function aggregateWeeklyDistances(activities: StravaActivity[], weeks = 12) {
 
 export async function GET() {
   try {
+    const now = Date.now();
+
+    if (cachedData && now - cacheTime < CACHE_DURATION) {
+      return NextResponse.json(cachedData);
+    }
+
     if (!process.env.STRAVA_CLIENT_ID || !process.env.STRAVA_CLIENT_SECRET || !process.env.STRAVA_REFRESH_TOKEN) {
       return NextResponse.json({ error: "Missing STRAVA_ env vars" }, { status: 500 });
     }
@@ -106,11 +116,13 @@ export async function GET() {
     const weeks = Number(process.env.STRAVA_WEEKS ?? 12);
     const aggregated = aggregateWeeklyDistances(activities, weeks);
 
-    return NextResponse.json({
+    cachedData = {
       meta: { fetchedAt: new Date().toISOString(), totalActivities: activities.length },
       aggregated,
-      // raw: activities.slice(0, 200) // uncomment to return sample raw activities if desired
-    });
+    };
+    cacheTime = now;
+
+    return NextResponse.json(cachedData);
   } catch (err: any) {
     console.error("Strava API error", err);
     return NextResponse.json({ error: err.message || String(err) }, { status: 500 });
