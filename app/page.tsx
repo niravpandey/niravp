@@ -11,6 +11,7 @@ export default function Home() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-zinc-50 dark:bg-black">
       <main className="flex flex-col min-h-screen w-full max-w-6xl py-12 px-12 gap-12 bg-white dark:bg-slate-950">
+        
         <Section>
           <div className="flex flex-col justify-center">
             {/* Heading */}
