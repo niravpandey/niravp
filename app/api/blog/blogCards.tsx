@@ -34,23 +34,5 @@ export const blogCards = [
     "categories": ["Machine Learning", "AI"],
     "readTime": "9 min read",
     "likes": 42
-  },
-  {
-    "title": "The Future of Web Development in 2025",
-    "slug": "future-web-dev-2025",
-    "date": "Sep 10, 2025",
-    "excerpt": "A deep dive into modern web development trends, tools, and frameworks shaping the next generation of digital experiences.",
-    "categories": ["Web Development", "Trends"],
-    "readTime": "5 min read",
-    "likes": 18
-  },
-  {
-    "title": "Financial Modeling with Python",
-    "slug": "financial-modeling-python",
-    "date": "Aug 25, 2025",
-    "excerpt": "Learn how Python can be leveraged for financial modeling, risk analysis, and building predictive models for trading strategies.",
-    "categories": ["Finance", "Python"],
-    "readTime": "7 min read",
-    "likes": 29
   }
 ]

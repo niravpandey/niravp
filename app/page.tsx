@@ -30,12 +30,11 @@ export default function Home() {
                   Final-year Bachelor of Science student at The University of Melbourne, majoring in Data Science.
                 </p>
                 <p>
-                  I’m fascinated by AI and Machine Learning, particularly how they interact with finance, economics, and society. 
-                  I also enjoy building thoughtful and useful web applications.
+                  I’m fascinated by AI and Machine Learning, particularly how they interact with finance, economics, and society as a whole. 
+                  I also enjoy tinkering with web development in my free time, and I aspire to build something impactful one day. 
                 </p>
                 <p>
-                  In my spare time, I climb, paint, write blogs, and listen to music. 
-                  When the sun is out, I run; when it isn’t, I cook, read, or play the piano.
+                  I love climbing on plastic rocks and listening to classical music. If the sun is harsh, I stay inside, play the piano, cook, and read. If it isn't, I run.
                 </p>
                 <p>Stay curious.</p>
               </div>
@@ -58,7 +57,7 @@ export default function Home() {
         <Section>
           <h1 className="text-5xl font-bold">Recent <span className={`text-blue-800 dark:text-green-500`}>Ideas</span></h1>
           <p className="text-gray-500 dark:text-gray-400 mb-3">Ideas, Opinions, Explainers and more</p>
-          <div className="py-6">
+          <div className="flex flex-col py-6 gap-2">
             {blogCards.map((blog) => (
           <BlogCard key={blog.slug} {...blog} />
           ))}

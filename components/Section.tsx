@@ -9,7 +9,8 @@ type SectionProps = {
 
 export default function Section({ children }: SectionProps) {
   return (
-    <motion.section
+    <div className="my-auto">
+      <motion.section
       initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, amount: 0.2 }}
@@ -17,5 +18,7 @@ export default function Section({ children }: SectionProps) {
     >
       {children}
     </motion.section>
+    </div>
+    
   );
 }
