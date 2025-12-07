@@ -11,7 +11,11 @@ import TechStack from "@/components/tech-stack/TechStack";
 export default function Home() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-zinc-50 dark:bg-black">
-      <main className="flex flex-col min-h-screen w-full max-w-6xl py-12 px-12 bg-white dark:bg-zinc-950">
+      <main className="flex flex-col min-h-screen w-full max-w-6xl 
+                       px-4 py-4
+                       sm:px-6  sm:py-6
+                       md:py-12 md:px-12 
+                       bg-white dark:bg-zinc-950">
         
         <Section className="bg-dotgrid">
           <div className="flex flex-col justify-center">
