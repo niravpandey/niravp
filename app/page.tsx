@@ -7,8 +7,10 @@ import Section from "@/components/Section";
 import BlogCard from "@/components/blog/BlogCard";
 import { blogCards } from "./api/blog/blogCards";
 import TechStack from "@/components/tech-stack/TechStack";
+import { getTopPosts } from "@/lib/posts";
 
-export default function Home() {
+export default async function Home() {
+  const posts = await getTopPosts(4);
   return (
     <div className="flex min-h-screen items-center justify-center bg-zinc-50 dark:bg-black">
       <main className="flex flex-col min-h-screen w-full max-w-6xl 
@@ -78,10 +80,21 @@ export default function Home() {
         <Section className="bg-dotgrid">
           <h1 className="text-5xl font-bold">Recent <span className={`text-blue-800 dark:text-green-500`}>Ideas</span></h1>
           <p className="text-gray-500 dark:text-gray-400 mb-3">Ideas, Opinions, Explainers and more</p>
+          
           <div className="flex flex-col py-6 gap-2">
-            {blogCards.map((blog) => (
-          <BlogCard key={blog.slug} {...blog} />
+            {posts.map((post) => (
+          <BlogCard
+              key={post.slug}
+              title={post.title}
+              slug={post.slug}
+              date={post.date}
+              excerpt={post.excerpt}
+              categories={post.categories}
+              readTime={post.readTime}
+              likes={post.likes}
+            />
           ))}
+          
           </div>
           
           <div className="w-full flex justify-center mt-3">
