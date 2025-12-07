@@ -11,7 +11,7 @@ import TechStack from "@/components/tech-stack/TechStack";
 export default function Home() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-zinc-50 dark:bg-black">
-      <main className="flex flex-col min-h-screen w-full max-w-6xl py-12 px-12 bg-white dark:bg-slate-950">
+      <main className="flex flex-col min-h-screen w-full max-w-6xl py-12 px-12 bg-white dark:bg-zinc-950">
         
         <Section className="bg-dotgrid">
           <div className="flex flex-col justify-center">
@@ -119,27 +119,6 @@ export default function Home() {
           <p className="text-gray-500 dark:text-gray-400 mt-4 text-xs text-right">
             All images and information belong to Goodreads. 
           </p>
-          <div className="w-full flex justify-center mt-6">
-            <Button 
-              variant="outline"
-              className="
-                bg-transparent 
-                border-gray-400 
-                text-gray-700 
-                dark:text-gray-300 
-                hover:bg-gray-100 
-                dark:hover:bg-gray-800
-                transition-all
-                px-6 py-3 
-                gap-2
-              "
-            >
-              <Eye className="w-4 h-4" />
-              How I built this feature
-            </Button>
-          </div>
-
-          
         </Section>
           
         

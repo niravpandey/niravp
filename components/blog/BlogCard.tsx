@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { CalendarIcon, ClockIcon, Heart } from "lucide-react";
 import { motion, useReducedMotion, type Variants } from "framer-motion";
+import { Card } from "@/components/ui/card";
 
 type BlogCardProps = {
   title: string;
@@ -60,37 +61,29 @@ export default function BlogCard({
               transition: { duration: 0.12 },
             }
       }
-      className="w-full"
+      className="w-full h-full"
     >
       <Link
         href={`/blog/${slug}`}
         aria-label={`Read blog post: ${title}`}
-        className="group block focus:outline-none focus-visible:ring-2 focus-visible:ring-zince-500/70 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-50 dark:focus-visible:ring-offset-zinc-950 rounded-xl"
+        className="group block h-full focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/70 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-50 dark:focus-visible:ring-offset-zinc-950 rounded-xl"
       >
-        <div
+        <Card
           className="
-            relative w-full overflow-hidden rounded-xl
-            border border-slate-400/70 bg-linear-to-br from-slate-50/90 via-slate-50/80 to-zinc-100/40
-            p-5 shadow-sm
-            backdrop-blur-sm
-            transition-all duration-300 ease-out
-            hover:border-blue-400/80 hover:shadow-lg
-            dark:border-slate-800/80 dark:bg-linear-to-br dark:from-slate-950 dark:via-slate-950/90 dark:to-slate-900/80
-            dark:hover:border-slate-700
+            h-full
+            flex flex-col
+            p-5
+            border border-zinc-200/70 dark:border-zinc-800
+            bg-zinc-50/80 dark:bg-zinc-950
+            shadow-sm
+            hover:border-blue-500/70 dark:hover:border-emerald-400/70
+            hover:bg-white dark:hover:bg-zinc-900
+            hover:shadow-md
+            transition-all duration-150
+            cursor-pointer
           "
         >
-          {/* Subtle light sheen on hover */}
-          <div
-            className="
-              pointer-events-none absolute inset-x-0 -top-10 h-16
-              bg-linear-to-b from-white/40 via-white/10 to-transparent
-              opacity-0 transition-opacity duration-300
-              group-hover:opacity-100
-              dark:from-white/10 dark:via-white/5
-            "
-          />
-
-          <div className="relative flex h-full flex-col gap-4">
+          <div className="flex h-full flex-col gap-4">
             {/* Top row: categories + meta */}
             <div className="flex flex-wrap items-center justify-between gap-3">
               {/* Categories */}
@@ -101,7 +94,7 @@ export default function BlogCard({
                       key={cat}
                       className="
                         inline-flex items-center gap-1
-                        rounded-full border border-zinc-100/80 bg-white/70 px-2.5 py-0.5
+                        rounded-full border border-zinc-200/80 bg-white/70 px-2.5 py-0.5
                         text-[0.7rem] font-semibold uppercase tracking-wide
                         text-zinc-700
                         shadow-[0_1px_2px_rgba(15,23,42,0.04)]
@@ -117,10 +110,12 @@ export default function BlogCard({
               {/* Meta compact pill */}
               <div
                 className="
+                  rounded-full border border-zinc-200/80
+                  dark:border-slate-700
                   inline-flex flex-wrap items-center gap-3
-                  rounded-full bg-white/60 px-3 py-1 text-xs
+                  rounded-full bg-white/80 px-3 py-1 text-xs
                   text-gray-600 shadow-sm
-                  dark:bg-slate-900/80 dark:text-gray-300
+                  dark:bg-slate-950/80 dark:text-gray-300
                 "
               >
                 <span className="inline-flex items-center gap-1.5">
@@ -138,7 +133,7 @@ export default function BlogCard({
                 {likes !== undefined && (
                   <span className="inline-flex items-center gap-1.5">
                     <Heart
-                      className="h-3.5 w-3.5 text-rose-500 dark:text-green-400"
+                      className="h-3.5 w-3.5 text-rose-500 dark:text-emerald-400"
                       aria-hidden="true"
                     />
                     <span>{likes}</span>
@@ -178,9 +173,9 @@ export default function BlogCard({
               <span
                 className="
                   inline-flex items-center gap-1 font-medium
-                  text-blue-800 transition-colors
+                  text-blue-700 transition-colors
                   group-hover:text-blue-900
-                  dark:text-green-400 dark:group-hover:text-green-300
+                  dark:text-emerald-400 dark:group-hover:text-emerald-300
                 "
               >
                 Read post
@@ -190,7 +185,7 @@ export default function BlogCard({
               </span>
             </div>
           </div>
-        </div>
+        </Card>
       </Link>
     </motion.article>
   );
