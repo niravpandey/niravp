@@ -65,19 +65,17 @@ export default function CurrentlyReading() {
               <HoverCardTrigger asChild>
                 <button
                   aria-label={`Open details for ${book.title}`}
-                  className="group relative w-full"
+                  className="group relative w-full text-left"
                 >
-                  {/* Aspect ratio keeps all covers consistent */}
                   <div
                     className="
                       relative
                       w-full
-                      aspect-3/4
-                      rounded-lg
                       overflow-hidden
                       shadow-sm
                       group-hover:shadow-md
-                      transition-shadow
+                      group-hover:-translate-y-1
+                      transition-all
                       duration-150
                     "
                   >
@@ -89,6 +87,16 @@ export default function CurrentlyReading() {
                       loading="lazy"
                       className="rounded-lg"
                     />
+                  </div>
+
+                  {/* ⬇️ Add this block */}
+                  <div className="mt-2 space-y-1">
+                    <p className="text-sm font-medium line-clamp-2">
+                      {book.title}
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-1">
+                      {book.author}
+                    </p>
                   </div>
                 </button>
               </HoverCardTrigger>

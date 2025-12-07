@@ -6,13 +6,14 @@ import { BookOpen, Eye } from "lucide-react";
 import Section from "@/components/Section";
 import BlogCard from "@/components/blog/BlogCard";
 import { blogCards } from "./api/blog/blogCards";
+import TechStack from "@/components/tech-stack/TechStack";
 
 export default function Home() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-zinc-50 dark:bg-black">
-      <main className="flex flex-col min-h-screen w-full max-w-6xl py-12 px-12 gap-12 bg-white dark:bg-slate-950">
+      <main className="flex flex-col min-h-screen w-full max-w-6xl py-12 px-12 bg-white dark:bg-slate-950">
         
-        <Section>
+        <Section className="bg-dotgrid">
           <div className="flex flex-col justify-center">
             {/* Heading */}
             <h1 className="text-5xl font-bold mb-2">
@@ -37,7 +38,16 @@ export default function Home() {
                   I love climbing on plastic rocks and listening to classical music. If the sun is harsh, I stay inside, play the piano, cook, and read. If it isn't, I run.
                 </p>
                 <p>Stay curious.</p>
+
+                {/* Light mode version */}
+                <Image
+                  src="/signature_black.png"
+                  alt="Signature"
+                  height={250} width={250}
+                  className="hidden dark:invert md:block mt-0"
+                />
               </div>
+              
 
               {/* Image Section */}
               <div className="flex justify-center md:justify-end flex-1 mt-6 md:mt-0">
@@ -50,11 +60,18 @@ export default function Home() {
                     className="w-full h-full object-cover"
                   />
                 </div>
+                
               </div>
             </div>
           </div>
         </Section>
-        <Section>
+
+        <Section className="bg-dotgrid">
+          <h1 className="text-5xl font-bold">Some <span className={`text-blue-800 dark:text-green-500`}>Tech</span> I use</h1>
+          <TechStack/>
+        </Section>
+
+        <Section className="bg-dotgrid">
           <h1 className="text-5xl font-bold">Recent <span className={`text-blue-800 dark:text-green-500`}>Ideas</span></h1>
           <p className="text-gray-500 dark:text-gray-400 mb-3">Ideas, Opinions, Explainers and more</p>
           <div className="flex flex-col py-6 gap-2">
@@ -63,18 +80,18 @@ export default function Home() {
           ))}
           </div>
           
-          <div className="w-full flex justify-center mt-6">
+          <div className="w-full flex justify-center mt-3">
             <Button 
               variant="outline"
               className="
-                bg-transparent 
+                bg-transparent text-lg font-medium
                 border-gray-400 
                 text-gray-700 
                 dark:text-gray-300 
                 hover:bg-gray-100 
                 dark:hover:bg-gray-800
                 transition-all
-                px-6 py-3 
+                px-6 py-2
                 gap-2
               "
             >
@@ -85,7 +102,7 @@ export default function Home() {
         </Section>
 
         {/* My Running Stats */}
-        <Section>
+        <Section className="">
           <h1 className="text-5xl font-bold">My <span className={`text-blue-800 dark:text-green-500`}>Running </span>Stats</h1>
           <p className="text-gray-500 dark:text-gray-400 mb-3">Imported using Strava API, plotted using Recharts</p>
           <RunningStats/>
@@ -93,7 +110,7 @@ export default function Home() {
         
         {/* Currently Reading */}
         
-        <Section>
+        <Section className="bg-dotgrid">
           <h1 className="text-5xl font-bold">My <span className={`text-blue-800 dark:text-green-500`}>Bookshelf </span></h1>
           <p className="text-gray-500 dark:text-gray-400">
             Books I am currently reading. Dynamically fetched from the Goodreads RSS.
