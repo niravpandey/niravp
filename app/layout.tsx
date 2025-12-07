@@ -4,6 +4,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Space_Grotesk} from "next/font/google";
+import { Analytics } from "@vercel/analytics/next"
 
 const spaceGrotesk = Space_Grotesk({ subsets: ['latin'] });
 
@@ -28,6 +29,7 @@ export default function RootLayout({
           >
             <Header/>
             {children}
+            <Analytics/>
             <Footer/>
           </ThemeProvider>
       </body>
