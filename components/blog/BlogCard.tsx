@@ -15,14 +15,15 @@ type BlogCardProps = {
   likes?: number;
 };
 
+// calmer: less travel, slightly longer, gentle ease
 const cardVariants: Variants = {
-  hidden: { opacity: 0, y: 24 },
+  hidden: { opacity: 0, y: 10 },
   visible: {
     opacity: 1,
     y: 0,
     transition: {
-      duration: 0.45,
-      ease: [0.16, 1, 0.3, 1],
+      duration: 0.65,
+      ease: [0.22, 1, 0.36, 1], // gentle "easeOut"
     },
   },
 };
@@ -39,29 +40,11 @@ export default function BlogCard({
   const shouldReduceMotion = useReducedMotion();
 
   return (
-    <motion.article
+    <motion.div
       variants={cardVariants}
-      initial={shouldReduceMotion ? false : "hidden"}
-      whileInView="visible"
-      viewport={{ once: true, amount: 0.2 }}
-      whileHover={
-        shouldReduceMotion
-          ? undefined
-          : {
-              y: -4,
-              scale: 1.01,
-              transition: { duration: 0.18 },
-            }
-      }
-      whileTap={
-        shouldReduceMotion
-          ? undefined
-          : {
-              scale: 0.99,
-              transition: { duration: 0.12 },
-            }
-      }
-      className="w-full h-full"
+      initial={shouldReduceMotion ? "visible" : "hidden"}
+      whileInView={shouldReduceMotion ? undefined : "visible"}
+      viewport={{ once: true, margin: "0px 0px -10% 0px" }}
     >
       <Link
         href={`/blog/${slug}`}
@@ -73,20 +56,14 @@ export default function BlogCard({
             h-full
             flex flex-col
             p-5
-            border border-zinc-200/70 dark:border-zinc-800
+            rounded-none
             bg-zinc-50/80 dark:bg-zinc-950
-            shadow-sm
-            hover:border-blue-500/70 dark:hover:border-emerald-400/70
             hover:bg-white dark:hover:bg-zinc-900
-            hover:shadow-md
-            transition-all duration-150
             cursor-pointer
           "
         >
           <div className="flex h-full flex-col gap-4">
-            {/* Top row: categories + meta */}
             <div className="flex flex-wrap items-center justify-between gap-3">
-              {/* Categories */}
               {categories.length > 0 && (
                 <div className="flex flex-wrap gap-2">
                   {categories.map((cat) => (
@@ -94,7 +71,7 @@ export default function BlogCard({
                       key={cat}
                       className="
                         inline-flex items-center gap-1
-                        rounded-full border border-zinc-200/80 bg-white/70 px-2.5 py-0.5
+                      bg-white/70 px-2.5 py-0.5
                         text-[0.7rem] font-semibold uppercase tracking-wide
                         text-zinc-700
                         shadow-[0_1px_2px_rgba(15,23,42,0.04)]
@@ -107,10 +84,9 @@ export default function BlogCard({
                 </div>
               )}
 
-              {/* Meta compact pill */}
               <div
                 className="
-                  rounded-full border border-zinc-200/80
+                  border border-zinc-200/80
                   dark:border-slate-700
                   inline-flex flex-wrap items-center gap-3
                   rounded-full bg-white/80 px-3 py-1 text-xs
@@ -142,7 +118,6 @@ export default function BlogCard({
               </div>
             </div>
 
-            {/* Title */}
             <h2
               className="
                 text-xl font-semibold leading-tight tracking-tight
@@ -153,12 +128,10 @@ export default function BlogCard({
               {title}
             </h2>
 
-            {/* Excerpt */}
             <p className="line-clamp-3 text-sm leading-relaxed text-slate-700 dark:text-slate-300">
               {excerpt}
             </p>
 
-            {/* Footer: subtle 'Read more' affordance */}
             <div className="mt-1 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
               <span className="inline-flex items-center gap-1">
                 <span
@@ -187,6 +160,6 @@ export default function BlogCard({
           </div>
         </Card>
       </Link>
-    </motion.article>
+    </motion.div>
   );
 }

@@ -48,7 +48,7 @@ export const CATEGORIES: TechCategory[] = [
   },
 
   {
-    name: "Data Science & Machine Learning",
+    name: "Data Science",
     icon: Brain,
     items: [
       { name: "NumPy", logo: "/tech/numpy.png", description: "Fast numerical computing and array operations in Python." },
@@ -75,7 +75,7 @@ export const CATEGORIES: TechCategory[] = [
   },
 
   {
-    name: "Databases & Backend",
+    name: "Backend",
     icon: Database,
     items: [
       { name: "Supabase", logo: "/tech/supabase.png", description: "Postgres backend with auth, storage, and real-time." },
@@ -86,7 +86,7 @@ export const CATEGORIES: TechCategory[] = [
   },
 
   {
-    name: "Tools & Platforms",
+    name: "Tools",
     icon: Wrench,
     items: [
       { name: "Git", logo: "/tech/git.png", description: "Version control system for managing code changes." },

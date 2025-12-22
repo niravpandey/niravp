@@ -1,9 +1,9 @@
 export const blogCards = [
   {
-    "title": "How AI is Transforming Finance",
-    "slug": "ai-finance",
-    "date": "Dec 3, 2025",
-    "excerpt": "AI and machine learning are reshaping the financial world. Learn how algorithms are changing trading, risk management, and customer services.",
+    "title": "Eigenvectors, Everywhere",
+    "slug": "eigenvec-centrality",
+    "date": "Dec 21, 2025",
+    "excerpt": "Eigen is German for “own”, and the etymological link between the mathematical world of eigenvectors, eigenvalues, and eigenthings",
     "categories": ["AI", "Finance"],
     "readTime": "6 min read",
     "likes": 24

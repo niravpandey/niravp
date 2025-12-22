@@ -7,6 +7,13 @@ import Section from "@/components/Section";
 import BlogCard from "@/components/blog/BlogCard";
 import { blogCards } from "./api/blog/blogCards";
 import TechStack from "@/components/tech-stack/TechStack";
+import { Castoro } from "next/font/google";
+
+const genos = Castoro({ 
+  subsets: ['latin'], 
+  weight: '400', 
+  display: 'swap' 
+});
 
 export default function Home() {
   return (
@@ -17,66 +24,45 @@ export default function Home() {
                        md:py-12 md:px-12 
                        bg-white dark:bg-zinc-950">
         
-        <Section className="bg-dotgrid">
+        <Section>
           <div className="flex flex-col justify-center">
             {/* Heading */}
-            <h1 className="text-5xl font-bold mb-2">
-              Hi, I am <span className="text-blue-800 dark:text-green-500">Nirav</span>
+            <h1 className={`text-5xl font-bold mb-2 ${genos.className}`}>
+              Hi, I am <span className={`text-blue-800 dark:text-green-500`}>Nirav</span>
             </h1>
             <p className="text-gray-500 dark:text-gray-400 mb-8">
               Data Science @ UniMelb | Machine Learning Enthusiast
             </p>
 
             {/* Content Section */}
-            <div className="flex flex-col md:flex-row md:items-center gap-8">
+            <div className="flex flex-col gap-8 md:flex-row md:items-center">
               {/* Text Section */}
               <div className="space-y-4 max-w-prose flex-1">
                 <p>
-                  Final-year Bachelor of Science student at The University of Melbourne, majoring in Data Science.
+                  I am a final year Bachelor of Science student at The University of Melbourne, majoring in Data Science.
                 </p>
-                <p>
-                  I’m fascinated by AI and Machine Learning, particularly how they interact with finance, economics, and society as a whole. 
-                  I also enjoy tinkering with web development in my free time, and I aspire to build something impactful one day. 
+                <p> 
+                  I enjoy tinkering with web development in my free time, and I aspire to build something impactful one day. 
                 </p>
                 <p>
                   I love climbing on plastic rocks and listening to classical music. If the sun is harsh, I stay inside, play the piano, cook, and read. If it isn't, I run.
                 </p>
-                <p>Stay curious.</p>
-
-                {/* Light mode version */}
-                <Image
-                  src="/signature_black.png"
-                  alt="Signature"
-                  height={250} width={250}
-                  className="hidden dark:invert md:block mt-0"
-                />
+              </div>
+              <div className={`bg-blue-800 dark:bg-green-600 w-40 h-40 flex items-center justify-center mx-auto text-white text-4xl ${genos.className}`}>
+                np
               </div>
               
-
-              {/* Image Section */}
-              <div className="flex justify-center md:justify-end flex-1 mt-6 md:mt-0">
-                <div className="relative w-64 h-64 sm:w-72 sm:h-72 md:w-80 md:h-80 rounded-xl overflow-hidden shadow-md">
-                  <Image
-                    src="/headshot.jpeg"
-                    alt="Headshot of Nirav Pandey"
-                    width={320}
-                    height={320}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                
-              </div>
             </div>
           </div>
         </Section>
 
-        <Section className="bg-dotgrid">
-          <h1 className="text-5xl font-bold">Some <span className={`text-blue-800 dark:text-green-500`}>Tech</span> I use</h1>
+        <Section>
+          <h1 className={`text-5xl font-bold mb-2 ${genos.className}`}>Some <span className={`text-blue-800 dark:text-green-500`}>Tech</span> I use</h1>
           <TechStack/>
         </Section>
 
-        <Section className="bg-dotgrid">
-          <h1 className="text-5xl font-bold">Recent <span className={`text-blue-800 dark:text-green-500`}>Ideas</span></h1>
+        <Section>
+          <h1 className={`text-5xl font-bold mb-2 ${genos.className}`}>Recent <span className={`text-blue-800 dark:text-green-500`}>Ideas</span></h1>
           <p className="text-gray-500 dark:text-gray-400 mb-3">Ideas, Opinions, Explainers and more</p>
           <div className="flex flex-col py-6 gap-2">
             {blogCards.map((blog) => (
@@ -106,16 +92,16 @@ export default function Home() {
         </Section>
 
         {/* My Running Stats */}
-        <Section className="">
-          <h1 className="text-5xl font-bold">My <span className={`text-blue-800 dark:text-green-500`}>Running </span>Stats</h1>
+        <Section>
+          <h1 className={`text-5xl font-bold mb-2 ${genos.className}`}>My <span className={`text-blue-800 dark:text-green-500`}>Running </span>Stats</h1>
           <p className="text-gray-500 dark:text-gray-400 mb-3">Imported using Strava API, plotted using Recharts</p>
           <RunningStats/>
         </Section>
         
         {/* Currently Reading */}
         
-        <Section className="bg-dotgrid">
-          <h1 className="text-5xl font-bold">My <span className={`text-blue-800 dark:text-green-500`}>Bookshelf </span></h1>
+        <Section>
+          <h1 className={`text-5xl font-bold mb-2 ${genos.className}`}>My <span className={`text-blue-800 dark:text-green-500`}>Bookshelf </span></h1>
           <p className="text-gray-500 dark:text-gray-400">
             Books I am currently reading. Dynamically fetched from the Goodreads RSS.
           </p>
