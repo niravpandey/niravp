@@ -74,15 +74,12 @@ export default function Home() {
             <Button 
               variant="outline"
               className="
-                bg-transparent text-lg font-medium
-                border-gray-400 
-                text-gray-700 
-                dark:text-gray-300 
-                hover:bg-gray-100 
-                dark:hover:bg-gray-800
+                font-medium
                 transition-all
-                px-6 py-2
-                gap-2
+                px-6 py-2 rounded-none
+              bg-zinc-50/80 dark:bg-zinc-950
+              hover:bg-white dark:hover:bg-zinc-900
+                cursor-pointer
               "
             >
               <BookOpen className="w-4 h-4" />

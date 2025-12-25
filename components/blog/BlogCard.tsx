@@ -70,14 +70,13 @@ export default function BlogCard({
                     <span
                       key={cat}
                       className="
-                        inline-flex items-center gap-1
-                      bg-white/70 px-2.5 py-0.5
+                        inline-flex items-center gap-1 border rounded-full
+                      bg-white/80 px-2.5 py-0.5
                         text-[0.7rem] font-semibold uppercase tracking-wide
                         text-zinc-700
                         shadow-[0_1px_2px_rgba(15,23,42,0.04)]
-                        dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-200
-                      "
-                    >
+                        dark:border-slate-700 dark:bg-slate-950/80 dark:text-slate-200
+                      ">
                       {cat}
                     </span>
                   ))}
@@ -109,7 +108,7 @@ export default function BlogCard({
                 {likes !== undefined && (
                   <span className="inline-flex items-center gap-1.5">
                     <Heart
-                      className="h-3.5 w-3.5 text-rose-500 dark:text-emerald-400"
+                      className="h-3.5 w-3.5 text-gray-600 dark:text-green-400"
                       aria-hidden="true"
                     />
                     <span>{likes}</span>
@@ -134,21 +133,15 @@ export default function BlogCard({
 
             <div className="mt-1 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
               <span className="inline-flex items-center gap-1">
-                <span
-                  className="
-                    h-1.5 w-1.5 rounded-full bg-emerald-500/80
-                    shadow-[0_0_0_2px_rgba(16,185,129,0.35)]
-                  "
-                />
-                <span>Open to read</span>
+                
               </span>
 
               <span
                 className="
                   inline-flex items-center gap-1 font-medium
-                  text-blue-700 transition-colors
-                  group-hover:text-blue-900
-                  dark:text-emerald-400 dark:group-hover:text-emerald-300
+                  text-slate-900 transition-colors
+                  group-hover:text-blue-800
+                  dark:text-slate-50 dark:group-hover:text-green-400
                 "
               >
                 Read post
