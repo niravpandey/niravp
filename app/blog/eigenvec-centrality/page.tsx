@@ -3,6 +3,8 @@ import LikeButton from "@/components/blog/LikeButton";
 import clientPromise from "@/lib/mongodb";
 import Post from "./post.mdx";
 
+export const dynamic = "force-dynamic";
+
 const castoro = Castoro({
   subsets: ["latin"],
   weight: "400",
