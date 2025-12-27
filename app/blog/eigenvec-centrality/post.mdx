@@ -1,0 +1,205 @@
+import Image from "next/image";
+
+*Eigen* is German for “own”, and the etymological link between the mathematical world of eigenvectors, eigenvalues, and eigenthings, and this German word is fascinating. Even more fascinating is how these concepts lay the foundation for a lot of social and technological phenomena. This blog explores the concept of Eigenvector Centrality and how it is tied to Google’s PageRank Algorithm.
+
+To uncover how exactly, we shall slowly build the mathematical logic from this equation:
+
+$$
+A\mathbf{x} = \lambda \mathbf{x}
+$$
+
+If we could cancel the vector $\mathbf{x}$ from both sides and conclude that $A = \lambda$, it would make my life much easier, at the cost of producing a far less interesting case.
+
+The reason we cannot commit such a heresy is because $A$ is an $n \times n$ matrix that multiplies the vector $\mathbf{x}$, and in doing so, produces another vector multiplied by $\lambda$, a scalar we know as the eigenvalue. This explains why *eigenvalue* is such a befitting name for this number; it’s “intrinsic” to the vector itself.
+
+The key interest of this post however, is not the eigenvalue $\lambda$ (which is another poor assumption of the writer we will soon disprove), but the matrix $A$. $A$ in this case is a symmetric $n \times n$ matrix that can be used to model relationships between $n$ arbitrary things.
+
+Consider the following graph where $n = 4$ (for now, all nodes are a network of friends).
+
+<div className="flex justify-center">
+  <Image
+    src="/blog/eigenvec-centrality/1.png"
+    alt="Graph for eigenvector centrality"
+    width={420}
+    height={420}
+    className="rounded-lg shadow-sm"
+  />
+</div>
+
+This corresponds to a matrix
+
+$$
+A =
+\begin{bmatrix}
+0 & 0 & 1 & 1 \\
+0 & 0 & 1 & 0 \\
+1 & 1 & 0 & 0 \\
+1 & 0 & 0 & 0
+\end{bmatrix}
+\in \mathbb{R}^{4\times 4}.
+$$
+
+$A_{ij}$ means that $i$ is connected to $j$, where $i$ and $j$ stand for the rows and columns of the matrix, and $0$ means they’re not.
+
+You may have noticed that we have twice the amount of information than we need (If $i$ is friends with $j$, we can also tell $j$ is friends with $i$), and that in some cases (when $n$ is in millions), we will have a lot of zeros to dispose of, since everyone may not be friends with everyone else.
+
+Calculating eigenvector centrality starts off with the assumption that everyone is well connected with everyone else, and everyone gets a centrality score of $1$ to begin with. Iteratively multiplying this vector by the adjacency matrix, and normalizing the values as we go allows us to find the corresponding eigenvalue and eigenvector of the adjacency matrix.
+
+<details className="rounded-lg border border-zinc-200/70 p-4 dark:border-zinc-700/70">
+  <summary className="cursor-pointer font-semibold">
+    Worked example
+  </summary>
+  <div className="mt-4 space-y-6">
+    <p>
+      For this particular setup, in a few iterations, we end up with the equation
+    </p>
+
+$$
+\begin{bmatrix}
+0 & 0 & 1 & 1 \\
+0 & 0 & 1 & 0\\
+1 & 1 & 0 & 0\\
+1 & 0 & 0 & 0
+\end{bmatrix}
+\begin{bmatrix}
+1\\
+1\\
+1\\
+1
+\end{bmatrix}
+=
+\begin{bmatrix}
+2\\
+1\\
+2\\
+1
+\end{bmatrix}
+$$
+
+Normalization of the result involves dividing each component by the norm
+$$
+\|\mathbf{x}\| = \sqrt{2^2+1^2+2^2+1^2} = \sqrt{10}
+$$
+
+$$
+\frac{1}{\sqrt{10}}
+\begin{bmatrix}
+0 & 0 & 1 & 1 \\
+0 & 0 & 1 & 0\\
+1 & 1 & 0 & 0\\
+1 & 0 & 0 & 0
+\end{bmatrix}
+\begin{bmatrix}
+2\\
+1\\
+2\\
+1
+\end{bmatrix}
+=
+\frac{1}{\sqrt{10}}
+\begin{bmatrix}
+3\\
+2\\
+3\\
+2
+\end{bmatrix}
+$$
+
+  </div>
+</details>
+
+After a few iterations, we end up with the equation
+
+$$
+A
+\begin{pmatrix}
+0.60\\
+0.37\\
+0.60\\
+0.37
+\end{pmatrix}
+=
+1.618
+\begin{pmatrix}
+0.60\\
+0.37\\
+0.60\\
+0.37
+\end{pmatrix}.
+$$
+
+And isn’t it surprisingly beautiful that in this case, the eigenvalue is the Golden Ratio!
+
+$$
+\phi \approx 1.618
+$$
+
+I still don’t understand why this emerges, but my best guess would be that it has something to do with the structure of the graph.
+
+Eigenvector centrality argues that the most well-connected nodes in this graph are the ones that are connected with other well connected nodes. For example, you are really well connected if your two best friends are the President of your country, and the CEO of a Fortune 500 company, as opposed to being connected to 10 friends that are poorly connected in their networks.
+
+In this case, the most well-connected nodes are nodes $1$ and $3$ corresponding to the larger entries of $\mathbf{x}$.
+
+## How this relates to Google’s PageRank
+
+The internet can be modelled as a rather larger version of our 4-node graph. You will find that it has hundreds of millions of pages, and is even messier than our matrix, which was assumed to be symmetric. But let’s stick to our 4-node graph because it is so much simpler to visualize.
+
+Imagine you’re a random surfer in this network. You start on a random node, and click a random outgoing link, and repeat. If this simulation is carried out till infinitum, we know that the fraction of the total time you spend on every single node converges to a stable distribution, because our process is random.
+
+So, instead of an adjacency matrix $A$, PageRank uses a stochastic matrix $P$. Let’s convert our matrix to a column-stochastic one, where each column shows you the probability of going to the next node. Notice how all columns sum to $1$.
+
+$$
+P =
+\begin{bmatrix}
+0 & 0 & \frac{1}{2} & 1 \\
+0 & 0 & \frac{1}{2} & 0 \\
+\frac{1}{2} & 1 & 0 & 0 \\
+\frac{1}{2} & 0 & 0 & 0
+\end{bmatrix}.
+$$
+
+Our rank vector $\mathbf{x}$ would then represent the probability that the web surfer visits a certain page. Initially, the probability is uniformly distributed.
+
+$$
+\mathbf{x}^{(0)} =
+\begin{pmatrix}
+\frac{1}{4}\\
+\frac{1}{4}\\
+\frac{1}{4}\\
+\frac{1}{4}
+\end{pmatrix}.
+$$
+
+We expect the final rank vector gives us the probability of the websurfer visiting a particular node at a particular iteration of the algorithm. It ties beautifully well with our eigenvector centrality problem.
+
+Another interesting divertissement in this topic would be to analyze a few edge cases. What about spider traps and dead ends? What if your websurfer ends up going in cycles around this network.
+
+Google introduces a pretty cool approach to tackle this. They include a damping factor $p$ that introduces some novelty in this path of the web surfer. The web surfer goes about their regular business most of the time, but the web surfer teleports to a different location every once in a while, given by a factor $p$. This enables the web surfer to exit dead ends and break out of cycles.
+
+The resulting model is described by the following update rule. The second term captures the small probability that the surfer disregards the current link structure and jumps uniformly to any other page.
+
+$$
+\boxed{
+\mathbf{x}^{(n+1)}
+=
+\left(
+(1-p)P
++
+\frac{p}{n}
+\begin{bmatrix}
+1&1&\cdots&1\\
+1&1&\cdots&1\\
+\vdots&\vdots&\ddots&\vdots\\
+1&1&\cdots&1
+\end{bmatrix}
+\right)
+\mathbf{x}^{(n)}
+}
+$$
+
+There are many more optimizations to this problem, but for today, we will put our pens down, take a step back, and reflect. What started as a simple mathematical problem of finding an influential node in a small network was eventually applied to create one of the most influential systems in the world — one that made indexing and traversing the World Wide Web a far smoother and more optimized experience for its users. The beauty of it all lies in the foundations upon which this system was built. Larry Page and Sergey Brin began with an adjacency matrix, computed eigenvalues, linked the problem to a stochastic process, and even addressed subtle edge cases. To me, this is the beauty of algorithms.
+
+## Resources Used
+
+- R. Remus & R. Tănase, *Lecture 3: PageRank Algorithm — The Mathematics of Google Search*, Cornell University (Winter 2009). https://pi.math.cornell.edu/~mec/Winter2009/RalucaRemus/Lecture3/lecture3.html
+- Matthew O. Jackson, *The Human Network: How Your Social Position Determines Your Power, Beliefs, and Behaviors*, Vintage Books, 2019.

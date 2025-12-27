@@ -2,20 +2,45 @@ import Image from "next/image";
 import RunningStats from "@/components/running/RunningStats";
 import { Button } from "@/components/ui/button";
 import CurrentlyReading from "@/components/reading/CurrentlyReading";
-import { BookOpen, Eye } from "lucide-react";
+import { BookOpen } from "lucide-react";
 import Section from "@/components/Section";
 import BlogCard from "@/components/blog/BlogCard";
-import { blogCards } from "./api/blog/blogCards";
 import TechStack from "@/components/tech-stack/TechStack";
 import { Castoro } from "next/font/google";
+import clientPromise from "@/lib/mongodb";
 
-const genos = Castoro({ 
+const castoro = Castoro({ 
   subsets: ['latin'], 
   weight: '400', 
   display: 'swap' 
 });
 
-export default function Home() {
+export default async function Home() {
+
+  const client = await clientPromise;
+  const db = client.db("posts");
+
+  const posts = await db
+    .collection("metadata")
+    .find({ })
+    .sort({ publishedAt: -1 })
+    .limit(4)
+    .toArray();
+
+  const recents = posts.map((p: any) => ({
+    title: p.title,
+    slug: p.slug,
+    date: new Date(p.publishedAt).toLocaleDateString("en-AU", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    }),
+    excerpt: p.excerpt,
+    categories: p.categories ?? [],
+    readTime: `${p.readTimeMinutes ?? 0} min read`,
+    likes: p.likes ?? 0,
+  }));
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-zinc-50 dark:bg-black">
       <main className="flex flex-col min-h-screen w-full max-w-6xl 
@@ -27,7 +52,7 @@ export default function Home() {
         <Section>
           <div className="flex flex-col justify-center">
             {/* Heading */}
-            <h1 className={`text-5xl font-bold mb-2 ${genos.className}`}>
+            <h1 className={`text-5xl font-bold mb-2 ${castoro.className}`}>
               Hi, I am <span className={`text-blue-800 dark:text-green-500`}>Nirav</span>
             </h1>
             <p className="text-gray-500 dark:text-gray-400 mb-8">
@@ -48,7 +73,7 @@ export default function Home() {
                   I love climbing on plastic rocks and listening to classical music. If the sun is harsh, I stay inside, play the piano, cook, and read. If it isn't, I run.
                 </p>
               </div>
-              <div className={`bg-blue-800 dark:bg-green-600 w-40 h-40 flex items-center justify-center mx-auto text-white text-4xl ${genos.className}`}>
+              <div className={`bg-blue-800 dark:bg-green-600 w-40 h-40 flex items-center justify-center mx-auto text-white text-4xl ${castoro.className}`}>
                 np
               </div>
               
@@ -57,15 +82,15 @@ export default function Home() {
         </Section>
 
         <Section>
-          <h1 className={`text-5xl font-bold mb-2 ${genos.className}`}>Some <span className={`text-blue-800 dark:text-green-500`}>Tech</span> I use</h1>
+          <h1 className={`text-5xl font-bold mb-2 ${castoro.className}`}>Some <span className={`text-blue-800 dark:text-green-500`}>Tech</span> I use</h1>
           <TechStack/>
         </Section>
 
         <Section>
-          <h1 className={`text-5xl font-bold mb-2 ${genos.className}`}>Recent <span className={`text-blue-800 dark:text-green-500`}>Ideas</span></h1>
+          <h1 className={`text-5xl font-bold mb-2 ${castoro.className}`}>Recent <span className={`text-blue-800 dark:text-green-500`}>Ideas</span></h1>
           <p className="text-gray-500 dark:text-gray-400 mb-3">Ideas, Opinions, Explainers and more</p>
           <div className="flex flex-col py-6 gap-2">
-            {blogCards.map((blog) => (
+            {recents.map((blog) => (
           <BlogCard key={blog.slug} {...blog} />
           ))}
           </div>
@@ -90,7 +115,7 @@ export default function Home() {
 
         {/* My Running Stats */}
         <Section>
-          <h1 className={`text-5xl font-bold mb-2 ${genos.className}`}>My <span className={`text-blue-800 dark:text-green-500`}>Running </span>Stats</h1>
+          <h1 className={`text-5xl font-bold mb-2 ${castoro.className}`}>My <span className={`text-blue-800 dark:text-green-500`}>Running </span>Stats</h1>
           <p className="text-gray-500 dark:text-gray-400 mb-3">Imported using Strava API, plotted using Recharts</p>
           <RunningStats/>
         </Section>
@@ -98,7 +123,7 @@ export default function Home() {
         {/* Currently Reading */}
         
         <Section>
-          <h1 className={`text-5xl font-bold mb-2 ${genos.className}`}>My <span className={`text-blue-800 dark:text-green-500`}>Bookshelf </span></h1>
+          <h1 className={`text-5xl font-bold mb-2 ${castoro.className}`}>My <span className={`text-blue-800 dark:text-green-500`}>Bookshelf </span></h1>
           <p className="text-gray-500 dark:text-gray-400">
             Books I am currently reading. Dynamically fetched from the Goodreads RSS.
           </p>
