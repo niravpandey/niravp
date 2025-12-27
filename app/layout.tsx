@@ -5,6 +5,7 @@ import Footer from "@/components/Footer";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Inter } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next"
+import "katex/dist/katex.min.css";
 
 const inter = Inter({ subsets: ['latin'] });
 

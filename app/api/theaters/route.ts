@@ -3,10 +3,10 @@ import clientPromise from "@/lib/mongodb";
 export async function GET() {
   const client = await clientPromise;
 
-  const db = client.db("sample_mflix");
+  const db = client.db("posts");
   const theaters = await db
-    .collection("theaters")
-    .find({})
+    .collection("metadata")
+    .find({"status":"published"})
     .limit(10)
     .toArray();
 
