@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useEffectEvent, useState, useTransition } from "react";
+import { useEffect, useEffectEvent, useRef, useState, useTransition } from "react";
 import type { Post } from "@/lib/blog";
 import { deletePost, savePost, type PostFormData } from "./actions";
 
@@ -35,7 +35,9 @@ export default function PostEditor({ post }: Props) {
     post?.created_at ? toDatetimeLocalValue(post.created_at) : toDatetimeLocalValue(new Date().toISOString())
   );
   const [error, setError] = useState<string | null>(null);
+  const [importedFileName, setImportedFileName] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const markdownInputRef = useRef<HTMLInputElement | null>(null);
 
   async function handleSave(publish?: boolean) {
     if (!title.trim()) {
@@ -91,6 +93,25 @@ export default function PostEditor({ post }: Props) {
     });
   }
 
+  async function handleMarkdownImport(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+
+    if (!file) {
+      return;
+    }
+
+    try {
+      const nextContent = await file.text();
+      setContent(nextContent);
+      setImportedFileName(file.name);
+      setError(null);
+    } catch {
+      setError("Could not read that markdown file.");
+    } finally {
+      event.target.value = "";
+    }
+  }
+
   const onSaveShortcut = useEffectEvent(() => {
     if (isPending) {
       return;
@@ -130,6 +151,13 @@ export default function PostEditor({ post }: Props) {
           ← All posts
         </Link>
         <div className="flex items-center gap-2">
+          <input
+            ref={markdownInputRef}
+            type="file"
+            accept=".md,.mdx,text/markdown,text/plain"
+            className="hidden"
+            onChange={handleMarkdownImport}
+          />
           {!isNew && (
             <button
               onClick={handleDelete}
@@ -139,6 +167,14 @@ export default function PostEditor({ post }: Props) {
               Delete
             </button>
           )}
+          <button
+            type="button"
+            onClick={() => markdownInputRef.current?.click()}
+            disabled={isPending}
+            className="border border-gray-300 bg-white/60 px-3 py-1.5 text-sm text-gray-700 transition-colors hover:border-gray-400 disabled:opacity-40"
+          >
+            Import markdown
+          </button>
           <button
             onClick={() => handleSave()}
             disabled={isPending}
@@ -240,7 +276,7 @@ export default function PostEditor({ post }: Props) {
           className="min-h-120 w-full resize-none border-0 px-4 py-3 font-mono text-sm text-gray-800 focus:outline-none"
         />
         <div className="flex items-center justify-between border-t border-gray-200 px-4 py-2 text-xs text-gray-500">
-          <span>Markdown editor</span>
+          <span>{importedFileName ? `Markdown editor · loaded ${importedFileName}` : "Markdown editor"}</span>
           <span>{isPending ? "Saving..." : "⌘S to save draft"}</span>
         </div>
       </div>
