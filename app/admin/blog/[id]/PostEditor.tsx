@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useTransition } from "react";
+import { useEffect, useEffectEvent, useState, useTransition } from "react";
 import type { Post } from "@/lib/blog";
 import { deletePost, savePost, type PostFormData } from "./actions";
 
@@ -90,6 +90,33 @@ export default function PostEditor({ post }: Props) {
       }
     });
   }
+
+  const onSaveShortcut = useEffectEvent(() => {
+    if (isPending) {
+      return;
+    }
+
+    void handleSave();
+  });
+
+  useEffect(() => {
+    function handleKeyDown(event: KeyboardEvent) {
+      const isSaveShortcut = (event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "s";
+
+      if (!isSaveShortcut) {
+        return;
+      }
+
+      event.preventDefault();
+      onSaveShortcut();
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, []);
 
   return (
     <div className="mx-auto w-full max-w-4xl">
@@ -205,12 +232,18 @@ export default function PostEditor({ post }: Props) {
         </div>
       </div>
 
-      <textarea
-        value={content}
-        onChange={(event) => setContent(event.target.value)}
-        placeholder="Write your MDX here..."
-        className="min-h-120 w-full resize-none border border-gray-200 bg-white/60 px-4 py-3 font-mono text-sm text-gray-800 focus:border-gray-400 focus:outline-none"
-      />
+      <div className="overflow-hidden border border-gray-200 bg-white/60">
+        <textarea
+          value={content}
+          onChange={(event) => setContent(event.target.value)}
+          placeholder="Write your MDX here..."
+          className="min-h-120 w-full resize-none border-0 px-4 py-3 font-mono text-sm text-gray-800 focus:outline-none"
+        />
+        <div className="flex items-center justify-between border-t border-gray-200 px-4 py-2 text-xs text-gray-500">
+          <span>Markdown editor</span>
+          <span>{isPending ? "Saving..." : "⌘S to save draft"}</span>
+        </div>
+      </div>
     </div>
   );
 }
