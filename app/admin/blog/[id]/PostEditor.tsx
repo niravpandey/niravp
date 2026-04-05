@@ -9,6 +9,15 @@ type Props = {
   post: Post | null;
 };
 
+type ImportedFrontmatter = {
+  title?: string;
+  slug?: string;
+  description?: string;
+  tags?: string;
+  published?: boolean;
+  createdAt?: string;
+};
+
 function pad(value: number) {
   return String(value).padStart(2, "0");
 }
@@ -21,6 +30,102 @@ function toDatetimeLocalValue(value: string) {
     pad(date.getMonth() + 1),
     pad(date.getDate()),
   ].join("-") + `T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
+function stripWrappingQuotes(value: string) {
+  const trimmed = value.trim();
+
+  if (
+    (trimmed.startsWith('"') && trimmed.endsWith('"')) ||
+    (trimmed.startsWith("'") && trimmed.endsWith("'"))
+  ) {
+    return trimmed.slice(1, -1);
+  }
+
+  return trimmed;
+}
+
+function parseFrontmatter(source: string): { content: string; data: ImportedFrontmatter } {
+  const lines = source.split(/\r?\n/);
+
+  if (lines[0]?.trim() !== "---") {
+    return { content: source, data: {} };
+  }
+
+  const fields: Record<string, string | string[]> = {};
+  let currentListKey: string | null = null;
+  let closingIndex = -1;
+
+  for (let index = 1; index < lines.length; index += 1) {
+    const line = lines[index];
+
+    if (line.trim() === "---") {
+      closingIndex = index;
+      break;
+    }
+
+    const listItemMatch = line.match(/^\s*-\s+(.*)$/);
+
+    if (listItemMatch && currentListKey) {
+      const currentValue = fields[currentListKey];
+      const nextItem = stripWrappingQuotes(listItemMatch[1]);
+
+      fields[currentListKey] = Array.isArray(currentValue)
+        ? [...currentValue, nextItem]
+        : [nextItem];
+      continue;
+    }
+
+    currentListKey = null;
+
+    const keyValueMatch = line.match(/^([A-Za-z0-9_-]+):\s*(.*)$/);
+
+    if (!keyValueMatch) {
+      continue;
+    }
+
+    const [, key, rawValue] = keyValueMatch;
+    const value = stripWrappingQuotes(rawValue);
+
+    if (value) {
+      fields[key] = value;
+      continue;
+    }
+
+    fields[key] = [];
+    currentListKey = key;
+  }
+
+  if (closingIndex === -1) {
+    return { content: source, data: {} };
+  }
+
+  const publishedValue = fields.published;
+  const createdAtValue = fields.createdAt ?? fields.created_at ?? fields.date;
+  const normalizedCreatedAt =
+    typeof createdAtValue === "string" && !Number.isNaN(Date.parse(createdAtValue))
+      ? new Date(createdAtValue).toISOString()
+      : undefined;
+
+  return {
+    content: lines.slice(closingIndex + 1).join("\n").replace(/^\n+/, ""),
+    data: {
+      title: typeof fields.title === "string" ? fields.title : undefined,
+      slug: typeof fields.slug === "string" ? fields.slug : undefined,
+      description: typeof fields.description === "string" ? fields.description : undefined,
+      tags:
+        typeof fields.tags === "string"
+          ? fields.tags
+          : Array.isArray(fields.tags)
+            ? fields.tags.join(", ")
+            : undefined,
+      published:
+        typeof publishedValue === "string"
+          ? publishedValue.toLowerCase() === "true"
+          : undefined,
+      createdAt: normalizedCreatedAt,
+    },
+  };
 }
 
 export default function PostEditor({ post }: Props) {
@@ -101,8 +206,29 @@ export default function PostEditor({ post }: Props) {
     }
 
     try {
-      const nextContent = await file.text();
-      setContent(nextContent);
+      const importedText = await file.text();
+      const imported = parseFrontmatter(importedText);
+
+      setContent(imported.content);
+      if (imported.data.title !== undefined) {
+        setTitle(imported.data.title);
+      }
+      if (imported.data.slug !== undefined) {
+        setSlug(imported.data.slug.toLowerCase().replace(/\s+/g, "-"));
+      }
+      if (imported.data.description !== undefined) {
+        setDescription(imported.data.description);
+      }
+      if (imported.data.tags !== undefined) {
+        setTags(imported.data.tags);
+      }
+      if (imported.data.published !== undefined) {
+        setPublished(imported.data.published);
+      }
+      if (imported.data.createdAt !== undefined) {
+        setCreatedAt(toDatetimeLocalValue(imported.data.createdAt));
+      }
+
       setImportedFileName(file.name);
       setError(null);
     } catch {
