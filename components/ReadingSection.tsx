@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ArrowRight } from "lucide-react";
  
 type Book = {
   id: string;
@@ -34,8 +35,9 @@ export default function ReadingSection({ books = [] }: { books: Book[] }) {
           </div>
         ))}
       </div>
-      <Link href="/reading" className="mt-4 inline-block text-xs text-gray-400 hover:text-gray-600 transition-colors">
-        All books →
+      <Link href="/reading" className="mt-4 inline-flex items-center gap-1.5 text-xs text-gray-400 transition-colors hover:text-gray-600">
+        <span>All books</span>
+        <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
       </Link>
     </div>
   );

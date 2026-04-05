@@ -1,5 +1,6 @@
 import { getAllPosts } from "@/lib/blog";
 import Link from "next/link";
+import { ArrowLeft, FilePlus2 } from "lucide-react";
 import Footer from "@/components/Footer";
  
 function formatDate(iso: string) {
@@ -17,8 +18,9 @@ export default async function AdminBlogPage() {
     <div className="flex min-h-screen flex-col font-sans">
       <main className="flex flex-1 flex-col items-center bg-olive-100 px-4 py-16 sm:px-8 sm:py-24 lg:px-16">
         <div className="w-full max-w-4xl">
-          <Link href="/admin" className="text-sm text-gray-500 transition-colors hover:text-gray-800">
-            ← Admin
+          <Link href="/admin" className="inline-flex items-center gap-2 text-sm text-gray-500 transition-colors hover:text-gray-800">
+            <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+            <span>Admin</span>
           </Link>
 
           <div className="mt-6 mb-8 flex items-end justify-between gap-4 border-b border-gray-200 pb-5">
@@ -28,9 +30,10 @@ export default async function AdminBlogPage() {
             </div>
             <Link
               href="/admin/blog/new"
-              className="border border-gray-300 px-4 py-2 text-sm text-gray-700 transition-colors hover:border-gray-400"
+              className="inline-flex items-center gap-2 border border-gray-300 px-4 py-2 text-sm text-gray-700 transition-colors hover:border-gray-400"
             >
-              New post
+              <FilePlus2 className="h-4 w-4" aria-hidden="true" />
+              <span>New post</span>
             </Link>
           </div>
 

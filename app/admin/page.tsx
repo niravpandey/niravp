@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import Footer from "@/components/Footer";
 
@@ -22,8 +23,9 @@ export default async function AdminPage() {
     <div className="flex min-h-screen flex-col font-sans">
       <main className="flex flex-1 flex-col items-center bg-olive-100 px-4 py-16 sm:px-8 sm:py-24 lg:px-16">
         <div className="w-full max-w-4xl">
-          <Link href="/" className="text-sm text-gray-500 transition-colors hover:text-gray-800">
-            ← Home
+          <Link href="/" className="inline-flex items-center gap-2 text-sm text-gray-500 transition-colors hover:text-gray-800">
+            <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+            <span>Home</span>
           </Link>
 
           <div className="mt-6 mb-8 flex items-end justify-between gap-4 border-b border-gray-200 pb-5">

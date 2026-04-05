@@ -5,15 +5,14 @@ import Footer from "@/components/Footer";
 
 export default async function AdminPostPage(props: PageProps<"/admin/blog/[id]">) {
   const { id } = await props.params;
+  let post = null;
 
-  if (id === "new") {
-    return <PostEditor post={null} />;
-  }
+  if (id !== "new") {
+    post = await getPostById(id);
 
-  const post = await getPostById(id);
-
-  if (!post) {
-    notFound();
+    if (!post) {
+      notFound();
+    }
   }
 
   return (
