@@ -58,6 +58,12 @@ export default function HeroSection() {
           on fun projects that challenge me to learn and grow. 
         </p>
         <p className="mt-2 text-gray-600">This is where I write about things that interest me and document my projects</p>
+        <p className="mt-2 text-mauve-500">
+          Nirav Pandey 
+        </p>
+        <p className="text-mauve-500">
+          09/04/26
+        </p>
       </div>
     </div>
   );
