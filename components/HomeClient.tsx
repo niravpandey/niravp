@@ -1,44 +1,54 @@
 "use client";
+
 import { useState } from "react";
-import HeroSection from "@/components/HeroSection";
-import ProjectSection from "@/components/ProjectSection";
-import SkillSection from "@/components/SkillSection";
-import BlogSection from "@/components/BlogSection";
-import ReadingSection from "@/components/ReadingSection";
-import Footer from "@/components/Footer";
+import HeroSection from "@/components/home/HeroSection";
+import ProjectSection from "@/components/home/ProjectSection";
+import SkillSection from "@/components/home/SkillSection";
+import BlogSection from "@/components/home/BlogSection";
+import ReadingSection from "@/components/home/ReadingSection";
+import Footer from "@/components/layout/Footer";
 import type { PostSummary } from "@/lib/blog";
 import type { Project } from "@/lib/projects";
+import type { Book } from "@/lib/books";
+import Navbar from "./layout/Navbar";
 
-type Book = { id: string; title: string; author: string; progress: number; color: string };
+type HomeClientProps = {
+  posts: PostSummary[];
+  books: Book[];
+  projects: Project[];
+};
 
 export default function HomeClient({
   posts,
   books,
   projects,
-}: {
-  posts: PostSummary[];
-  books: Book[];
-  projects: Project[];
-}) {
+}: HomeClientProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const safeCurrentIndex = projects.length === 0 ? 0 : Math.min(currentIndex, projects.length - 1);
+
+  const safeCurrentIndex =
+    projects.length > 0 ? Math.min(currentIndex, projects.length - 1) : 0;
+
   const activeSkills = new Set(projects[safeCurrentIndex]?.tags ?? []);
- 
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center font-sans">
-      <main className="flex flex-1 flex-col items-center py-16 sm:py-32 px-4 sm:px-8 lg:px-16 bg-olive-100 w-full sm:items-start">
+    <div className="flex min-h-screen flex-1 flex-col items-center justify-center font-sans">
+      
+      <main className=" flex w-full flex-1 flex-col items-center px-4 py-16 sm:items-start sm:px-8 sm:py-32 lg:px-16">
+        
         <HeroSection />
-        <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-6 border-b border-gray-200 pb-5">
+
+        <div className="grid w-full grid-cols-1 gap-6 border-b border-gray-200 pb-5 lg:grid-cols-2">
           <SkillSection activeSkills={activeSkills} />
           <ProjectSection
             projects={projects}
             currentIndex={safeCurrentIndex}
             setCurrentIndex={setCurrentIndex}
           />
+          <ReadingSection books={books} />
+          <BlogSection posts={posts} />
         </div>
-        <ReadingSection books={books} />
-        <BlogSection posts = {posts} />
       </main>
+
       <Footer />
     </div>
   );

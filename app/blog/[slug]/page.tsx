@@ -5,7 +5,7 @@ import { ArrowLeft } from "lucide-react";
 import { MDXRemote } from "next-mdx-remote/rsc";
 import rehypeKatex from "rehype-katex";
 import remarkMath from "remark-math";
-import Footer from "@/components/Footer";
+import Footer from "@/components/layout/Footer";
 import { getPublishedPost } from "@/lib/blog";
 
 const mdxOptions = {
@@ -57,8 +57,8 @@ export default async function BlogPostPage(props: PageProps<"/blog/[slug]">) {
           </Link>
 
           <header className="mt-6 border-b border-gray-200 pb-8">
-            <p className="text-xs uppercase tracking-[0.2em] text-gray-400">{formatDate(post.created_at)}</p>
-            <h1 className="mt-3 text-4xl font-semibold tracking-tight text-mauve-500">{post.title}</h1>
+            <p className="text-xs uppercase  text-gray-400">{formatDate(post.created_at)}</p>
+            <h1 className="mt-3 text-4xl font-semibold  text-mauve-500">{post.title}</h1>
             {post.description && <p className="mt-4 max-w-2xl text-base text-gray-600">{post.description}</p>}
             {(post.tags ?? []).length > 0 && (
               <div className="mt-5 flex flex-wrap gap-2">

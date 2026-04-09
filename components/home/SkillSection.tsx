@@ -1,3 +1,5 @@
+import { CodeXml } from "lucide-react";
+
 interface Props {
   activeSkills: Set<string>;
 }
@@ -13,7 +15,10 @@ export default function SkillSection({ activeSkills }: Props) {
 
   return (
     <div>
-      <h1 className="text-3xl text-mauve-500 font-semibold pt-4">Skills</h1>
+      <h1 className="flex items-center gap-2 pt-4 text-3xl font-semibold text-blue-900">
+        <CodeXml className="h-7 w-7 text-mauve-500" aria-hidden="true" />Skills
+        
+      </h1>
       <div className="mt-4 flex flex-col gap-3">
         {skills.map(({ category, items }) => (
           <div key={category} className="flex gap-4">

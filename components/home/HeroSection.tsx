@@ -15,11 +15,11 @@ export default function HeroSection() {
       </div>
 
       <div className="shrink-0">
-        <h1 className="text-3xl font-semibold text-mauve-600">Nirav Pandey</h1>
-        <p>Student, University of Melbourne</p>
-        <p>Bachelor of Science (Data Science)</p>
+        <h1 className="text-3xl font-semibold text-blue-900">Nirav Pandey</h1>
+        <p className="text-gray-600">Student, University of Melbourne</p>
+        <p className="text-gray-600">Bachelor of Science (Data Science)</p>
 
-        <div className="mt-4 flex flex-col gap-1">
+        <div className="mt-4 flex flex-col gap-1 text-gray-700">
           <a href="mailto:niravp@student.unimelb.edu.au" className="flex items-center gap-2 hover:text-mauve-500">
             <Mail className="h-4 w-4" />
             Email
@@ -48,16 +48,16 @@ export default function HeroSection() {
       </div>
 
       <div className="w-full md:flex-1">
-        <p>
+        <p className="text-gray-600">
           I grew up in Kathmandu, Nepal, and I am now pursuing my undergraduate
           studies in Melbourne. During my degree, I&apos;ve had the chance to learn about data science, AI and machine 
           learning. 
         </p>
-        <p className="mt-2">
+        <p className="mt-2 text-gray-600">
           Beyond academics, I enjoy reading a wide range of literature and working
           on fun projects that challenge me to learn and grow. If you 
         </p>
-        <p className="mt-2">You can find my projects and experiences here.</p>
+        <p className="mt-2 text-gray-600">You can find my projects and experiences here.</p>
       </div>
     </div>
   );

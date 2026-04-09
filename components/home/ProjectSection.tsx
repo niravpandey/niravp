@@ -1,5 +1,5 @@
 "use client";
-import { ExternalLink, ChevronLeft, ChevronRight } from "lucide-react";
+import { ExternalLink, ChevronLeft, ChevronRight, FolderKanban, FolderCode, AppWindow, Rocket } from "lucide-react";
 import type { Project } from "@/lib/projects";
 
 interface Props {
@@ -12,7 +12,10 @@ export default function ProjectSection({ projects, currentIndex, setCurrentIndex
   if (projects.length === 0) {
     return (
       <div>
-        <h1 className="pt-4 text-3xl font-semibold text-mauve-500">Projects</h1>
+        <h1 className="flex items-center gap-2 pt-4 text-3xl font-semibold text-blue-900">
+          <Rocket className="h-7 w-7 text-mauve-500" aria-hidden="true" />Projects
+          
+        </h1>
         <p className="mt-4 text-sm text-gray-500">No projects published yet.</p>
       </div>
     );
@@ -22,7 +25,10 @@ export default function ProjectSection({ projects, currentIndex, setCurrentIndex
 
   return (
     <div>
-      <h1 className="text-3xl text-mauve-500 font-semibold pt-4">Projects</h1>
+      <h1 className="flex items-center gap-2 pt-4 text-3xl font-semibold text-blue-900">
+        <Rocket className="h-7 w-7 text-mauve-500" aria-hidden="true" />Projects
+        
+      </h1>
       <div className="mt-4 flex flex-col gap-4">
         <div>
           <div className="flex items-baseline justify-between">
@@ -46,11 +52,11 @@ export default function ProjectSection({ projects, currentIndex, setCurrentIndex
             ))}
           </div>
         </div>
-
         <div className="flex items-center gap-2">
           <button
             onClick={() => setCurrentIndex(Math.max(0, currentIndex - 1))}
             disabled={currentIndex === 0}
+            aria-label="Previous project"
             className="p-1 disabled:opacity-30"
           >
             <ChevronLeft className="h-4 w-4" />
@@ -61,6 +67,7 @@ export default function ProjectSection({ projects, currentIndex, setCurrentIndex
           <button
             onClick={() => setCurrentIndex(Math.min(projects.length - 1, currentIndex + 1))}
             disabled={currentIndex === projects.length - 1}
+            aria-label="Next project"
             className="p-1 disabled:opacity-30"
           >
             <ChevronRight className="h-4 w-4" />
