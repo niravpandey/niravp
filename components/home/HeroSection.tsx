@@ -55,9 +55,9 @@ export default function HeroSection() {
         </p>
         <p className="mt-2 text-gray-600">
           Beyond academics, I enjoy reading a wide range of literature and working
-          on fun projects that challenge me to learn and grow. If you 
+          on fun projects that challenge me to learn and grow. 
         </p>
-        <p className="mt-2 text-gray-600">You can find my projects and experiences here.</p>
+        <p className="mt-2 text-gray-600">This is where I write about things that interest me and document my projects</p>
       </div>
     </div>
   );

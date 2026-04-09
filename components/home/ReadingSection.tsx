@@ -44,7 +44,7 @@ export default function ReadingSection({
                 {items.map((book) => (
                   <div
                     key={book.id}
-                    className="flex items-center gap-3 border-t border-gray-200 py-1.5"
+                    className="flex items-center gap-3 py-1.5"
                   >
                     <div className="flex min-w-0 flex-1 items-baseline gap-2">
                       <p className="truncate text-sm font-medium text-gray-900">
