@@ -1,13 +1,6 @@
 "use client";
 import { ExternalLink, ChevronLeft, ChevronRight } from "lucide-react";
-
-type Project = {
-  title: string;
-  org: string;
-  description: string;
-  tags: string[];
-  link: string;
-};
+import type { Project } from "@/lib/projects";
 
 interface Props {
   projects: Project[];
@@ -16,6 +9,15 @@ interface Props {
 }
 
 export default function ProjectSection({ projects, currentIndex, setCurrentIndex }: Props) {
+  if (projects.length === 0) {
+    return (
+      <div>
+        <h1 className="pt-4 text-3xl font-semibold text-mauve-500">Projects</h1>
+        <p className="mt-4 text-sm text-gray-500">No projects published yet.</p>
+      </div>
+    );
+  }
+
   const project = projects[currentIndex];
 
   return (

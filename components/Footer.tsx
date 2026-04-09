@@ -8,11 +8,11 @@ export default function Footer(){
                 <div className="flex items-center gap-2">
                 <span>Source code in</span>
                 <Image
-                    src="/GitHub_Invertocat_Black.png"
+                    src="https://apqsehnfehgcygadnrgq.supabase.co/storage/v1/object/public/Assets/icons/GitHub.png"
                     width={16}
                     height={16}
                     alt="GitHub"
-                    className="bg-white rounded-full p-0.5"
+                    className="h-4 w-4 rounded-full bg-white p-0.5"
                 />
                 <span>GitHub</span>
                 </div>

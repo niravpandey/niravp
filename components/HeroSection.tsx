@@ -6,9 +6,10 @@ export default function HeroSection() {
     <div className="flex flex-col sm:flex-row flex-wrap items-start gap-6 border-b border-gray-200 pb-5">
       <div className="relative w-32 sm:w-40 md:w-48 aspect-square shrink-0">
         <Image
-          src="/headshot.png"
+          src="https://apqsehnfehgcygadnrgq.supabase.co/storage/v1/object/public/Assets/headshot.png"
           fill
           alt="Nirav Pandey"
+          sizes="(max-width: 640px) 8rem, (max-width: 768px) 10rem, 12rem"
           className="object-cover border border-gray-300 p-1"
         />
       </div>
@@ -24,11 +25,23 @@ export default function HeroSection() {
             Email
           </a>
           <a href="https://linkedin.com/in/niravpandey05" className="flex items-center gap-2 hover:text-mauve-500">
-            <Image src="/LI-In-Bug.png" width={16} height={16} alt="LinkedIn" />
+            <Image
+              src="https://apqsehnfehgcygadnrgq.supabase.co/storage/v1/object/public/Assets/icons/LinkedIn.png"
+              width={16}
+              height={16}
+              alt="LinkedIn"
+              className="h-4 w-4"
+            />
             LinkedIn
           </a>
           <a href="https://github.com/niravpandey" className="flex items-center gap-2 hover:text-mauve-500">
-            <Image src="/GitHub_Invertocat_Black.png" width={16} height={16} alt="GitHub" />
+            <Image
+              src="https://apqsehnfehgcygadnrgq.supabase.co/storage/v1/object/public/Assets/icons/GitHub.png"
+              width={16}
+              height={16}
+              alt="GitHub"
+              className="h-4 w-4"
+            />
             GitHub
           </a>
         </div>

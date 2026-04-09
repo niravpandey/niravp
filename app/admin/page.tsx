@@ -60,6 +60,14 @@ export default async function AdminPage() {
               <span className="font-medium text-gray-900">Reading list</span>
               <span className="text-sm text-gray-500">Update books and reading progress</span>
             </Link>
+
+            <Link
+              href="/admin/projects"
+              className="flex flex-col gap-1 border border-gray-200 bg-white/60 p-5 transition-colors hover:border-gray-400"
+            >
+              <span className="font-medium text-gray-900">Projects</span>
+              <span className="text-sm text-gray-500">Manage portfolio projects and their order</span>
+            </Link>
           </div>
         </div>
       </main>
