@@ -1,4 +1,4 @@
-import { BookOpen } from "lucide-react";
+import PhosphorIcon from "@/components/ui/PhosphorIcon";
 import type { Book, BookStatus } from "@/lib/books";
 
 const STATUS_LABELS: Record<BookStatus, string> = {
@@ -25,7 +25,7 @@ export default function ReadingSection({
   return (
     <section className="w-full pt-4">
       <h1 className="flex items-center gap-2 pb-3 text-3xl font-semibold text-blue-900">
-        <BookOpen className="h-7 w-7 text-mauve-500" aria-hidden="true" />
+        <PhosphorIcon name="bookmark-simple" size={28} className="text-mauve-500" />
         Reading
       </h1>
 

@@ -1,5 +1,5 @@
 "use client";
-import { ExternalLink, ChevronLeft, ChevronRight, FolderKanban, FolderCode, AppWindow, Rocket } from "lucide-react";
+import PhosphorIcon from "@/components/ui/PhosphorIcon";
 import type { Project } from "@/lib/projects";
 
 interface Props {
@@ -13,7 +13,7 @@ export default function ProjectSection({ projects, currentIndex, setCurrentIndex
     return (
       <div>
         <h1 className="flex items-center gap-2 pt-4 text-3xl font-semibold text-blue-900">
-          <Rocket className="h-7 w-7 text-mauve-500" aria-hidden="true" />Projects
+          <PhosphorIcon name="folder-simple-star" size={28} className="text-mauve-500" />Projects
           
         </h1>
         <p className="mt-4 text-sm text-gray-500">No projects published yet.</p>
@@ -26,7 +26,7 @@ export default function ProjectSection({ projects, currentIndex, setCurrentIndex
   return (
     <div>
       <h1 className="flex items-center gap-2 pt-4 text-3xl font-semibold text-blue-900">
-        <Rocket className="h-7 w-7 text-mauve-500" aria-hidden="true" />Projects
+        <PhosphorIcon name="folder-simple-star" size={28} className="text-mauve-500" />Projects
         
       </h1>
       <div className="mt-4 flex flex-col gap-4">
@@ -39,14 +39,18 @@ export default function ProjectSection({ projects, currentIndex, setCurrentIndex
               className="group flex items-center gap-1 font-medium hover:underline"
             >
               {project.title}
-              <ExternalLink className="h-3.5 w-3.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150" />
+              <PhosphorIcon
+                name="arrow-square-out"
+                size={14}
+                className="opacity-0 transition-opacity duration-150 group-hover:opacity-100"
+              />
             </a>
             <span className="text-sm text-gray-500">{project.org}</span>
           </div>
           <p className="text-sm text-gray-600 mt-1">{project.description}</p>
           <div className="flex flex-wrap gap-2 mt-2">
             {project.tags.map((tag) => (
-              <span key={tag} className="text-xs border border-gray-300 px-2 py-0.5 text-gray-600">
+              <span key={tag} className="text-xs border rounded-full border-gray-300 px-2 py-0.5 text-gray-600">
                 {tag}
               </span>
             ))}
@@ -59,7 +63,7 @@ export default function ProjectSection({ projects, currentIndex, setCurrentIndex
             aria-label="Previous project"
             className="p-1 disabled:opacity-30"
           >
-            <ChevronLeft className="h-4 w-4" />
+            <PhosphorIcon name="caret-left" size={10} />
           </button>
           <span className="text-xs text-gray-500">
             {currentIndex + 1} / {projects.length}
@@ -70,7 +74,7 @@ export default function ProjectSection({ projects, currentIndex, setCurrentIndex
             aria-label="Next project"
             className="p-1 disabled:opacity-30"
           >
-            <ChevronRight className="h-4 w-4" />
+            <PhosphorIcon name="caret-right" size={10} />
           </button>
         </div>
       </div>

@@ -1,4 +1,4 @@
-import { CodeXml } from "lucide-react";
+import PhosphorIcon from "@/components/ui/PhosphorIcon";
 
 interface Props {
   activeSkills: Set<string>;
@@ -16,7 +16,7 @@ export default function SkillSection({ activeSkills }: Props) {
   return (
     <div>
       <h1 className="flex items-center gap-2 pt-4 text-3xl font-semibold text-blue-900">
-        <CodeXml className="h-7 w-7 text-mauve-500" aria-hidden="true" />Skills
+        <PhosphorIcon name="code" size={28} className="text-mauve-500" />Skills
         
       </h1>
       <div className="mt-4 flex flex-col gap-3">
@@ -27,7 +27,7 @@ export default function SkillSection({ activeSkills }: Props) {
               {items.map((item) => (
                 <span
                   key={item}
-                  className={`text-xs border px-2 py-0.5 transition-colors duration-150 ${
+                  className={`text-xs border rounded-full px-2 py-0.5 transition-colors duration-150 ${
                     activeSkills.has(item)
                       ? "border-mauve-500 text-mauve-500 bg-mauve-200"
                       : "border-gray-300 text-gray-600"

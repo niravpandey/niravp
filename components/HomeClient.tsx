@@ -6,11 +6,11 @@ import ProjectSection from "@/components/home/ProjectSection";
 import SkillSection from "@/components/home/SkillSection";
 import BlogSection from "@/components/home/BlogSection";
 import ReadingSection from "@/components/home/ReadingSection";
+import GallerySection from "@/components/home/GallerySection";
 import Footer from "@/components/layout/Footer";
 import type { PostSummary } from "@/lib/blog";
 import type { Project } from "@/lib/projects";
 import type { Book } from "@/lib/books";
-import Navbar from "./layout/Navbar";
 
 type HomeClientProps = {
   posts: PostSummary[];
@@ -32,20 +32,26 @@ export default function HomeClient({
 
   return (
     <div className="flex min-h-screen flex-1 flex-col items-center justify-center font-sans">
-      
-      <main className=" flex w-full flex-1 flex-col items-center px-4 py-16 sm:items-start sm:px-8 sm:py-32 lg:px-16">
-        
+      <main className="flex w-full flex-1 flex-col items-center px-4 py-16 sm:items-start sm:px-8 sm:py-32 lg:px-16">
         <HeroSection />
 
-        <div className="grid w-full grid-cols-1 gap-6 border-b border-gray-200 pb-5 lg:grid-cols-2">
-          <SkillSection activeSkills={activeSkills} />
-          <ProjectSection
-            projects={projects}
-            currentIndex={safeCurrentIndex}
-            setCurrentIndex={setCurrentIndex}
-          />
-          <ReadingSection books={books} />
-          <BlogSection posts={posts} />
+        <div className="w-full lg:grid lg:grid-cols-[minmax(0,1fr)_240px] lg:gap-8">
+          <div className="min-w-0">
+            <div className="grid w-full grid-cols-1 gap-6 border-b border-gray-200 pb-5 lg:grid-cols-2">
+              <SkillSection activeSkills={activeSkills} />
+              <ProjectSection
+                projects={projects}
+                currentIndex={safeCurrentIndex}
+                setCurrentIndex={setCurrentIndex}
+              />
+              <ReadingSection books={books} />
+              <BlogSection posts={posts} />
+            </div>
+          </div>
+
+          <aside className="mt-8 hidden lg:block">
+            <GallerySection />
+          </aside>
         </div>
       </main>
 

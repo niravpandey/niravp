@@ -1,9 +1,9 @@
 "use client";
 import { useEffect, useState } from "react";
-import { ArrowLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 import Footer from "@/components/layout/Footer";
+import PhosphorIcon from "@/components/ui/PhosphorIcon";
 
 type Book = {
   id: string;
@@ -143,7 +143,7 @@ export default function AdminReadingPage() {
             href="/admin"
             className="inline-flex items-center gap-2 text-sm text-gray-500 transition-colors hover:text-gray-800"
           >
-            <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+            <PhosphorIcon name="arrow-left" size={16} />
             <span>Admin</span>
           </Link>
 

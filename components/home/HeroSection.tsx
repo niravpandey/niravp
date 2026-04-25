@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { Mail } from "lucide-react";
+import PhosphorIcon from "@/components/ui/PhosphorIcon";
 
 export default function HeroSection() {
   return (
@@ -21,7 +21,7 @@ export default function HeroSection() {
 
         <div className="mt-4 flex flex-col gap-1 text-gray-700">
           <a href="mailto:niravp@student.unimelb.edu.au" className="flex items-center gap-2 hover:text-mauve-500">
-            <Mail className="h-4 w-4" />
+            <PhosphorIcon name="paper-plane-tilt" size={16} />
             Email
           </a>
           <a href="https://linkedin.com/in/niravpandey05" className="flex items-center gap-2 hover:text-mauve-500">

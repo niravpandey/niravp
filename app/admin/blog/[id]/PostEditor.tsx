@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowLeft, Upload } from "lucide-react";
 import { useEffect, useEffectEvent, useRef, useState, useTransition } from "react";
+import PhosphorIcon from "@/components/ui/PhosphorIcon";
 import type { Post } from "@/lib/blog";
 import { deletePost, savePost, type PostFormData } from "./actions";
 
@@ -275,7 +275,7 @@ export default function PostEditor({ post }: Props) {
 
       <div className="mb-8 flex items-center justify-between">
         <Link href="/admin/blog" className="inline-flex items-center gap-2 text-sm text-gray-500 transition-colors hover:text-gray-800">
-          <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+          <PhosphorIcon name="arrow-left" size={16} />
           <span>All posts</span>
         </Link>
         <div className="flex items-center gap-2">
@@ -301,7 +301,7 @@ export default function PostEditor({ post }: Props) {
             disabled={isPending}
             className="inline-flex items-center gap-2 border border-gray-300 bg-white/60 px-3 py-1.5 text-sm text-gray-700 transition-colors hover:border-gray-400 disabled:opacity-40"
           >
-            <Upload className="h-4 w-4" aria-hidden="true" />
+            <PhosphorIcon name="upload-simple" size={16} />
             <span>Import markdown</span>
           </button>
           <button

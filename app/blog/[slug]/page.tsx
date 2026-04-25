@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
 import { MDXRemote } from "next-mdx-remote/rsc";
 import rehypeKatex from "rehype-katex";
 import remarkMath from "remark-math";
 import Footer from "@/components/layout/Footer";
+import PhosphorIcon from "@/components/ui/PhosphorIcon";
 import { getPublishedPost } from "@/lib/blog";
 
 const mdxOptions = {
@@ -52,7 +52,7 @@ export default async function BlogPostPage(props: PageProps<"/blog/[slug]">) {
       <main className="flex flex-1 flex-col items-center bg-olive-100 px-4 py-16 sm:px-8 sm:py-24 lg:px-16">
         <article className="mx-auto w-full max-w-3xl">
           <Link href="/blog" className="inline-flex items-center gap-2 text-sm text-gray-500 transition-colors hover:text-gray-800">
-            <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+            <PhosphorIcon name="arrow-left" size={16} />
             <span>All writing</span>
           </Link>
 

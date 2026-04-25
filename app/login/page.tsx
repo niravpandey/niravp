@@ -1,10 +1,10 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import Footer from "@/components/layout/Footer";
 import Link from "next/link";
+import PhosphorIcon from "@/components/ui/PhosphorIcon";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -36,7 +36,7 @@ export default function LoginPage() {
       <main className="flex flex-1 flex-col items-center bg-olive-100 px-4 py-16 sm:px-8 sm:py-24 lg:px-16">
         <div className="w-full max-w-4xl">
           <Link href="/" className="inline-flex items-center gap-2 text-sm text-gray-500 transition-colors hover:text-gray-800">
-            <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+            <PhosphorIcon name="arrow-left" size={16} />
             <span>Home</span>
           </Link>
 
