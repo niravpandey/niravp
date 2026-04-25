@@ -38,7 +38,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="min-h-screen font-sans antialiased bg-white text-gray-900">
         <Navbar />
         {children}
-        <Footer/>
       </body>
     </html>
   );
