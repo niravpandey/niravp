@@ -17,8 +17,8 @@ export default function HeroSection() {
       <div className="shrink-0">
         <h1 className="text-3xl font-semibold text-blue-900">Nirav Pandey</h1>
         <p className="text-gray-600">Student, University of Melbourne</p>
-        <p className="text-gray-600">Bachelor of Science (Data Science)</p>
-
+        <p className="text-gray-600">Bachelor of Science (Data Science) </p>
+        <p className="text-gray-600">with a Specialisation in AI</p> 
         <div className="mt-4 flex flex-col gap-1 text-gray-700">
           <a href="mailto:niravp@student.unimelb.edu.au" className="flex items-center gap-2 hover:text-mauve-500">
             <PhosphorIcon name="paper-plane-tilt" size={16} />
