@@ -269,7 +269,7 @@ function BlogPreview({
     .filter(Boolean);
 
   return (
-    <aside className="flex h-[46rem] flex-col border border-gray-200 bg-white/60">
+    <aside className="flex h-184 flex-col border border-gray-200 bg-white/60">
       <div className="flex items-center justify-between border-b border-gray-200 px-4 py-2">
         <p className="text-xs font-medium text-gray-700">Live preview</p>
         <p className="text-xs text-gray-400">{loading ? "Rendering..." : "Draft"}</p>
@@ -811,57 +811,44 @@ export default function PostEditor({ post }: Props) {
           />
           {!isNew && (
             <button
-              type="button"
               onClick={handleDelete}
               disabled={isPending}
-              title="Delete post"
-              aria-label="Delete post"
-              className="inline-flex h-8 w-8 items-center justify-center border border-red-700 bg-white/60 text-red-700 transition-colors hover:bg-red-100 disabled:opacity-40"
+              className="border border-red-700 bg-white/60 px-3 py-1.5 text-sm text-red-700 transition-colors hover:bg-red-100 disabled:opacity-40"
             >
-              <PhosphorIcon name="trash" size={16} />
+              Delete
             </button>
           )}
           <button
             type="button"
             onClick={() => markdownInputRef.current?.click()}
             disabled={isPending}
-            title="Import markdown"
-            aria-label="Import markdown"
-            className="inline-flex h-8 w-8 items-center justify-center border border-gray-300 bg-white/60 text-gray-700 transition-colors hover:border-gray-400 disabled:opacity-40"
+            className="inline-flex items-center gap-2 border border-gray-300 bg-white/60 px-3 py-1.5 text-sm text-gray-700 transition-colors hover:border-gray-400 disabled:opacity-40"
           >
             <PhosphorIcon name="upload-simple" size={16} />
+            <span>Import markdown</span>
           </button>
           <button
-            type="button"
             onClick={() => handleSave()}
             disabled={isPending}
-            title={isPending ? "Saving..." : "Save draft"}
-            aria-label={isPending ? "Saving" : "Save draft"}
-            className="inline-flex h-8 w-8 items-center justify-center border border-gray-300 bg-white/60 text-gray-700 transition-colors hover:border-gray-400 disabled:opacity-40"
+            className="border border-gray-300 bg-white/60 px-3 py-1.5 text-sm text-gray-700 transition-colors hover:border-gray-400 disabled:opacity-40"
           >
-            <PhosphorIcon name="floppy-disk" size={16} />
+            {isPending ? "Saving..." : "Save draft"}
           </button>
           {!published ? (
             <button
-              type="button"
               onClick={() => handleSave(true)}
               disabled={isPending}
-              title="Publish"
-              aria-label="Publish"
-              className="inline-flex h-8 w-8 items-center justify-center border border-gray-300 bg-white/60 text-mauve-500 transition-colors hover:border-gray-400 disabled:opacity-40"
+              className="border border-gray-300 bg-white/60 px-3 py-1.5 text-sm text-mauve-500 transition-colors hover:border-gray-400 disabled:opacity-40"
             >
-              <PhosphorIcon name="paper-plane-tilt" size={16} />
+              Publish
             </button>
           ) : (
             <button
-              type="button"
               onClick={() => handleSave(false)}
               disabled={isPending}
-              title="Unpublish"
-              aria-label="Unpublish"
-              className="inline-flex h-8 w-8 items-center justify-center border border-gray-300 bg-white/60 text-gray-700 transition-colors hover:border-gray-400 disabled:opacity-40"
+              className="border border-gray-300 bg-white/60 px-3 py-1.5 text-sm text-gray-700 transition-colors hover:border-gray-400 disabled:opacity-40"
             >
-              <PhosphorIcon name="eye-slash" size={16} />
+              Unpublish
             </button>
           )}
         </div>
@@ -941,11 +928,9 @@ export default function PostEditor({ post }: Props) {
                 <button
                   type="button"
                   onClick={() => setEditorPreviewPaneMode("split")}
-                  title={editorPreviewPaneMode === "editor" ? "Show preview" : "Show editor"}
-                  aria-label={editorPreviewPaneMode === "editor" ? "Show preview" : "Show editor"}
-                  className="inline-flex h-8 w-8 items-center justify-center border border-gray-300 bg-white/60 text-gray-700 transition-colors hover:border-gray-400"
+                  className="border border-gray-300 bg-white/60 px-3 py-1.5 text-xs text-gray-700 transition-colors hover:border-gray-400"
                 >
-                  <PhosphorIcon name={editorPreviewPaneMode === "editor" ? "eye" : "note-pencil"} size={16} />
+                  {editorPreviewPaneMode === "editor" ? "Show preview" : "Show editor"}
                 </button>
               </div>
             )}
@@ -968,7 +953,7 @@ export default function PostEditor({ post }: Props) {
               }
             >
               {editorPreviewPaneMode !== "preview" && (
-                <div className="flex h-[46rem] flex-col overflow-hidden border border-gray-200 bg-white/60">
+                <div className="flex h-184 flex-col overflow-hidden border border-gray-200 bg-white/60">
                   <textarea
                     ref={contentTextareaRef}
                     value={content}
@@ -988,7 +973,7 @@ export default function PostEditor({ post }: Props) {
                   role="separator"
                   aria-label="Resize editor and preview"
                   aria-orientation="vertical"
-                  className="group hidden h-[46rem] cursor-col-resize touch-none items-center justify-center xl:flex"
+                  className="group hidden h-184 cursor-col-resize touch-none items-center justify-center xl:flex"
                   onPointerDown={handleEditorPreviewResizePointerDown}
                   onPointerMove={handleEditorPreviewResizePointerMove}
                   onPointerUp={handleEditorPreviewResizePointerUp}
@@ -1020,11 +1005,10 @@ export default function PostEditor({ post }: Props) {
       <button
         type="button"
         onClick={() => setImageWidgetVisible((visible) => !visible)}
-        title={imageWidgetVisible ? "Hide images" : "Show images"}
-        aria-label={imageWidgetVisible ? "Hide images" : "Show images"}
-        className="fixed right-3 bottom-18 z-30 inline-flex h-10 w-10 items-center justify-center border border-gray-300 bg-white/95 text-gray-700 shadow-sm transition-colors hover:border-gray-400"
+        className="fixed right-3 bottom-18 z-30 inline-flex items-center gap-2 border border-gray-300 bg-white/95 px-3 py-2 text-xs font-medium text-gray-700 shadow-sm transition-colors hover:border-gray-400"
       >
-        <PhosphorIcon name={imageWidgetVisible ? "eye-slash" : "folder-open"} size={18} />
+        <PhosphorIcon name="folder-open" size={16} />
+        <span>{imageWidgetVisible ? "Hide images" : "Show images"}</span>
       </button>
 
       {imageWidgetVisible && (

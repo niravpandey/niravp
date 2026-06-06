@@ -11,6 +11,7 @@ type PhosphorIconName =
   | "code"
   | "paper-plane-tilt"
   | "file-plus"
+  | "file-text"
   | "folder"
   | "folder-open"
   | "magnifying-glass"

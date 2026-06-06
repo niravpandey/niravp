@@ -1,15 +1,44 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import PhosphorIcon from "@/components/ui/PhosphorIcon";
 
+const RESUME_URL = "https://apqsehnfehgcygadnrgq.supabase.co/storage/v1/object/public/Assets/resume.pdf";
+
 export default function HeroSection() {
+  const [resumeOpen, setResumeOpen] = useState(false);
+
+  useEffect(() => {
+    if (!resumeOpen) {
+      return;
+    }
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setResumeOpen(false);
+      }
+    }
+
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = originalOverflow;
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [resumeOpen]);
+
   return (
-    <div className="flex flex-col sm:flex-row flex-wrap items-start gap-6 border-b border-gray-200 pb-5">
-      <div className="relative w-32 sm:w-40 md:w-48 aspect-square shrink-0">
+    <>
+    <div className="flex flex-col flex-wrap items-start gap-6 border-b border-gray-200 pb-5 sm:flex-row">
+      <div className="relative aspect-square w-40 shrink-0 sm:w-48 md:w-56">
         <Image
           src="https://apqsehnfehgcygadnrgq.supabase.co/storage/v1/object/public/Assets/headshot.png"
           fill
           alt="Nirav Pandey"
-          sizes="(max-width: 640px) 8rem, (max-width: 768px) 10rem, 12rem"
+          sizes="(max-width: 640px) 10rem, (max-width: 768px) 12rem, 14rem"
           className="object-cover border border-gray-300 p-1"
         />
       </div>
@@ -44,6 +73,14 @@ export default function HeroSection() {
             />
             GitHub
           </a>
+          <button
+            type="button"
+            onClick={() => setResumeOpen(true)}
+            className="flex items-center gap-2 text-left hover:text-mauve-500"
+          >
+            <PhosphorIcon name="file-text" size={16} />
+            Resume
+          </button>
         </div>
       </div>
 
@@ -66,5 +103,40 @@ export default function HeroSection() {
         </p>
       </div>
     </div>
+
+    {resumeOpen && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-950/45 p-1 backdrop-blur-sm sm:p-2">
+        <button
+          type="button"
+          aria-label="Close resume"
+          onClick={() => setResumeOpen(false)}
+          className="absolute inset-0 cursor-default"
+        />
+
+        <div className="relative z-10 flex h-[98vh] w-[min(calc(98vh*0.78),calc(100vw-0.5rem))] flex-col border border-gray-300 bg-white shadow-xl sm:w-[min(calc(98vh*0.78),calc(100vw-1rem))]">
+          <div className="flex items-center justify-between border-b border-gray-200 px-3 py-1">
+            <div className="flex items-center gap-2 text-sm font-medium text-gray-800">
+              <PhosphorIcon name="file-text" size={16} />
+              <span>Resume</span>
+            </div>
+            <button
+              type="button"
+              aria-label="Close resume"
+              onClick={() => setResumeOpen(false)}
+              className="inline-flex h-8 w-8 items-center justify-center border border-gray-300 text-xl leading-none text-gray-600 transition-colors hover:border-gray-500 hover:text-gray-900"
+            >
+              ×
+            </button>
+          </div>
+
+          <iframe
+            src={`${RESUME_URL}#page=1&zoom=60&toolbar=0&navpanes=0&scrollbar=0`}
+            title="Resume"
+            className="min-h-0 flex-1 overflow-hidden border-0"
+          />
+        </div>
+      </div>
+    )}
+    </>
   );
 }
