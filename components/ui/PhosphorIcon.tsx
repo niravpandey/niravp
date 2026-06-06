@@ -16,6 +16,10 @@ type PhosphorIconName =
   | "magnifying-glass"
   | "note-pencil"
   | "folder-simple-star"
+  | "floppy-disk"
+  | "trash"
+  | "eye"
+  | "eye-slash"
   | "upload-simple";
 
 type PhosphorIconProps = Omit<HTMLAttributes<HTMLElement>, "children"> & {

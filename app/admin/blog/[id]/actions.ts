@@ -2,6 +2,10 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { serialize } from "next-mdx-remote/serialize";
+import rehypeKatex from "rehype-katex";
+import remarkGfm from "remark-gfm";
+import remarkMath from "remark-math";
 import { createClient } from "@/lib/supabase/server";
 
 export type PostFormData = {
@@ -86,4 +90,15 @@ export async function deletePost(id: string) {
   revalidatePath("/blog");
   revalidatePath(`/blog/${post.slug}`);
   redirect("/admin/blog");
+}
+
+export async function compilePostPreview(source: string) {
+  await requireUser();
+
+  return serialize(source, {
+    mdxOptions: {
+      remarkPlugins: [remarkGfm, remarkMath],
+      rehypePlugins: [rehypeKatex],
+    },
+  });
 }

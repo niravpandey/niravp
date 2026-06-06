@@ -3,10 +3,12 @@
 import Link from "next/link";
 import { useEffect, useEffectEvent, useRef, useState, useTransition } from "react";
 import imageCompression from "browser-image-compression";
+import { MDXRemote, type MDXRemoteSerializeResult } from "next-mdx-remote";
+import BlogImage from "@/components/blog/BlogImage";
 import PhosphorIcon from "@/components/ui/PhosphorIcon";
 import type { Post } from "@/lib/blog";
 import { createClient } from "@/lib/supabase/client";
-import { deletePost, savePost, type PostFormData } from "./actions";
+import { compilePostPreview, deletePost, savePost, type PostFormData } from "./actions";
 
 type Props = {
   post: Post | null;
@@ -26,6 +28,9 @@ type BlogImage = {
   path: string;
   publicUrl: string;
 };
+
+type PreviewSource = MDXRemoteSerializeResult<Record<string, unknown>, Record<string, unknown>>;
+type EditorPreviewPaneMode = "split" | "editor" | "preview";
 
 const BLOG_BUCKET_NAME = "Blog";
 const BLOG_IMAGE_LIMIT = 10;
@@ -162,6 +167,150 @@ async function listBlogImages(supabase: ReturnType<typeof createClient>) {
     }) as BlogImage[];
 }
 
+const previewMdxComponents = {
+  BlogImage,
+  img: BlogImage,
+  a: ({ className, ...props }: React.ComponentPropsWithoutRef<"a">) => (
+    <a
+      className={["font-medium text-blue-900 underline decoration-gray-300 underline-offset-4", className]
+        .filter(Boolean)
+        .join(" ")}
+      {...props}
+    />
+  ),
+  pre: ({ className, ...props }: React.ComponentPropsWithoutRef<"pre">) => (
+    <pre
+      className={[
+        "overflow-x-auto border border-gray-200 bg-gray-950 px-4 py-3 text-sm leading-6 text-gray-100",
+        className,
+      ]
+        .filter(Boolean)
+        .join(" ")}
+      {...props}
+    />
+  ),
+  code: ({ className, ...props }: React.ComponentPropsWithoutRef<"code">) => {
+    const isBlockCode = className?.includes("language-");
+
+    return (
+      <code
+        className={[
+          "font-mono",
+          isBlockCode ? "text-gray-100" : "border border-gray-200 bg-gray-100 px-1.5 py-0.5 text-[0.9em] text-gray-900",
+          className,
+        ]
+          .filter(Boolean)
+          .join(" ")}
+        {...props}
+      />
+    );
+  },
+  blockquote: ({ className, ...props }: React.ComponentPropsWithoutRef<"blockquote">) => (
+    <blockquote
+      className={["border-l-2 border-blue-900 pl-5 text-gray-700 italic", className].filter(Boolean).join(" ")}
+      {...props}
+    />
+  ),
+  table: ({ className, ...props }: React.ComponentPropsWithoutRef<"table">) => (
+    <div className="my-8 overflow-x-auto bg-white">
+      <table className={["my-0 min-w-full border-collapse text-sm", className].filter(Boolean).join(" ")} {...props} />
+    </div>
+  ),
+  tr: ({ className, ...props }: React.ComponentPropsWithoutRef<"tr">) => (
+    <tr className={["even:bg-gray-50/60", className].filter(Boolean).join(" ")} {...props} />
+  ),
+  th: ({ className, ...props }: React.ComponentPropsWithoutRef<"th">) => (
+    <th
+      className={["border-b border-gray-200 bg-gray-50 px-4 py-3 text-left text-xs font-semibold uppercase text-gray-600", className]
+        .filter(Boolean)
+        .join(" ")}
+      {...props}
+    />
+  ),
+  td: ({ className, ...props }: React.ComponentPropsWithoutRef<"td">) => (
+    <td className={["border-t border-gray-100 px-4 py-3 align-top leading-6 text-gray-700", className].filter(Boolean).join(" ")} {...props} />
+  ),
+};
+
+function formatPreviewDate(value: string) {
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+
+  return date.toLocaleDateString("en-AU", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+}
+
+function BlogPreview({
+  compiledSource,
+  description,
+  error,
+  loading,
+  title,
+  tags,
+  createdAt,
+}: {
+  compiledSource: PreviewSource | null;
+  description: string;
+  error: string | null;
+  loading: boolean;
+  title: string;
+  tags: string;
+  createdAt: string;
+}) {
+  const normalizedTags = tags
+    .split(",")
+    .map((tag) => tag.trim())
+    .filter(Boolean);
+
+  return (
+    <aside className="flex h-[46rem] flex-col border border-gray-200 bg-white/60">
+      <div className="flex items-center justify-between border-b border-gray-200 px-4 py-2">
+        <p className="text-xs font-medium text-gray-700">Live preview</p>
+        <p className="text-xs text-gray-400">{loading ? "Rendering..." : "Draft"}</p>
+      </div>
+
+      <div className="min-h-0 flex-1 overflow-y-auto p-4">
+        <article>
+          <header className="border-b border-gray-200 pb-6 text-center">
+            <p className="text-xs text-gray-400">{formatPreviewDate(createdAt)}</p>
+            <h2 className="mx-auto mt-3 max-w-2xl text-3xl font-medium leading-tight text-blue-900">
+              {title.trim() || "Untitled post"}
+            </h2>
+            {description.trim() && <p className="mx-auto mt-3 max-w-2xl text-sm text-gray-600">{description}</p>}
+            {normalizedTags.length > 0 && (
+              <div className="mt-4 flex flex-wrap justify-center gap-2">
+                {normalizedTags.map((tag) => (
+                  <span key={tag} className="border border-gray-300 px-2 py-0.5 text-xs text-gray-500">
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            )}
+          </header>
+
+          <div className="mt-6 border border-gray-200 bg-white/50 p-5">
+            {error ? (
+              <p className="text-sm text-red-500">{error}</p>
+            ) : compiledSource ? (
+              <div className="prose prose-gray max-w-none prose-headings:scroll-mt-24 prose-headings:font-medium prose-headings:text-gray-900 prose-h1:text-4xl prose-h2:border-b prose-h2:border-gray-200 prose-h2:pb-2 prose-a:no-underline prose-p:leading-7 prose-li:leading-7 prose-code:before:content-none prose-code:after:content-none prose-pre:my-6 prose-pre:rounded-none prose-img:my-8 prose-img:rounded-none">
+                <MDXRemote {...compiledSource} components={previewMdxComponents} />
+              </div>
+            ) : (
+              <p className="text-sm text-gray-400">Start writing to preview the post.</p>
+            )}
+          </div>
+        </article>
+      </div>
+    </aside>
+  );
+}
+
 function parseFrontmatter(source: string): { content: string; data: ImportedFrontmatter } {
   const lines = source.split(/\r?\n/);
 
@@ -265,10 +414,16 @@ export default function PostEditor({ post }: Props) {
   const [imageWidgetVisible, setImageWidgetVisible] = useState(true);
   const [imageWidgetPosition, setImageWidgetPosition] = useState<{ x: number; y: number } | null>(null);
   const [importedFileName, setImportedFileName] = useState<string | null>(null);
+  const [previewSource, setPreviewSource] = useState<PreviewSource | null>(null);
+  const [previewError, setPreviewError] = useState<string | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [editorPreviewSplit, setEditorPreviewSplit] = useState(58);
+  const [editorPreviewPaneMode, setEditorPreviewPaneMode] = useState<EditorPreviewPaneMode>("split");
   const [isPending, startTransition] = useTransition();
   const markdownInputRef = useRef<HTMLInputElement | null>(null);
   const imageInputRef = useRef<HTMLInputElement | null>(null);
   const contentTextareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const editorPreviewGridRef = useRef<HTMLDivElement | null>(null);
   const imageWidgetRef = useRef<HTMLElement | null>(null);
   const imageWidgetDragRef = useRef<{ offsetX: number; offsetY: number } | null>(null);
 
@@ -495,6 +650,51 @@ export default function PostEditor({ post }: Props) {
     }
   }
 
+  function updateEditorPreviewSplit(clientX: number) {
+    const grid = editorPreviewGridRef.current;
+
+    if (!grid) {
+      return;
+    }
+
+    const rect = grid.getBoundingClientRect();
+    const nextSplit = ((clientX - rect.left) / rect.width) * 100;
+
+    if (nextSplit < 9) {
+      setEditorPreviewPaneMode("preview");
+      return;
+    }
+
+    if (nextSplit > 91) {
+      setEditorPreviewPaneMode("editor");
+      return;
+    }
+
+    const clampedSplit = Math.min(Math.max(nextSplit, 35), 75);
+
+    setEditorPreviewPaneMode("split");
+    setEditorPreviewSplit(clampedSplit);
+  }
+
+  function handleEditorPreviewResizePointerDown(event: React.PointerEvent<HTMLDivElement>) {
+    event.currentTarget.setPointerCapture(event.pointerId);
+    updateEditorPreviewSplit(event.clientX);
+  }
+
+  function handleEditorPreviewResizePointerMove(event: React.PointerEvent<HTMLDivElement>) {
+    if (!event.currentTarget.hasPointerCapture(event.pointerId)) {
+      return;
+    }
+
+    updateEditorPreviewSplit(event.clientX);
+  }
+
+  function handleEditorPreviewResizePointerUp(event: React.PointerEvent<HTMLDivElement>) {
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+  }
+
   const onSaveShortcut = useEffectEvent(() => {
     if (isPending) {
       return;
@@ -550,6 +750,45 @@ export default function PostEditor({ post }: Props) {
     };
   }, [supabase]);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    const timeoutId = window.setTimeout(() => {
+      if (!content.trim()) {
+        setPreviewSource(null);
+        setPreviewError(null);
+        setPreviewLoading(false);
+        return;
+      }
+
+      setPreviewLoading(true);
+
+      compilePostPreview(content)
+        .then((compiled) => {
+          if (!cancelled) {
+            setPreviewSource(compiled);
+            setPreviewError(null);
+          }
+        })
+        .catch((cause: unknown) => {
+          if (!cancelled) {
+            setPreviewSource(null);
+            setPreviewError(cause instanceof Error ? cause.message : "Could not render preview.");
+          }
+        })
+        .finally(() => {
+          if (!cancelled) {
+            setPreviewLoading(false);
+          }
+        });
+    }, 500);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timeoutId);
+    };
+  }, [content]);
+
   return (
     <div className="mx-auto w-full max-w-6xl">
       <div className="mb-8 border-b border-gray-200 pb-5">
@@ -572,44 +811,57 @@ export default function PostEditor({ post }: Props) {
           />
           {!isNew && (
             <button
+              type="button"
               onClick={handleDelete}
               disabled={isPending}
-              className="border border-red-700 bg-white/60 px-3 py-1.5 text-sm text-red-700 transition-colors hover:bg-red-100 disabled:opacity-40"
+              title="Delete post"
+              aria-label="Delete post"
+              className="inline-flex h-8 w-8 items-center justify-center border border-red-700 bg-white/60 text-red-700 transition-colors hover:bg-red-100 disabled:opacity-40"
             >
-              Delete
+              <PhosphorIcon name="trash" size={16} />
             </button>
           )}
           <button
             type="button"
             onClick={() => markdownInputRef.current?.click()}
             disabled={isPending}
-            className="inline-flex items-center gap-2 border border-gray-300 bg-white/60 px-3 py-1.5 text-sm text-gray-700 transition-colors hover:border-gray-400 disabled:opacity-40"
+            title="Import markdown"
+            aria-label="Import markdown"
+            className="inline-flex h-8 w-8 items-center justify-center border border-gray-300 bg-white/60 text-gray-700 transition-colors hover:border-gray-400 disabled:opacity-40"
           >
             <PhosphorIcon name="upload-simple" size={16} />
-            <span>Import markdown</span>
           </button>
           <button
+            type="button"
             onClick={() => handleSave()}
             disabled={isPending}
-            className="border border-gray-300 bg-white/60 px-3 py-1.5 text-sm text-gray-700 transition-colors hover:border-gray-400 disabled:opacity-40"
+            title={isPending ? "Saving..." : "Save draft"}
+            aria-label={isPending ? "Saving" : "Save draft"}
+            className="inline-flex h-8 w-8 items-center justify-center border border-gray-300 bg-white/60 text-gray-700 transition-colors hover:border-gray-400 disabled:opacity-40"
           >
-            {isPending ? "Saving..." : "Save draft"}
+            <PhosphorIcon name="floppy-disk" size={16} />
           </button>
           {!published ? (
             <button
+              type="button"
               onClick={() => handleSave(true)}
               disabled={isPending}
-              className="border border-gray-300 bg-white/60 px-3 py-1.5 text-sm text-mauve-500 transition-colors hover:border-gray-400 disabled:opacity-40"
+              title="Publish"
+              aria-label="Publish"
+              className="inline-flex h-8 w-8 items-center justify-center border border-gray-300 bg-white/60 text-mauve-500 transition-colors hover:border-gray-400 disabled:opacity-40"
             >
-              Publish
+              <PhosphorIcon name="paper-plane-tilt" size={16} />
             </button>
           ) : (
             <button
+              type="button"
               onClick={() => handleSave(false)}
               disabled={isPending}
-              className="border border-gray-300 bg-white/60 px-3 py-1.5 text-sm text-gray-700 transition-colors hover:border-gray-400 disabled:opacity-40"
+              title="Unpublish"
+              aria-label="Unpublish"
+              className="inline-flex h-8 w-8 items-center justify-center border border-gray-300 bg-white/60 text-gray-700 transition-colors hover:border-gray-400 disabled:opacity-40"
             >
-              Unpublish
+              <PhosphorIcon name="eye-slash" size={16} />
             </button>
           )}
         </div>
@@ -683,17 +935,83 @@ export default function PostEditor({ post }: Props) {
             </div>
           </div>
 
-          <div className="overflow-hidden border border-gray-200 bg-white/60">
-            <textarea
-              ref={contentTextareaRef}
-              value={content}
-              onChange={(event) => setContent(event.target.value)}
-              placeholder="Write your MDX here..."
-              className="min-h-120 w-full resize-none border-0 px-4 py-3 font-mono text-sm text-gray-800 focus:outline-none"
-            />
-            <div className="flex items-center justify-between border-t border-gray-200 px-4 py-2 text-xs text-gray-500">
-              <span>{importedFileName ? `Markdown editor · loaded ${importedFileName}` : "Markdown editor"}</span>
-              <span>{isPending ? "Saving..." : "⌘S to save draft"}</span>
+          <div>
+            {editorPreviewPaneMode !== "split" && (
+              <div className="mb-3 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => setEditorPreviewPaneMode("split")}
+                  title={editorPreviewPaneMode === "editor" ? "Show preview" : "Show editor"}
+                  aria-label={editorPreviewPaneMode === "editor" ? "Show preview" : "Show editor"}
+                  className="inline-flex h-8 w-8 items-center justify-center border border-gray-300 bg-white/60 text-gray-700 transition-colors hover:border-gray-400"
+                >
+                  <PhosphorIcon name={editorPreviewPaneMode === "editor" ? "eye" : "note-pencil"} size={16} />
+                </button>
+              </div>
+            )}
+
+            <div
+              ref={editorPreviewGridRef}
+              className={[
+                "grid grid-cols-1 gap-6",
+                editorPreviewPaneMode === "split"
+                  ? "xl:grid-cols-[minmax(0,var(--editor-pane-width))_0.75rem_minmax(0,var(--preview-pane-width))] xl:items-start xl:gap-3"
+                  : "",
+              ]
+                .filter(Boolean)
+                .join(" ")}
+              style={
+                {
+                  "--editor-pane-width": `${editorPreviewSplit}fr`,
+                  "--preview-pane-width": `${100 - editorPreviewSplit}fr`,
+                } as React.CSSProperties
+              }
+            >
+              {editorPreviewPaneMode !== "preview" && (
+                <div className="flex h-[46rem] flex-col overflow-hidden border border-gray-200 bg-white/60">
+                  <textarea
+                    ref={contentTextareaRef}
+                    value={content}
+                    onChange={(event) => setContent(event.target.value)}
+                    placeholder="Write your MDX here..."
+                    className="min-h-0 flex-1 resize-none border-0 px-4 py-3 font-mono text-sm text-gray-800 focus:outline-none"
+                  />
+                  <div className="flex items-center justify-between border-t border-gray-200 px-4 py-2 text-xs text-gray-500">
+                    <span>{importedFileName ? `Markdown editor · loaded ${importedFileName}` : "Markdown editor"}</span>
+                    <span>{isPending ? "Saving..." : "⌘S to save draft"}</span>
+                  </div>
+                </div>
+              )}
+
+              {editorPreviewPaneMode === "split" && (
+                <div
+                  role="separator"
+                  aria-label="Resize editor and preview"
+                  aria-orientation="vertical"
+                  className="group hidden h-[46rem] cursor-col-resize touch-none items-center justify-center xl:flex"
+                  onPointerDown={handleEditorPreviewResizePointerDown}
+                  onPointerMove={handleEditorPreviewResizePointerMove}
+                  onPointerUp={handleEditorPreviewResizePointerUp}
+                  onPointerCancel={handleEditorPreviewResizePointerUp}
+                >
+                  <div className="relative flex h-full w-3 items-center justify-center">
+                    <div className="h-full w-0.5 bg-gray-300 transition-colors group-hover:bg-gray-500" />
+                    <div className="absolute h-10 w-1.5 bg-white ring-1 ring-gray-300 transition-colors group-hover:ring-gray-500" />
+                  </div>
+                </div>
+              )}
+
+              {editorPreviewPaneMode !== "editor" && (
+                <BlogPreview
+                  compiledSource={previewSource}
+                  createdAt={createdAt}
+                  description={description}
+                  error={previewError}
+                  loading={previewLoading}
+                  tags={tags}
+                  title={title}
+                />
+              )}
             </div>
           </div>
         </div>
@@ -702,10 +1020,11 @@ export default function PostEditor({ post }: Props) {
       <button
         type="button"
         onClick={() => setImageWidgetVisible((visible) => !visible)}
-        className="fixed right-3 bottom-18 z-30 inline-flex items-center gap-2 border border-gray-300 bg-white/95 px-3 py-2 text-xs font-medium text-gray-700 shadow-sm transition-colors hover:border-gray-400"
+        title={imageWidgetVisible ? "Hide images" : "Show images"}
+        aria-label={imageWidgetVisible ? "Hide images" : "Show images"}
+        className="fixed right-3 bottom-18 z-30 inline-flex h-10 w-10 items-center justify-center border border-gray-300 bg-white/95 text-gray-700 shadow-sm transition-colors hover:border-gray-400"
       >
-        <PhosphorIcon name="folder-open" size={16} />
-        <span>{imageWidgetVisible ? "Hide images" : "Show images"}</span>
+        <PhosphorIcon name={imageWidgetVisible ? "eye-slash" : "folder-open"} size={18} />
       </button>
 
       {imageWidgetVisible && (
