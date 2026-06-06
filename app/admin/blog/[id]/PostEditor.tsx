@@ -2,8 +2,10 @@
 
 import Link from "next/link";
 import { useEffect, useEffectEvent, useRef, useState, useTransition } from "react";
+import imageCompression from "browser-image-compression";
 import PhosphorIcon from "@/components/ui/PhosphorIcon";
 import type { Post } from "@/lib/blog";
+import { createClient } from "@/lib/supabase/client";
 import { deletePost, savePost, type PostFormData } from "./actions";
 
 type Props = {
@@ -18,6 +20,18 @@ type ImportedFrontmatter = {
   published?: boolean;
   createdAt?: string;
 };
+
+type BlogImage = {
+  name: string;
+  path: string;
+  publicUrl: string;
+};
+
+const BLOG_BUCKET_NAME = "Blog";
+const BLOG_IMAGE_LIMIT = 10;
+const MAX_UPLOAD_SIZE_BYTES = 2 * 1024 * 1024;
+const MAX_UPLOAD_SIZE_MB = 1.9;
+const IMAGE_FILE_PATTERN = /\.(avif|bmp|gif|heic|jpe?g|png|webp)$/i;
 
 function pad(value: number) {
   return String(value).padStart(2, "0");
@@ -44,6 +58,108 @@ function stripWrappingQuotes(value: string) {
   }
 
   return trimmed;
+}
+
+function formatFileSize(bytes: number) {
+  return `${(bytes / 1024 / 1024).toFixed(2)}MB`;
+}
+
+function getFileExtension(file: File) {
+  const extensionFromName = file.name.split(".").pop()?.toLowerCase();
+
+  if (file.type === "image/webp") {
+    return "webp";
+  }
+
+  if (file.type === "image/jpeg") {
+    return "jpg";
+  }
+
+  if (file.type === "image/png") {
+    return "png";
+  }
+
+  return extensionFromName ?? "jpg";
+}
+
+function getImageAltText(name: string) {
+  return name
+    .replace(/\.[^/.]+$/, "")
+    .replace(/^\d+-/, "")
+    .replace(/[-_]+/g, " ")
+    .trim() || "Blog image";
+}
+
+function escapeMdxAttribute(value: string) {
+  return value.replace(/&/g, "&amp;").replace(/"/g, "&quot;");
+}
+
+function getImageMdxSnippet(image: BlogImage) {
+  return [
+    "<BlogImage",
+    `  src="${escapeMdxAttribute(image.publicUrl)}"`,
+    `  alt="${escapeMdxAttribute(getImageAltText(image.name))}"`,
+    '  width="50%"',
+    '  align="center"',
+    "/>",
+  ].join("\n");
+}
+
+async function compressImage(file: File) {
+  if (file.size <= MAX_UPLOAD_SIZE_BYTES) {
+    return file;
+  }
+
+  if (file.type === "image/svg+xml" || file.type === "image/gif") {
+    throw new Error(`${file.name} is larger than 2MB and cannot be compressed automatically.`);
+  }
+
+  const compressed = await imageCompression(file, {
+    maxSizeMB: MAX_UPLOAD_SIZE_MB,
+    maxWidthOrHeight: 2000,
+    useWebWorker: false,
+    fileType: "image/webp",
+    initialQuality: 0.85,
+    maxIteration: 20,
+  });
+
+  if (compressed.size > MAX_UPLOAD_SIZE_BYTES) {
+    throw new Error(`${file.name} could not be compressed below 2MB.`);
+  }
+
+  const compressedName = file.name.replace(/\.[^/.]+$/, ".webp");
+
+  return new File([compressed], compressedName, {
+    type: compressed.type,
+    lastModified: Date.now(),
+  });
+}
+
+async function listBlogImages(supabase: ReturnType<typeof createClient>) {
+  const { data, error } = await supabase.storage
+    .from(BLOG_BUCKET_NAME)
+    .list("", {
+      limit: BLOG_IMAGE_LIMIT,
+      sortBy: { column: "name", order: "desc" },
+    });
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return (data ?? [])
+    .filter((item) => item.name && !item.name.endsWith("/") && IMAGE_FILE_PATTERN.test(item.name))
+    .map((item) => {
+      const { data: urlData } = supabase.storage
+        .from(BLOG_BUCKET_NAME)
+        .getPublicUrl(item.name);
+
+      return {
+        name: item.name,
+        path: item.name,
+        publicUrl: urlData.publicUrl,
+      };
+    }) as BlogImage[];
 }
 
 function parseFrontmatter(source: string): { content: string; data: ImportedFrontmatter } {
@@ -131,19 +247,44 @@ function parseFrontmatter(source: string): { content: string; data: ImportedFron
 
 export default function PostEditor({ post }: Props) {
   const isNew = !post;
+  const [supabase] = useState(createClient);
   const [title, setTitle] = useState(post?.title ?? "");
   const [slug, setSlug] = useState(post?.slug ?? "");
   const [description, setDescription] = useState(post?.description ?? "");
   const [content, setContent] = useState(post?.content ?? "");
   const [tags, setTags] = useState((post?.tags ?? []).join(", "));
   const [published, setPublished] = useState(post?.published ?? false);
+  const [blogImages, setBlogImages] = useState<BlogImage[]>([]);
   const [createdAt, setCreatedAt] = useState(
     post?.created_at ? toDatetimeLocalValue(post.created_at) : toDatetimeLocalValue(new Date().toISOString())
   );
   const [error, setError] = useState<string | null>(null);
+  const [imageError, setImageError] = useState<string | null>(null);
+  const [imageStatus, setImageStatus] = useState<string | null>(null);
+  const [imagesLoading, setImagesLoading] = useState(true);
+  const [imageWidgetVisible, setImageWidgetVisible] = useState(true);
+  const [imageWidgetPosition, setImageWidgetPosition] = useState<{ x: number; y: number } | null>(null);
   const [importedFileName, setImportedFileName] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const markdownInputRef = useRef<HTMLInputElement | null>(null);
+  const imageInputRef = useRef<HTMLInputElement | null>(null);
+  const contentTextareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const imageWidgetRef = useRef<HTMLElement | null>(null);
+  const imageWidgetDragRef = useRef<{ offsetX: number; offsetY: number } | null>(null);
+
+  async function refreshBlogImages() {
+    setImagesLoading(true);
+    setImageError(null);
+
+    try {
+      const images = await listBlogImages(supabase);
+      setBlogImages(images);
+    } catch (cause: unknown) {
+      setImageError(cause instanceof Error ? cause.message : "Failed to load blog images.");
+    } finally {
+      setImagesLoading(false);
+    }
+  }
 
   async function handleSave(publish?: boolean) {
     if (!title.trim()) {
@@ -239,6 +380,121 @@ export default function PostEditor({ post }: Props) {
     }
   }
 
+  async function handleImageUpload(event: React.ChangeEvent<HTMLInputElement>) {
+    const files = event.target.files;
+
+    if (!files || files.length === 0) {
+      return;
+    }
+
+    setImagesLoading(true);
+    setImageError(null);
+    setImageStatus(null);
+
+    try {
+      for (const file of Array.from(files)) {
+        setImageStatus(`Compressing ${file.name}...`);
+
+        const uploadFile = await compressImage(file);
+        const fileExt = getFileExtension(uploadFile);
+        const baseName = uploadFile.name.replace(/\.[^/.]+$/, "");
+        const safeBaseName = baseName
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/(^-|-$)/g, "");
+        const fileName = `${Date.now()}-${safeBaseName || "image"}.${fileExt}`;
+
+        setImageStatus(`Uploading ${uploadFile.name} (${formatFileSize(file.size)} -> ${formatFileSize(uploadFile.size)})...`);
+
+        const { error: uploadError } = await supabase.storage
+          .from(BLOG_BUCKET_NAME)
+          .upload(fileName, uploadFile, {
+            cacheControl: "3600",
+            contentType: uploadFile.type,
+            upsert: false,
+          });
+
+        if (uploadError) {
+          throw new Error(uploadError.message);
+        }
+      }
+
+      setImageStatus("Image upload complete.");
+      await refreshBlogImages();
+    } catch (cause: unknown) {
+      setImageError(cause instanceof Error ? cause.message : "Failed to upload image.");
+    } finally {
+      event.target.value = "";
+      setImagesLoading(false);
+    }
+  }
+
+  function insertImageMarkdown(image: BlogImage) {
+    const textarea = contentTextareaRef.current;
+    const imageSnippet = getImageMdxSnippet(image);
+
+    if (!textarea) {
+      setContent((current) => `${current}${current.endsWith("\n") || current.length === 0 ? "" : "\n\n"}${imageSnippet}`);
+      return;
+    }
+
+    const selectionStart = textarea.selectionStart;
+    const selectionEnd = textarea.selectionEnd;
+    const before = content.slice(0, selectionStart);
+    const after = content.slice(selectionEnd);
+    const prefix = before.length === 0 || before.endsWith("\n\n") ? "" : before.endsWith("\n") ? "\n" : "\n\n";
+    const suffix = after.length === 0 || after.startsWith("\n\n") ? "" : after.startsWith("\n") ? "\n" : "\n\n";
+    const nextContent = `${before}${prefix}${imageSnippet}${suffix}${after}`;
+    const nextCursorPosition = before.length + prefix.length + imageSnippet.length;
+
+    setContent(nextContent);
+    requestAnimationFrame(() => {
+      textarea.focus();
+      textarea.setSelectionRange(nextCursorPosition, nextCursorPosition);
+    });
+  }
+
+  function handleImageWidgetPointerDown(event: React.PointerEvent<HTMLElement>) {
+    const widget = imageWidgetRef.current;
+
+    if (!widget) {
+      return;
+    }
+
+    const rect = widget.getBoundingClientRect();
+    imageWidgetDragRef.current = {
+      offsetX: event.clientX - rect.left,
+      offsetY: event.clientY - rect.top,
+    };
+    setImageWidgetPosition({ x: rect.left, y: rect.top });
+    event.currentTarget.setPointerCapture(event.pointerId);
+  }
+
+  function handleImageWidgetPointerMove(event: React.PointerEvent<HTMLElement>) {
+    const drag = imageWidgetDragRef.current;
+    const widget = imageWidgetRef.current;
+
+    if (!drag || !widget) {
+      return;
+    }
+
+    const rect = widget.getBoundingClientRect();
+    const maxX = Math.max(8, window.innerWidth - rect.width - 8);
+    const maxY = Math.max(8, window.innerHeight - rect.height - 8);
+    const nextX = Math.min(Math.max(8, event.clientX - drag.offsetX), maxX);
+    const nextY = Math.min(Math.max(8, event.clientY - drag.offsetY), maxY);
+
+    setImageWidgetPosition({ x: nextX, y: nextY });
+  }
+
+  function handleImageWidgetPointerUp(event: React.PointerEvent<HTMLElement>) {
+    imageWidgetDragRef.current = null;
+
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+  }
+
   const onSaveShortcut = useEffectEvent(() => {
     if (isPending) {
       return;
@@ -266,8 +522,36 @@ export default function PostEditor({ post }: Props) {
     };
   }, []);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadInitialBlogImages() {
+      try {
+        const images = await listBlogImages(supabase);
+
+        if (!cancelled) {
+          setBlogImages(images);
+        }
+      } catch (cause: unknown) {
+        if (!cancelled) {
+          setImageError(cause instanceof Error ? cause.message : "Failed to load blog images.");
+        }
+      } finally {
+        if (!cancelled) {
+          setImagesLoading(false);
+        }
+      }
+    }
+
+    void loadInitialBlogImages();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [supabase]);
+
   return (
-    <div className="mx-auto w-full max-w-4xl">
+    <div className="mx-auto w-full max-w-6xl">
       <div className="mb-8 border-b border-gray-200 pb-5">
         <p className="text-sm text-gray-500">{isNew ? "New post" : "Edit post"}</p>
         <h1 className="mt-1 text-3xl font-semibold text-mauve-500">{isNew ? "Write something new" : "Refine the draft"}</h1>
@@ -337,78 +621,201 @@ export default function PostEditor({ post }: Props) {
         </p>
       )}
 
-      <div className="mb-6 grid grid-cols-1 gap-4 border border-gray-200 bg-white/60 p-4 sm:p-5">
-        <div>
-          <label className="mb-1 block text-xs text-gray-500">Title</label>
-          <input
-            value={title}
-            onChange={(event) => setTitle(event.target.value)}
-            placeholder="Post title"
-            className="w-full border border-gray-200 px-3 py-2 text-lg font-medium text-gray-900 focus:border-gray-400 focus:outline-none"
-          />
-        </div>
+      <div className="grid grid-cols-1 gap-6">
+        <div className="min-w-0">
+          <div className="mb-6 grid grid-cols-1 gap-4 border border-gray-200 bg-white/60 p-4 sm:p-5">
+            <div>
+              <label className="mb-1 block text-xs text-gray-500">Title</label>
+              <input
+                value={title}
+                onChange={(event) => setTitle(event.target.value)}
+                placeholder="Post title"
+                className="w-full border border-gray-200 px-3 py-2 text-lg font-medium text-gray-900 focus:border-gray-400 focus:outline-none"
+              />
+            </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="mb-1 block text-xs text-gray-500">
-              Slug <span className="text-gray-300">(url path)</span>
-            </label>
-            <input
-              value={slug}
-              onChange={(event) => setSlug(event.target.value.toLowerCase().replace(/\s+/g, "-"))}
-              placeholder="my-post-slug"
-              className="w-full border border-gray-200 px-3 py-2 font-mono text-sm text-gray-700 focus:border-gray-400 focus:outline-none"
-            />
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div>
+                <label className="mb-1 block text-xs text-gray-500">
+                  Slug <span className="text-gray-300">(url path)</span>
+                </label>
+                <input
+                  value={slug}
+                  onChange={(event) => setSlug(event.target.value.toLowerCase().replace(/\s+/g, "-"))}
+                  placeholder="my-post-slug"
+                  className="w-full border border-gray-200 px-3 py-2 font-mono text-sm text-gray-700 focus:border-gray-400 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="mb-1 block text-xs text-gray-500">
+                  Tags <span className="text-gray-300">(comma separated)</span>
+                </label>
+                <input
+                  value={tags}
+                  onChange={(event) => setTags(event.target.value)}
+                  placeholder="math, cs, life"
+                  className="w-full border border-gray-200 px-3 py-2 text-sm text-gray-700 focus:border-gray-400 focus:outline-none"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="mb-1 block text-xs text-gray-500">Publish date</label>
+              <input
+                type="datetime-local"
+                value={createdAt}
+                onChange={(event) => setCreatedAt(event.target.value)}
+                className="w-full border border-gray-200 px-3 py-2 text-sm text-gray-700 focus:border-gray-400 focus:outline-none"
+              />
+            </div>
+
+            <div>
+              <label className="mb-1 block text-xs text-gray-500">
+                Description <span className="text-gray-300">(shown on blog card)</span>
+              </label>
+              <input
+                value={description}
+                onChange={(event) => setDescription(event.target.value)}
+                placeholder="A short summary of this post..."
+                className="w-full border border-gray-200 px-3 py-2 text-sm text-gray-700 focus:border-gray-400 focus:outline-none"
+              />
+            </div>
           </div>
 
-          <div>
-            <label className="mb-1 block text-xs text-gray-500">
-              Tags <span className="text-gray-300">(comma separated)</span>
-            </label>
-            <input
-              value={tags}
-              onChange={(event) => setTags(event.target.value)}
-              placeholder="math, cs, life"
-              className="w-full border border-gray-200 px-3 py-2 text-sm text-gray-700 focus:border-gray-400 focus:outline-none"
+          <div className="overflow-hidden border border-gray-200 bg-white/60">
+            <textarea
+              ref={contentTextareaRef}
+              value={content}
+              onChange={(event) => setContent(event.target.value)}
+              placeholder="Write your MDX here..."
+              className="min-h-120 w-full resize-none border-0 px-4 py-3 font-mono text-sm text-gray-800 focus:outline-none"
             />
+            <div className="flex items-center justify-between border-t border-gray-200 px-4 py-2 text-xs text-gray-500">
+              <span>{importedFileName ? `Markdown editor · loaded ${importedFileName}` : "Markdown editor"}</span>
+              <span>{isPending ? "Saving..." : "⌘S to save draft"}</span>
+            </div>
           </div>
-        </div>
-
-        <div>
-          <label className="mb-1 block text-xs text-gray-500">Publish date</label>
-          <input
-            type="datetime-local"
-            value={createdAt}
-            onChange={(event) => setCreatedAt(event.target.value)}
-            className="w-full border border-gray-200 px-3 py-2 text-sm text-gray-700 focus:border-gray-400 focus:outline-none"
-          />
-        </div>
-
-        <div>
-          <label className="mb-1 block text-xs text-gray-500">
-            Description <span className="text-gray-300">(shown on blog card)</span>
-          </label>
-          <input
-            value={description}
-            onChange={(event) => setDescription(event.target.value)}
-            placeholder="A short summary of this post..."
-            className="w-full border border-gray-200 px-3 py-2 text-sm text-gray-700 focus:border-gray-400 focus:outline-none"
-          />
         </div>
       </div>
 
-      <div className="overflow-hidden border border-gray-200 bg-white/60">
-        <textarea
-          value={content}
-          onChange={(event) => setContent(event.target.value)}
-          placeholder="Write your MDX here..."
-          className="min-h-120 w-full resize-none border-0 px-4 py-3 font-mono text-sm text-gray-800 focus:outline-none"
-        />
-        <div className="flex items-center justify-between border-t border-gray-200 px-4 py-2 text-xs text-gray-500">
-          <span>{importedFileName ? `Markdown editor · loaded ${importedFileName}` : "Markdown editor"}</span>
-          <span>{isPending ? "Saving..." : "⌘S to save draft"}</span>
-        </div>
-      </div>
+      <button
+        type="button"
+        onClick={() => setImageWidgetVisible((visible) => !visible)}
+        className="fixed right-3 bottom-18 z-30 inline-flex items-center gap-2 border border-gray-300 bg-white/95 px-3 py-2 text-xs font-medium text-gray-700 shadow-sm transition-colors hover:border-gray-400"
+      >
+        <PhosphorIcon name="folder-open" size={16} />
+        <span>{imageWidgetVisible ? "Hide images" : "Show images"}</span>
+      </button>
+
+      {imageWidgetVisible && (
+        <aside
+          ref={imageWidgetRef}
+          className="fixed z-30 w-72 border border-gray-200 bg-white/95 p-3 shadow-sm"
+          style={
+            imageWidgetPosition
+              ? { left: `${imageWidgetPosition.x}px`, top: `${imageWidgetPosition.y}px` }
+              : { right: "1.5rem", top: "6rem" }
+          }
+        >
+          <div
+            className="mb-3 flex cursor-move touch-none select-none items-center justify-between gap-3 border-b border-gray-200 pb-2"
+            onPointerDown={handleImageWidgetPointerDown}
+            onPointerMove={handleImageWidgetPointerMove}
+            onPointerUp={handleImageWidgetPointerUp}
+            onPointerCancel={handleImageWidgetPointerUp}
+          >
+            <div>
+              <p className="text-sm font-medium text-gray-800">Blog images</p>
+              <p className="mt-0.5 text-xs text-gray-400">Latest {BLOG_IMAGE_LIMIT}</p>
+            </div>
+            <div className="flex shrink-0 items-center gap-1">
+              <button
+                type="button"
+                onPointerDown={(event) => event.stopPropagation()}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  void refreshBlogImages();
+                }}
+                disabled={imagesLoading}
+                title="Refresh images"
+                className="inline-flex h-8 w-8 items-center justify-center border border-gray-300 text-gray-500 transition-colors hover:border-gray-400 disabled:opacity-40"
+              >
+                <PhosphorIcon name="folder-open" size={16} />
+              </button>
+              <button
+                type="button"
+                onPointerDown={(event) => event.stopPropagation()}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  setImageWidgetVisible(false);
+                }}
+                title="Hide images"
+                className="inline-flex h-8 w-8 items-center justify-center border border-gray-300 text-gray-500 transition-colors hover:border-gray-400"
+              >
+                <PhosphorIcon name="caret-right" size={16} />
+              </button>
+            </div>
+          </div>
+
+          <input
+            ref={imageInputRef}
+            type="file"
+            accept="image/*"
+            multiple
+            className="hidden"
+            onChange={handleImageUpload}
+          />
+          <button
+            type="button"
+            onClick={() => imageInputRef.current?.click()}
+            disabled={imagesLoading}
+            className="mb-2 inline-flex w-full items-center justify-center gap-2 border border-gray-300 px-2 py-1.5 text-xs text-gray-700 transition-colors hover:border-gray-400 disabled:opacity-40"
+          >
+            <PhosphorIcon name="upload-simple" size={16} />
+            <span>{imagesLoading ? "Working..." : "Upload images"}</span>
+          </button>
+
+          {imageError && <p className="mb-2 border border-red-200 bg-white/70 px-2 py-1.5 text-xs text-red-500">{imageError}</p>}
+          {imageStatus && <p className="mb-2 border border-green-200 bg-white/70 px-2 py-1.5 text-xs text-green-600">{imageStatus}</p>}
+
+          <div className="flex max-h-[calc(100vh-12rem)] flex-col gap-2 overflow-y-auto pr-1">
+            {blogImages.length === 0 ? (
+              <div className="border border-gray-200 bg-white/70 p-3 text-xs text-gray-500">
+                {imagesLoading ? "Loading images..." : "No blog images yet."}
+              </div>
+            ) : (
+              blogImages.map((image) => (
+                <div key={image.path} className="group flex min-w-0 gap-2 border border-gray-200 bg-white p-1.5">
+                  <div
+                    className="relative shrink-0 overflow-hidden bg-gray-100"
+                    style={{ width: "56px", height: "48px" }}
+                  >
+                    <img
+                      src={image.publicUrl}
+                      alt={getImageAltText(image.name)}
+                      className="absolute inset-0 h-full w-full object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => insertImageMarkdown(image)}
+                      className="absolute inset-1 inline-flex items-center justify-center gap-1 border border-gray-900 bg-white/90 px-1.5 py-1 text-xs font-medium text-gray-900 opacity-0 shadow-sm transition-opacity hover:bg-white group-hover:opacity-100 focus:opacity-100"
+                    >
+                      <PhosphorIcon name="file-plus" size={13} />
+                      <span>Add</span>
+                    </button>
+                  </div>
+                  <div className="flex min-w-0 flex-1 items-center">
+                    <p className="truncate text-xs text-gray-500" title={image.name}>
+                      {image.name}
+                    </p>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </aside>
+      )}
     </div>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import imageCompression from "browser-image-compression";
 import Link from "next/link";
 import Footer from "@/components/layout/Footer";
 import PhosphorIcon from "@/components/ui/PhosphorIcon";
@@ -10,10 +11,87 @@ type GalleryItem = {
   name: string;
   path: string;
   publicUrl: string;
+  location: string;
   created_at?: string;
 };
 
 const BUCKET_NAME = "Gallery";
+const MAX_UPLOAD_SIZE_BYTES = 2 * 1024 * 1024;
+const MAX_UPLOAD_SIZE_MB = 1.9;
+const IMAGE_FILE_PATTERN = /\.(avif|bmp|gif|heic|jpe?g|png|webp)$/i;
+const LOCATION_SEPARATOR = "--location-";
+
+function formatFileSize(bytes: number) {
+  return `${(bytes / 1024 / 1024).toFixed(2)}MB`;
+}
+
+function getFileExtension(file: File) {
+  const extensionFromName = file.name.split(".").pop()?.toLowerCase();
+
+  if (file.type === "image/webp") {
+    return "webp";
+  }
+
+  if (file.type === "image/jpeg") {
+    return "jpg";
+  }
+
+  if (file.type === "image/png") {
+    return "png";
+  }
+
+  return extensionFromName ?? "jpg";
+}
+
+function getLocationFromPath(path: string) {
+  const nameWithoutExtension = path.replace(/\.[^/.]+$/, "");
+  const locationSlug = nameWithoutExtension.split(LOCATION_SEPARATOR)[1];
+
+  return locationSlug?.replace(/-/g, " ") ?? "";
+}
+
+function getPathWithLocation(path: string, location: string) {
+  const extension = path.split(".").pop()?.toLowerCase() ?? "webp";
+  const nameWithoutExtension = path.replace(/\.[^/.]+$/, "");
+  const baseName = nameWithoutExtension.split(LOCATION_SEPARATOR)[0];
+  const locationSlug = location
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
+
+  return locationSlug ? `${baseName}${LOCATION_SEPARATOR}${locationSlug}.${extension}` : `${baseName}.${extension}`;
+}
+
+async function compressImage(file: File) {
+  if (file.size <= MAX_UPLOAD_SIZE_BYTES) {
+    return file;
+  }
+
+  if (file.type === "image/svg+xml" || file.type === "image/gif") {
+    throw new Error(`${file.name} is larger than 2MB and cannot be compressed automatically.`);
+  }
+
+  const compressed = await imageCompression(file, {
+    maxSizeMB: MAX_UPLOAD_SIZE_MB,
+    maxWidthOrHeight: 2000,
+    useWebWorker: false,
+    fileType: "image/webp",
+    initialQuality: 0.85,
+    maxIteration: 20,
+  });
+
+  if (compressed.size > MAX_UPLOAD_SIZE_BYTES) {
+    throw new Error(`${file.name} could not be compressed below 2MB.`);
+  }
+
+  const compressedName = file.name.replace(/\.[^/.]+$/, ".webp");
+
+  return new File([compressed], compressedName, {
+    type: compressed.type,
+    lastModified: Date.now(),
+  });
+}
 
 async function listImages(supabase: ReturnType<typeof createClient>) {
   const { data, error } = await supabase.storage
@@ -28,7 +106,7 @@ async function listImages(supabase: ReturnType<typeof createClient>) {
   }
 
   return (data ?? [])
-    .filter((item) => item.name && !item.name.endsWith("/"))
+    .filter((item) => item.name && !item.name.endsWith("/") && IMAGE_FILE_PATTERN.test(item.name))
     .map((item) => {
       const { data: urlData } = supabase.storage
         .from(BUCKET_NAME)
@@ -38,6 +116,7 @@ async function listImages(supabase: ReturnType<typeof createClient>) {
         name: item.name,
         path: item.name,
         publicUrl: urlData.publicUrl,
+        location: getLocationFromPath(item.name),
         created_at: "created_at" in item ? String(item.created_at ?? "") : "",
       };
     }) as GalleryItem[];
@@ -46,6 +125,7 @@ async function listImages(supabase: ReturnType<typeof createClient>) {
 export default function AdminGalleryPage() {
   const [supabase] = useState(createClient);
   const [images, setImages] = useState<GalleryItem[]>([]);
+  const [locationInputs, setLocationInputs] = useState<Record<string, string>>({});
   const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -53,7 +133,9 @@ export default function AdminGalleryPage() {
 
   async function refreshImages() {
     try {
-      setImages(await listImages(supabase));
+      const data = await listImages(supabase);
+      setImages(data);
+      setLocationInputs(Object.fromEntries(data.map((image) => [image.path, image.location])));
     } catch (cause: unknown) {
       setError(cause instanceof Error ? cause.message : "Failed to load gallery images.");
     }
@@ -67,6 +149,7 @@ export default function AdminGalleryPage() {
         const data = await listImages(supabase);
         if (!cancelled) {
           setImages(data);
+          setLocationInputs(Object.fromEntries(data.map((image) => [image.path, image.location])));
         }
       } catch (cause: unknown) {
         if (!cancelled) {
@@ -96,19 +179,25 @@ export default function AdminGalleryPage() {
 
     try {
       for (const file of Array.from(selectedFiles)) {
-        const fileExt = file.name.split(".").pop()?.toLowerCase() ?? "";
-        const baseName = file.name.replace(/\.[^/.]+$/, "");
+        setSuccess(`Compressing ${file.name}...`);
+
+        const uploadFile = await compressImage(file);
+        const fileExt = getFileExtension(uploadFile);
+        const baseName = uploadFile.name.replace(/\.[^/.]+$/, "");
         const safeBaseName = baseName
           .toLowerCase()
           .replace(/[^a-z0-9]+/g, "-")
           .replace(/(^-|-$)/g, "");
 
-        const fileName = `${Date.now()}-${safeBaseName || "image"}${fileExt ? `.${fileExt}` : ""}`;
+        const fileName = `${Date.now()}-${safeBaseName || "image"}.${fileExt}`;
+
+        setSuccess(`Uploading ${uploadFile.name} (${formatFileSize(file.size)} -> ${formatFileSize(uploadFile.size)})...`);
 
         const { error: uploadError } = await supabase.storage
           .from(BUCKET_NAME)
-          .upload(fileName, file, {
+          .upload(fileName, uploadFile, {
             cacheControl: "3600",
+            contentType: uploadFile.type,
             upsert: false,
           });
 
@@ -122,6 +211,59 @@ export default function AdminGalleryPage() {
       await refreshImages();
     } catch (cause: unknown) {
       setError(cause instanceof Error ? cause.message : "Failed to upload image.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleSaveLocation(image: GalleryItem) {
+    setLoading(true);
+    setError("");
+    setSuccess("");
+
+    try {
+      const nextPath = getPathWithLocation(image.path, locationInputs[image.path] ?? "");
+
+      if (nextPath === image.path) {
+        setSuccess("Location saved.");
+        return;
+      }
+
+      const { data: currentImage, error: downloadError } = await supabase.storage
+        .from(BUCKET_NAME)
+        .download(image.path);
+
+      if (downloadError) {
+        throw new Error(downloadError.message);
+      }
+
+      const renamedImage = new File([currentImage], nextPath, {
+        type: currentImage.type || "image/webp",
+      });
+      const { error: uploadError } = await supabase.storage
+        .from(BUCKET_NAME)
+        .upload(nextPath, renamedImage, {
+          cacheControl: "3600",
+          contentType: renamedImage.type,
+          upsert: false,
+        });
+
+      if (uploadError) {
+        throw new Error(uploadError.message);
+      }
+
+      const { error: deleteError } = await supabase.storage
+        .from(BUCKET_NAME)
+        .remove([image.path]);
+
+      if (deleteError) {
+        throw new Error(deleteError.message);
+      }
+
+      setSuccess("Location saved.");
+      await refreshImages();
+    } catch (cause: unknown) {
+      setError(cause instanceof Error ? cause.message : "Failed to save location.");
     } finally {
       setLoading(false);
     }
@@ -233,6 +375,29 @@ export default function AdminGalleryPage() {
                           <span className="truncate">Open image</span>
                           <PhosphorIcon name="arrow-square-out" size={14} />
                         </a>
+
+                        <div className="mt-3 flex max-w-sm flex-col gap-2 sm:flex-row">
+                          <input
+                            type="text"
+                            value={locationInputs[image.path] ?? ""}
+                            onChange={(event) => {
+                              setLocationInputs((current) => ({
+                                ...current,
+                                [image.path]: event.target.value,
+                              }));
+                            }}
+                            placeholder="Location"
+                            className="min-w-0 flex-1 border border-gray-200 bg-white/70 px-2 py-1.5 text-xs text-gray-700 outline-none transition-colors placeholder:text-gray-300 focus:border-gray-400"
+                          />
+                          <button
+                            type="button"
+                            disabled={loading}
+                            onClick={() => handleSaveLocation(image)}
+                            className="border border-gray-300 px-2 py-1.5 text-xs text-gray-500 transition-colors hover:border-gray-400 disabled:opacity-40"
+                          >
+                            Save location
+                          </button>
+                        </div>
                       </div>
                     </div>
 

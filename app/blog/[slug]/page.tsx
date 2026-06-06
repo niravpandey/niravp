@@ -17,6 +17,78 @@ const mdxOptions = {
   },
 };
 
+type BlogImageProps = Omit<ComponentPropsWithoutRef<"img">, "width"> & {
+  align?: "left" | "center" | "right";
+  caption?: string;
+  width?: number | string;
+};
+
+function getRenderedImageWidth(width: BlogImageProps["width"]) {
+  if (typeof width === "number") {
+    return `${width}px`;
+  }
+
+  if (typeof width === "string" && /^\d+$/.test(width)) {
+    return `${width}px`;
+  }
+
+  if (typeof width === "string" && width.trim()) {
+    return width;
+  }
+
+  return "100%";
+}
+
+function getImageMargin(align: BlogImageProps["align"]) {
+  if (align === "left") {
+    return { marginLeft: 0, marginRight: "auto" };
+  }
+
+  if (align === "right") {
+    return { marginLeft: "auto", marginRight: 0 };
+  }
+
+  return { marginLeft: "auto", marginRight: "auto" };
+}
+
+function BlogImage({
+  align = "center",
+  alt,
+  caption,
+  className,
+  style,
+  width = "100%",
+  ...props
+}: BlogImageProps) {
+  return (
+    <figure
+      className="my-8 block"
+      style={{
+        width: getRenderedImageWidth(width),
+        maxWidth: "100%",
+        ...getImageMargin(align),
+      }}
+    >
+      <img
+        className={["m-0 block h-auto w-full", className].filter(Boolean).join(" ")}
+        style={{
+          ...style,
+          width: "100%",
+          maxWidth: "100%",
+          height: "auto",
+        }}
+        alt={alt ?? ""}
+        {...props}
+      />
+      {caption && (
+        <figcaption className="mt-2 text-center text-sm leading-6 text-gray-500">
+          {caption}
+        </figcaption>
+      )}
+    </figure>
+  );
+}
+
 const mdxComponents = {
   a: ({ className, ...props }: ComponentPropsWithoutRef<"a">) => (
     <a
@@ -59,6 +131,8 @@ const mdxComponents = {
       {...props}
     />
   ),
+  BlogImage,
+  img: BlogImage,
   table: ({ className, ...props }: ComponentPropsWithoutRef<"table">) => (
     <div className="my-8 overflow-x-auto bg-white">
       <table className={["my-0 min-w-full border-collapse text-sm", className].filter(Boolean).join(" ")} {...props} />

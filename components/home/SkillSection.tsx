@@ -6,12 +6,13 @@ interface Props {
 
 export default function SkillSection({ activeSkills }: Props) {
   const skills = [
-    { category: "Languages", items: ["Python", "Java", "SQL", "JavaScript"] },
-    { category: "Web & Frameworks", items: ["React", "Next.js", "FastAPI", "Node.js", "HTML", "CSS"] },
-    { category: "Backend & APIs", items: ["REST APIs", "OpenAI API", "Email Automation", "Scheduled Jobs"] },
-    { category: "Databases", items: ["PostgreSQL", "MongoDB", "MySQL", "Supabase"] },
-    { category: "Tools", items: ["Git", "GitHub Actions", "Postman", "Figma"] },
-  ];
+  { category: "Languages", items: ["Python", "Java", "SQL", "JavaScript", "C"] },
+  { category: "Frontend", items: ["React", "Next.js", "HTML/CSS"] },
+  { category: "Backend", items: ["FastAPI", "Node.js", "REST APIs"] },
+  { category: "Databases", items: ["PostgreSQL", "MongoDB", "MySQL", "Supabase"] },
+  { category: "Tools & Platforms", items: ["Git", "GitHub Actions", "Postman", "Figma"] },
+  { category: "Other", items: ["OpenAI API", "Email Automation", "Scheduled Jobs"] },
+];
 
   return (
     <div>
