@@ -178,7 +178,7 @@ export default function AdminReadingPage() {
                 setForm({ ...form, title: e.target.value })
               }
               required
-              className="border border-gray-200 bg-transparent px-3 py-2 text-sm"
+              className="border border-gray-200 bg-white/40 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 transition-colors focus:border-gray-400 focus:outline-none"
             />
 
             <label htmlFor="author" className="sr-only">
@@ -193,7 +193,7 @@ export default function AdminReadingPage() {
                 setForm({ ...form, author: e.target.value })
               }
               required
-              className="border border-gray-200 bg-transparent px-3 py-2 text-sm"
+              className="border border-gray-200 bg-white/40 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 transition-colors focus:border-gray-400 focus:outline-none"
             />
 
             <div className="flex gap-3">
@@ -211,7 +211,7 @@ export default function AdminReadingPage() {
                       status: e.target.value as Book["status"],
                     })
                   }
-                  className="w-full border border-gray-200 px-3 py-2 text-sm"
+                  className="w-full border border-gray-200 bg-white/40 px-3 py-2 text-sm text-gray-900 transition-colors focus:border-gray-400 focus:outline-none"
                 >
                   {STATUS_OPTIONS.map((s) => (
                     <option key={s} value={s}>
@@ -239,7 +239,7 @@ export default function AdminReadingPage() {
                       progress: parseInt(e.target.value) || 0,
                     })
                   }
-                  className="w-28 border border-gray-200 px-3 py-2 text-sm"
+                  className="w-28 border border-gray-200 bg-white/40 px-3 py-2 text-sm text-gray-900 transition-colors focus:border-gray-400 focus:outline-none"
                 />
               </div>
             </div>
@@ -259,7 +259,7 @@ export default function AdminReadingPage() {
                     ? "Update book"
                     : "Add book"
                 }
-                className="border px-3 py-1.5 text-sm"
+                className="border border-gray-300 px-3 py-1.5 text-sm text-gray-600 transition-colors hover:border-gray-400 disabled:opacity-40"
               >
                 {loading
                   ? "Saving..."
@@ -273,7 +273,7 @@ export default function AdminReadingPage() {
                   type="button"
                   onClick={cancelEdit}
                   aria-label="Cancel editing"
-                  className="border px-3 py-1.5 text-sm"
+                  className="border border-gray-300 px-3 py-1.5 text-sm text-gray-600 transition-colors hover:border-gray-400"
                 >
                   Cancel
                 </button>
@@ -286,17 +286,17 @@ export default function AdminReadingPage() {
             (status) =>
               grouped[status].length > 0 && (
                 <div key={status} className="mb-8">
-                  <p className="mb-3 text-xs uppercase text-gray-400">
+                  <p className="mb-3 text-xs font-medium uppercase text-gray-400">
                     {status}
                   </p>
                   <div className="flex flex-col gap-2">
                     {grouped[status].map((book) => (
                       <div
                         key={book.id}
-                        className="flex items-center border p-3"
+                        className="flex items-center border border-gray-200 bg-white/60 p-3 transition-colors hover:border-gray-300 hover:bg-white/80"
                       >
                         <div className="flex-1">
-                          <p className="text-sm font-medium">
+                          <p className="text-sm font-medium text-gray-900">
                             {book.title}
                           </p>
                           <p className="text-xs text-gray-500">
@@ -309,7 +309,7 @@ export default function AdminReadingPage() {
                             type="button"
                             onClick={() => startEdit(book)}
                             aria-label={`Edit ${book.title}`}
-                            className="text-xs"
+                            className="text-xs text-gray-400 transition-colors hover:text-gray-700"
                           >
                             Edit
                           </button>
@@ -319,7 +319,7 @@ export default function AdminReadingPage() {
                               handleDelete(book.id)
                             }
                             aria-label={`Delete ${book.title}`}
-                            className="text-xs text-red-500"
+                            className="text-xs text-gray-400 transition-colors hover:text-red-500"
                           >
                             Delete
                           </button>

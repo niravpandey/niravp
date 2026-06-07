@@ -323,7 +323,7 @@ export default function AdminGalleryPage() {
                 setError("");
                 setSuccess("");
               }}
-              className="border border-gray-200 bg-transparent px-3 py-2 text-sm text-gray-900 file:mr-3 file:border-0 file:bg-transparent file:text-sm file:text-gray-600"
+              className="border border-gray-200 bg-white/40 px-3 py-2 text-sm text-gray-900 transition-colors file:mr-3 file:border-0 file:bg-transparent file:text-sm file:text-gray-600 focus:border-gray-400 focus:outline-none"
             />
 
             {error && <p className="text-xs text-red-500">{error}</p>}
@@ -333,7 +333,7 @@ export default function AdminGalleryPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="border border-gray-300 px-3 py-1.5 text-sm text-gray-600 transition-colors hover:border-gray-400 disabled:opacity-40"
+                className="border border-gray-300 bg-white/50 px-3 py-1.5 text-sm text-gray-600 transition-colors hover:border-gray-400 hover:bg-white/80 disabled:opacity-40"
               >
                 {loading ? "Uploading..." : "Upload"}
               </button>
@@ -349,7 +349,7 @@ export default function AdminGalleryPage() {
               images.map((image) => (
                 <div
                   key={image.path}
-                  className="border border-gray-200 bg-white/60 p-4 transition-colors hover:border-gray-300"
+                  className="border border-gray-200 bg-white/60 p-4 transition-colors hover:border-gray-300 hover:bg-white/80"
                 >
                   <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                     <div className="flex min-w-0 flex-1 gap-4">
@@ -393,7 +393,7 @@ export default function AdminGalleryPage() {
                             type="button"
                             disabled={loading}
                             onClick={() => handleSaveLocation(image)}
-                            className="border border-gray-300 px-2 py-1.5 text-xs text-gray-500 transition-colors hover:border-gray-400 disabled:opacity-40"
+                            className="border border-gray-300 bg-white/50 px-2 py-1.5 text-xs text-gray-500 transition-colors hover:border-gray-400 hover:bg-white/80 disabled:opacity-40"
                           >
                             Save location
                           </button>

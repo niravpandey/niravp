@@ -2,397 +2,43 @@
 
 import Link from "next/link";
 import { useEffect, useEffectEvent, useRef, useState, useTransition } from "react";
-import imageCompression from "browser-image-compression";
-import { MDXRemote, type MDXRemoteSerializeResult } from "next-mdx-remote";
-import BlogImage from "@/components/blog/BlogImage";
 import PhosphorIcon from "@/components/ui/PhosphorIcon";
 import type { Post } from "@/lib/blog";
 import { createClient } from "@/lib/supabase/client";
 import { compilePostPreview, deletePost, savePost, type PostFormData } from "./actions";
+import BlogPreview from "./BlogPreview";
+import BlogImagesTool from "./BlogImagesTool";
+import DrawingPadTool from "./DrawingPadTool";
+import FocusOverlays from "./FocusOverlays";
+import PomodoroTool from "./PomodoroTool";
+import ResizeDivider from "./ResizeDivider";
+import WritingToolsSidebar from "./WritingToolsSidebar";
+import {
+  BLOG_BUCKET_NAME,
+  BREAK_SECONDS,
+  DEFAULT_POMODORO_MINUTES,
+  DEFAULT_POMODORO_SESSIONS,
+  TOOL_SIDEBAR_DEFAULT_REM,
+  TOOL_SIDEBAR_MAX_REM,
+  TOOL_SIDEBAR_MIN_REM,
+  clamp,
+  compressImage,
+  formatFileSize,
+  getFileExtension,
+  getImageMdxSnippet,
+  listBlogImages,
+  parseFrontmatter,
+  toDatetimeLocalValue,
+  type BlogImage as BlogImageItem,
+  type EditorPreviewPaneMode,
+  type PreviewSource,
+  type ToolDensity,
+  type WritingToolKey,
+} from "./editorUtils";
 
 type Props = {
   post: Post | null;
 };
-
-type ImportedFrontmatter = {
-  title?: string;
-  slug?: string;
-  description?: string;
-  tags?: string;
-  published?: boolean;
-  createdAt?: string;
-};
-
-type BlogImage = {
-  name: string;
-  path: string;
-  publicUrl: string;
-};
-
-type PreviewSource = MDXRemoteSerializeResult<Record<string, unknown>, Record<string, unknown>>;
-type EditorPreviewPaneMode = "split" | "editor" | "preview";
-
-const BLOG_BUCKET_NAME = "Blog";
-const BLOG_IMAGE_LIMIT = 10;
-const MAX_UPLOAD_SIZE_BYTES = 2 * 1024 * 1024;
-const MAX_UPLOAD_SIZE_MB = 1.9;
-const IMAGE_FILE_PATTERN = /\.(avif|bmp|gif|heic|jpe?g|png|webp)$/i;
-
-function pad(value: number) {
-  return String(value).padStart(2, "0");
-}
-
-function toDatetimeLocalValue(value: string) {
-  const date = new Date(value);
-
-  return [
-    date.getFullYear(),
-    pad(date.getMonth() + 1),
-    pad(date.getDate()),
-  ].join("-") + `T${pad(date.getHours())}:${pad(date.getMinutes())}`;
-}
-
-function stripWrappingQuotes(value: string) {
-  const trimmed = value.trim();
-
-  if (
-    (trimmed.startsWith('"') && trimmed.endsWith('"')) ||
-    (trimmed.startsWith("'") && trimmed.endsWith("'"))
-  ) {
-    return trimmed.slice(1, -1);
-  }
-
-  return trimmed;
-}
-
-function formatFileSize(bytes: number) {
-  return `${(bytes / 1024 / 1024).toFixed(2)}MB`;
-}
-
-function getFileExtension(file: File) {
-  const extensionFromName = file.name.split(".").pop()?.toLowerCase();
-
-  if (file.type === "image/webp") {
-    return "webp";
-  }
-
-  if (file.type === "image/jpeg") {
-    return "jpg";
-  }
-
-  if (file.type === "image/png") {
-    return "png";
-  }
-
-  return extensionFromName ?? "jpg";
-}
-
-function getImageAltText(name: string) {
-  return name
-    .replace(/\.[^/.]+$/, "")
-    .replace(/^\d+-/, "")
-    .replace(/[-_]+/g, " ")
-    .trim() || "Blog image";
-}
-
-function escapeMdxAttribute(value: string) {
-  return value.replace(/&/g, "&amp;").replace(/"/g, "&quot;");
-}
-
-function getImageMdxSnippet(image: BlogImage) {
-  return [
-    "<BlogImage",
-    `  src="${escapeMdxAttribute(image.publicUrl)}"`,
-    `  alt="${escapeMdxAttribute(getImageAltText(image.name))}"`,
-    '  width="50%"',
-    '  align="center"',
-    "/>",
-  ].join("\n");
-}
-
-async function compressImage(file: File) {
-  if (file.size <= MAX_UPLOAD_SIZE_BYTES) {
-    return file;
-  }
-
-  if (file.type === "image/svg+xml" || file.type === "image/gif") {
-    throw new Error(`${file.name} is larger than 2MB and cannot be compressed automatically.`);
-  }
-
-  const compressed = await imageCompression(file, {
-    maxSizeMB: MAX_UPLOAD_SIZE_MB,
-    maxWidthOrHeight: 2000,
-    useWebWorker: false,
-    fileType: "image/webp",
-    initialQuality: 0.85,
-    maxIteration: 20,
-  });
-
-  if (compressed.size > MAX_UPLOAD_SIZE_BYTES) {
-    throw new Error(`${file.name} could not be compressed below 2MB.`);
-  }
-
-  const compressedName = file.name.replace(/\.[^/.]+$/, ".webp");
-
-  return new File([compressed], compressedName, {
-    type: compressed.type,
-    lastModified: Date.now(),
-  });
-}
-
-async function listBlogImages(supabase: ReturnType<typeof createClient>) {
-  const { data, error } = await supabase.storage
-    .from(BLOG_BUCKET_NAME)
-    .list("", {
-      limit: BLOG_IMAGE_LIMIT,
-      sortBy: { column: "name", order: "desc" },
-    });
-
-  if (error) {
-    throw new Error(error.message);
-  }
-
-  return (data ?? [])
-    .filter((item) => item.name && !item.name.endsWith("/") && IMAGE_FILE_PATTERN.test(item.name))
-    .map((item) => {
-      const { data: urlData } = supabase.storage
-        .from(BLOG_BUCKET_NAME)
-        .getPublicUrl(item.name);
-
-      return {
-        name: item.name,
-        path: item.name,
-        publicUrl: urlData.publicUrl,
-      };
-    }) as BlogImage[];
-}
-
-const previewMdxComponents = {
-  BlogImage,
-  img: BlogImage,
-  a: ({ className, ...props }: React.ComponentPropsWithoutRef<"a">) => (
-    <a
-      className={["font-medium text-blue-900 underline decoration-gray-300 underline-offset-4", className]
-        .filter(Boolean)
-        .join(" ")}
-      {...props}
-    />
-  ),
-  pre: ({ className, ...props }: React.ComponentPropsWithoutRef<"pre">) => (
-    <pre
-      className={[
-        "overflow-x-auto border border-gray-200 bg-gray-950 px-4 py-3 text-sm leading-6 text-gray-100",
-        className,
-      ]
-        .filter(Boolean)
-        .join(" ")}
-      {...props}
-    />
-  ),
-  code: ({ className, ...props }: React.ComponentPropsWithoutRef<"code">) => {
-    const isBlockCode = className?.includes("language-");
-
-    return (
-      <code
-        className={[
-          "font-mono",
-          isBlockCode ? "text-gray-100" : "border border-gray-200 bg-gray-100 px-1.5 py-0.5 text-[0.9em] text-gray-900",
-          className,
-        ]
-          .filter(Boolean)
-          .join(" ")}
-        {...props}
-      />
-    );
-  },
-  blockquote: ({ className, ...props }: React.ComponentPropsWithoutRef<"blockquote">) => (
-    <blockquote
-      className={["border-l-2 border-blue-900 pl-5 text-gray-700 italic", className].filter(Boolean).join(" ")}
-      {...props}
-    />
-  ),
-  table: ({ className, ...props }: React.ComponentPropsWithoutRef<"table">) => (
-    <div className="my-8 overflow-x-auto bg-white">
-      <table className={["my-0 min-w-full border-collapse text-sm", className].filter(Boolean).join(" ")} {...props} />
-    </div>
-  ),
-  tr: ({ className, ...props }: React.ComponentPropsWithoutRef<"tr">) => (
-    <tr className={["even:bg-gray-50/60", className].filter(Boolean).join(" ")} {...props} />
-  ),
-  th: ({ className, ...props }: React.ComponentPropsWithoutRef<"th">) => (
-    <th
-      className={["border-b border-gray-200 bg-gray-50 px-4 py-3 text-left text-xs font-semibold uppercase text-gray-600", className]
-        .filter(Boolean)
-        .join(" ")}
-      {...props}
-    />
-  ),
-  td: ({ className, ...props }: React.ComponentPropsWithoutRef<"td">) => (
-    <td className={["border-t border-gray-100 px-4 py-3 align-top leading-6 text-gray-700", className].filter(Boolean).join(" ")} {...props} />
-  ),
-};
-
-function formatPreviewDate(value: string) {
-  const date = new Date(value);
-
-  if (Number.isNaN(date.getTime())) {
-    return "";
-  }
-
-  return date.toLocaleDateString("en-AU", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
-}
-
-function BlogPreview({
-  compiledSource,
-  description,
-  error,
-  loading,
-  title,
-  tags,
-  createdAt,
-}: {
-  compiledSource: PreviewSource | null;
-  description: string;
-  error: string | null;
-  loading: boolean;
-  title: string;
-  tags: string;
-  createdAt: string;
-}) {
-  const normalizedTags = tags
-    .split(",")
-    .map((tag) => tag.trim())
-    .filter(Boolean);
-
-  return (
-    <aside className="flex h-184 flex-col border border-gray-200 bg-white/60">
-      <div className="flex items-center justify-between border-b border-gray-200 px-4 py-2">
-        <p className="text-xs font-medium text-gray-700">Live preview</p>
-        <p className="text-xs text-gray-400">{loading ? "Rendering..." : "Draft"}</p>
-      </div>
-
-      <div className="min-h-0 flex-1 overflow-y-auto p-4">
-        <article>
-          <header className="border-b border-gray-200 pb-6 text-center">
-            <p className="text-xs text-gray-400">{formatPreviewDate(createdAt)}</p>
-            <h2 className="mx-auto mt-3 max-w-2xl text-3xl font-medium leading-tight text-blue-900">
-              {title.trim() || "Untitled post"}
-            </h2>
-            {description.trim() && <p className="mx-auto mt-3 max-w-2xl text-sm text-gray-600">{description}</p>}
-            {normalizedTags.length > 0 && (
-              <div className="mt-4 flex flex-wrap justify-center gap-2">
-                {normalizedTags.map((tag) => (
-                  <span key={tag} className="border border-gray-300 px-2 py-0.5 text-xs text-gray-500">
-                    {tag}
-                  </span>
-                ))}
-              </div>
-            )}
-          </header>
-
-          <div className="mt-6 border border-gray-200 bg-white/50 p-5">
-            {error ? (
-              <p className="text-sm text-red-500">{error}</p>
-            ) : compiledSource ? (
-              <div className="prose prose-gray max-w-none prose-headings:scroll-mt-24 prose-headings:font-medium prose-headings:text-gray-900 prose-h1:text-4xl prose-h2:border-b prose-h2:border-gray-200 prose-h2:pb-2 prose-a:no-underline prose-p:leading-7 prose-li:leading-7 prose-code:before:content-none prose-code:after:content-none prose-pre:my-6 prose-pre:rounded-none prose-img:my-8 prose-img:rounded-none">
-                <MDXRemote {...compiledSource} components={previewMdxComponents} />
-              </div>
-            ) : (
-              <p className="text-sm text-gray-400">Start writing to preview the post.</p>
-            )}
-          </div>
-        </article>
-      </div>
-    </aside>
-  );
-}
-
-function parseFrontmatter(source: string): { content: string; data: ImportedFrontmatter } {
-  const lines = source.split(/\r?\n/);
-
-  if (lines[0]?.trim() !== "---") {
-    return { content: source, data: {} };
-  }
-
-  const fields: Record<string, string | string[]> = {};
-  let currentListKey: string | null = null;
-  let closingIndex = -1;
-
-  for (let index = 1; index < lines.length; index += 1) {
-    const line = lines[index];
-
-    if (line.trim() === "---") {
-      closingIndex = index;
-      break;
-    }
-
-    const listItemMatch = line.match(/^\s*-\s+(.*)$/);
-
-    if (listItemMatch && currentListKey) {
-      const currentValue = fields[currentListKey];
-      const nextItem = stripWrappingQuotes(listItemMatch[1]);
-
-      fields[currentListKey] = Array.isArray(currentValue)
-        ? [...currentValue, nextItem]
-        : [nextItem];
-      continue;
-    }
-
-    currentListKey = null;
-
-    const keyValueMatch = line.match(/^([A-Za-z0-9_-]+):\s*(.*)$/);
-
-    if (!keyValueMatch) {
-      continue;
-    }
-
-    const [, key, rawValue] = keyValueMatch;
-    const value = stripWrappingQuotes(rawValue);
-
-    if (value) {
-      fields[key] = value;
-      continue;
-    }
-
-    fields[key] = [];
-    currentListKey = key;
-  }
-
-  if (closingIndex === -1) {
-    return { content: source, data: {} };
-  }
-
-  const publishedValue = fields.published;
-  const createdAtValue = fields.createdAt ?? fields.created_at ?? fields.date;
-  const normalizedCreatedAt =
-    typeof createdAtValue === "string" && !Number.isNaN(Date.parse(createdAtValue))
-      ? new Date(createdAtValue).toISOString()
-      : undefined;
-
-  return {
-    content: lines.slice(closingIndex + 1).join("\n").replace(/^\n+/, ""),
-    data: {
-      title: typeof fields.title === "string" ? fields.title : undefined,
-      slug: typeof fields.slug === "string" ? fields.slug : undefined,
-      description: typeof fields.description === "string" ? fields.description : undefined,
-      tags:
-        typeof fields.tags === "string"
-          ? fields.tags
-          : Array.isArray(fields.tags)
-            ? fields.tags.join(", ")
-            : undefined,
-      published:
-        typeof publishedValue === "string"
-          ? publishedValue.toLowerCase() === "true"
-          : undefined,
-      createdAt: normalizedCreatedAt,
-    },
-  };
-}
 
 export default function PostEditor({ post }: Props) {
   const isNew = !post;
@@ -403,7 +49,7 @@ export default function PostEditor({ post }: Props) {
   const [content, setContent] = useState(post?.content ?? "");
   const [tags, setTags] = useState((post?.tags ?? []).join(", "));
   const [published, setPublished] = useState(post?.published ?? false);
-  const [blogImages, setBlogImages] = useState<BlogImage[]>([]);
+  const [blogImages, setBlogImages] = useState<BlogImageItem[]>([]);
   const [createdAt, setCreatedAt] = useState(
     post?.created_at ? toDatetimeLocalValue(post.created_at) : toDatetimeLocalValue(new Date().toISOString())
   );
@@ -411,8 +57,24 @@ export default function PostEditor({ post }: Props) {
   const [imageError, setImageError] = useState<string | null>(null);
   const [imageStatus, setImageStatus] = useState<string | null>(null);
   const [imagesLoading, setImagesLoading] = useState(true);
-  const [imageWidgetVisible, setImageWidgetVisible] = useState(true);
-  const [imageWidgetPosition, setImageWidgetPosition] = useState<{ x: number; y: number } | null>(null);
+  const [openTools, setOpenTools] = useState<Record<WritingToolKey, boolean>>({
+    images: true,
+    timer: false,
+    drawing: false,
+  });
+  const [toolSidebarWidthRem, setToolSidebarWidthRem] = useState(TOOL_SIDEBAR_DEFAULT_REM);
+  const [pomodoroMinutes, setPomodoroMinutes] = useState(DEFAULT_POMODORO_MINUTES);
+  const [pomodoroTargetSessions, setPomodoroTargetSessions] = useState(DEFAULT_POMODORO_SESSIONS);
+  const [pomodoroCompletedSessions, setPomodoroCompletedSessions] = useState(0);
+  const [pomodoroSeconds, setPomodoroSeconds] = useState(DEFAULT_POMODORO_MINUTES * 60);
+  const [pomodoroRunning, setPomodoroRunning] = useState(false);
+  const [breakSeconds, setBreakSeconds] = useState(BREAK_SECONDS);
+  const [breakOpen, setBreakOpen] = useState(false);
+  const [breakRunning, setBreakRunning] = useState(false);
+  const [congratsOpen, setCongratsOpen] = useState(false);
+  const [drawing, setDrawing] = useState(false);
+  const [drawingUploading, setDrawingUploading] = useState(false);
+  const [drawingExpanded, setDrawingExpanded] = useState(false);
   const [importedFileName, setImportedFileName] = useState<string | null>(null);
   const [previewSource, setPreviewSource] = useState<PreviewSource | null>(null);
   const [previewError, setPreviewError] = useState<string | null>(null);
@@ -423,9 +85,11 @@ export default function PostEditor({ post }: Props) {
   const markdownInputRef = useRef<HTMLInputElement | null>(null);
   const imageInputRef = useRef<HTMLInputElement | null>(null);
   const contentTextareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const drawingCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const editorPreviewGridRef = useRef<HTMLDivElement | null>(null);
-  const imageWidgetRef = useRef<HTMLElement | null>(null);
-  const imageWidgetDragRef = useRef<{ offsetX: number; offsetY: number } | null>(null);
+  const toolsLayoutRef = useRef<HTMLDivElement | null>(null);
+  const toolDensity: ToolDensity =
+    toolSidebarWidthRem <= 14.5 ? "icon" : toolSidebarWidthRem <= 17 ? "compact" : "comfortable";
 
   async function refreshBlogImages() {
     setImagesLoading(true);
@@ -584,7 +248,7 @@ export default function PostEditor({ post }: Props) {
     }
   }
 
-  function insertImageMarkdown(image: BlogImage) {
+  function insertImageMarkdown(image: BlogImageItem) {
     const textarea = contentTextareaRef.current;
     const imageSnippet = getImageMdxSnippet(image);
 
@@ -607,47 +271,6 @@ export default function PostEditor({ post }: Props) {
       textarea.focus();
       textarea.setSelectionRange(nextCursorPosition, nextCursorPosition);
     });
-  }
-
-  function handleImageWidgetPointerDown(event: React.PointerEvent<HTMLElement>) {
-    const widget = imageWidgetRef.current;
-
-    if (!widget) {
-      return;
-    }
-
-    const rect = widget.getBoundingClientRect();
-    imageWidgetDragRef.current = {
-      offsetX: event.clientX - rect.left,
-      offsetY: event.clientY - rect.top,
-    };
-    setImageWidgetPosition({ x: rect.left, y: rect.top });
-    event.currentTarget.setPointerCapture(event.pointerId);
-  }
-
-  function handleImageWidgetPointerMove(event: React.PointerEvent<HTMLElement>) {
-    const drag = imageWidgetDragRef.current;
-    const widget = imageWidgetRef.current;
-
-    if (!drag || !widget) {
-      return;
-    }
-
-    const rect = widget.getBoundingClientRect();
-    const maxX = Math.max(8, window.innerWidth - rect.width - 8);
-    const maxY = Math.max(8, window.innerHeight - rect.height - 8);
-    const nextX = Math.min(Math.max(8, event.clientX - drag.offsetX), maxX);
-    const nextY = Math.min(Math.max(8, event.clientY - drag.offsetY), maxY);
-
-    setImageWidgetPosition({ x: nextX, y: nextY });
-  }
-
-  function handleImageWidgetPointerUp(event: React.PointerEvent<HTMLElement>) {
-    imageWidgetDragRef.current = null;
-
-    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
-      event.currentTarget.releasePointerCapture(event.pointerId);
-    }
   }
 
   function updateEditorPreviewSplit(clientX: number) {
@@ -676,22 +299,185 @@ export default function PostEditor({ post }: Props) {
     setEditorPreviewSplit(clampedSplit);
   }
 
-  function handleEditorPreviewResizePointerDown(event: React.PointerEvent<HTMLDivElement>) {
-    event.currentTarget.setPointerCapture(event.pointerId);
-    updateEditorPreviewSplit(event.clientX);
-  }
+  function updateToolSidebarWidth(clientX: number) {
+    const layout = toolsLayoutRef.current;
 
-  function handleEditorPreviewResizePointerMove(event: React.PointerEvent<HTMLDivElement>) {
-    if (!event.currentTarget.hasPointerCapture(event.pointerId)) {
+    if (!layout) {
       return;
     }
 
-    updateEditorPreviewSplit(event.clientX);
+    const rect = layout.getBoundingClientRect();
+    const nextWidthRem = (rect.right - clientX) / 16;
+    setToolSidebarWidthRem(clamp(nextWidthRem, TOOL_SIDEBAR_MIN_REM, TOOL_SIDEBAR_MAX_REM));
   }
 
-  function handleEditorPreviewResizePointerUp(event: React.PointerEvent<HTMLDivElement>) {
+  function toggleTool(tool: WritingToolKey) {
+    setOpenTools((current) => ({
+      ...current,
+      [tool]: !current[tool],
+    }));
+  }
+
+  function resetPomodoro() {
+    setPomodoroRunning(false);
+    setBreakRunning(false);
+    setBreakOpen(false);
+    setCongratsOpen(false);
+    setBreakSeconds(BREAK_SECONDS);
+    setPomodoroCompletedSessions(0);
+    setPomodoroSeconds(pomodoroMinutes * 60);
+  }
+
+  function cancelBreak() {
+    setBreakRunning(false);
+    setBreakOpen(false);
+    setBreakSeconds(BREAK_SECONDS);
+    setPomodoroSeconds(pomodoroMinutes * 60);
+  }
+
+  function skipBreak() {
+    setBreakRunning(false);
+    setBreakOpen(false);
+    setBreakSeconds(BREAK_SECONDS);
+    setPomodoroSeconds(pomodoroMinutes * 60);
+    setPomodoroRunning(true);
+  }
+
+  function adjustPomodoroMinutes(delta: number) {
+    const nextMinutes = clamp(pomodoroMinutes + delta, 1, 120);
+
+    setPomodoroMinutes(nextMinutes);
+    if (!pomodoroRunning) {
+      setPomodoroSeconds(nextMinutes * 60);
+    }
+  }
+
+  function handlePomodoroSessionsChange(value: string) {
+    const nextSessions = clamp(Number.parseInt(value, 10) || 2, 2, 10);
+
+    setPomodoroTargetSessions(nextSessions);
+    setPomodoroCompletedSessions((completed) => Math.min(completed, nextSessions));
+  }
+
+  function getCanvasPoint(event: React.PointerEvent<HTMLCanvasElement>) {
+    const canvas = drawingCanvasRef.current;
+
+    if (!canvas) {
+      return null;
+    }
+
+    const rect = canvas.getBoundingClientRect();
+
+    return {
+      x: ((event.clientX - rect.left) / rect.width) * canvas.width,
+      y: ((event.clientY - rect.top) / rect.height) * canvas.height,
+    };
+  }
+
+  function handleDrawingPointerDown(event: React.PointerEvent<HTMLCanvasElement>) {
+    const canvas = drawingCanvasRef.current;
+    const point = getCanvasPoint(event);
+
+    if (!canvas || !point) {
+      return;
+    }
+
+    const context = canvas.getContext("2d");
+
+    if (!context) {
+      return;
+    }
+
+    setDrawing(true);
+    event.currentTarget.setPointerCapture(event.pointerId);
+    context.strokeStyle = "#1f2937";
+    context.lineWidth = 4;
+    context.lineCap = "round";
+    context.lineJoin = "round";
+    context.beginPath();
+    context.moveTo(point.x, point.y);
+  }
+
+  function handleDrawingPointerMove(event: React.PointerEvent<HTMLCanvasElement>) {
+    const canvas = drawingCanvasRef.current;
+    const point = getCanvasPoint(event);
+
+    if (!drawing || !canvas || !point) {
+      return;
+    }
+
+    const context = canvas.getContext("2d");
+
+    if (!context) {
+      return;
+    }
+
+    context.lineTo(point.x, point.y);
+    context.stroke();
+  }
+
+  function handleDrawingPointerUp(event: React.PointerEvent<HTMLCanvasElement>) {
+    setDrawing(false);
+
     if (event.currentTarget.hasPointerCapture(event.pointerId)) {
       event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+  }
+
+  function clearDrawing() {
+    const canvas = drawingCanvasRef.current;
+    const context = canvas?.getContext("2d");
+
+    if (!canvas || !context) {
+      return;
+    }
+
+    context.clearRect(0, 0, canvas.width, canvas.height);
+  }
+
+  async function uploadDrawing() {
+    const canvas = drawingCanvasRef.current;
+
+    if (!canvas) {
+      return;
+    }
+
+    setDrawingUploading(true);
+    setImageError(null);
+    setImageStatus(null);
+
+    try {
+      const blob = await new Promise<Blob | null>((resolve) => {
+        canvas.toBlob(resolve, "image/png");
+      });
+
+      if (!blob) {
+        throw new Error("Could not export drawing.");
+      }
+
+      const fileName = `${Date.now()}-drawing.png`;
+      const file = new File([blob], fileName, { type: "image/png" });
+
+      const { error: uploadError } = await supabase.storage
+        .from(BLOG_BUCKET_NAME)
+        .upload(fileName, file, {
+          cacheControl: "3600",
+          contentType: file.type,
+          upsert: false,
+        });
+
+      if (uploadError) {
+        throw new Error(uploadError.message);
+      }
+
+      setImageStatus("Drawing uploaded.");
+      clearDrawing();
+      await refreshBlogImages();
+      setOpenTools((current) => ({ ...current, images: true }));
+    } catch (cause: unknown) {
+      setImageError(cause instanceof Error ? cause.message : "Failed to upload drawing.");
+    } finally {
+      setDrawingUploading(false);
     }
   }
 
@@ -789,8 +575,69 @@ export default function PostEditor({ post }: Props) {
     };
   }, [content]);
 
+  useEffect(() => {
+    if (!pomodoroRunning) {
+      return;
+    }
+
+    const intervalId = window.setInterval(() => {
+      setPomodoroSeconds((current) => {
+        if (current <= 1) {
+          window.clearInterval(intervalId);
+          setPomodoroRunning(false);
+          setPomodoroCompletedSessions((completed) => {
+            const nextCompleted = Math.min(completed + 1, pomodoroTargetSessions);
+
+            if (nextCompleted >= pomodoroTargetSessions) {
+              setBreakOpen(false);
+              setBreakRunning(false);
+              setCongratsOpen(true);
+            } else {
+              setBreakSeconds(BREAK_SECONDS);
+              setBreakOpen(true);
+              setBreakRunning(true);
+            }
+
+            return nextCompleted;
+          });
+          return 0;
+        }
+
+        return current - 1;
+      });
+    }, 1000);
+
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, [pomodoroRunning, pomodoroTargetSessions]);
+
+  useEffect(() => {
+    if (!breakOpen || !breakRunning) {
+      return;
+    }
+
+    const intervalId = window.setInterval(() => {
+      setBreakSeconds((current) => {
+        if (current <= 1) {
+          window.clearInterval(intervalId);
+          setBreakRunning(false);
+          setBreakOpen(false);
+          setPomodoroSeconds(pomodoroMinutes * 60);
+          return BREAK_SECONDS;
+        }
+
+        return current - 1;
+      });
+    }, 1000);
+
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, [breakOpen, breakRunning, pomodoroMinutes]);
+
   return (
-    <div className="mx-auto w-full max-w-6xl">
+    <div className="mx-auto w-full max-w-7xl">
       <div className="mb-8 border-b border-gray-200 pb-5">
         <p className="text-sm text-gray-500">{isNew ? "New post" : "Edit post"}</p>
         <h1 className="mt-1 text-3xl font-semibold text-mauve-500">{isNew ? "Write something new" : "Refine the draft"}</h1>
@@ -860,7 +707,11 @@ export default function PostEditor({ post }: Props) {
         </p>
       )}
 
-      <div className="grid grid-cols-1 gap-6">
+      <div
+        ref={toolsLayoutRef}
+        className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_0.75rem_minmax(13rem,var(--tools-width))] xl:items-start xl:gap-3"
+        style={{ "--tools-width": `${toolSidebarWidthRem}rem` } as React.CSSProperties}
+      >
         <div className="min-w-0">
           <div className="mb-6 grid grid-cols-1 gap-4 border border-gray-200 bg-white/60 p-4 sm:p-5">
             <div>
@@ -969,21 +820,11 @@ export default function PostEditor({ post }: Props) {
               )}
 
               {editorPreviewPaneMode === "split" && (
-                <div
-                  role="separator"
-                  aria-label="Resize editor and preview"
-                  aria-orientation="vertical"
-                  className="group hidden h-184 cursor-col-resize touch-none items-center justify-center xl:flex"
-                  onPointerDown={handleEditorPreviewResizePointerDown}
-                  onPointerMove={handleEditorPreviewResizePointerMove}
-                  onPointerUp={handleEditorPreviewResizePointerUp}
-                  onPointerCancel={handleEditorPreviewResizePointerUp}
-                >
-                  <div className="relative flex h-full w-3 items-center justify-center">
-                    <div className="h-full w-0.5 bg-gray-300 transition-colors group-hover:bg-gray-500" />
-                    <div className="absolute h-10 w-1.5 bg-white ring-1 ring-gray-300 transition-colors group-hover:ring-gray-500" />
-                  </div>
-                </div>
+                <ResizeDivider
+                  ariaLabel="Resize editor and preview"
+                  className="h-184"
+                  onResize={updateEditorPreviewSplit}
+                />
               )}
 
               {editorPreviewPaneMode !== "editor" && (
@@ -1000,125 +841,88 @@ export default function PostEditor({ post }: Props) {
             </div>
           </div>
         </div>
+
+        <ResizeDivider
+          ariaLabel="Resize writing tools"
+          className="h-184 xl:sticky xl:top-6"
+          onResize={updateToolSidebarWidth}
+        />
+
+        <WritingToolsSidebar density={toolDensity}>
+          <BlogImagesTool
+            open={openTools.images}
+            density={toolDensity}
+            images={blogImages}
+            loading={imagesLoading}
+            error={imageError}
+            status={imageStatus}
+            inputRef={imageInputRef}
+            onToggleOpen={() => toggleTool("images")}
+            onUploadChange={handleImageUpload}
+            onInsertImage={insertImageMarkdown}
+          />
+
+          <PomodoroTool
+            open={openTools.timer}
+            density={toolDensity}
+            seconds={pomodoroSeconds}
+            minutes={pomodoroMinutes}
+            running={pomodoroRunning}
+            completedSessions={pomodoroCompletedSessions}
+            targetSessions={pomodoroTargetSessions}
+            onToggleOpen={() => toggleTool("timer")}
+            onAdjustMinutes={adjustPomodoroMinutes}
+            onTargetSessionsChange={handlePomodoroSessionsChange}
+            onStartPause={() => {
+              setCongratsOpen(false);
+              setBreakOpen(false);
+              setBreakRunning(false);
+              setPomodoroRunning((running) => {
+                if (running) {
+                  return false;
+                }
+
+                if (pomodoroCompletedSessions >= pomodoroTargetSessions) {
+                  setPomodoroCompletedSessions(0);
+                }
+
+                if (pomodoroSeconds <= 0) {
+                  setPomodoroSeconds(pomodoroMinutes * 60);
+                }
+
+                return true;
+              });
+            }}
+            onReset={resetPomodoro}
+          />
+
+          <DrawingPadTool
+            open={openTools.drawing}
+            density={toolDensity}
+            expanded={drawingExpanded}
+            uploading={drawingUploading}
+            canvasRef={drawingCanvasRef}
+            onToggleOpen={() => toggleTool("drawing")}
+            onExpandedChange={setDrawingExpanded}
+            onPointerDown={handleDrawingPointerDown}
+            onPointerMove={handleDrawingPointerMove}
+            onPointerUp={handleDrawingPointerUp}
+            onClear={clearDrawing}
+            onUpload={() => void uploadDrawing()}
+          />
+        </WritingToolsSidebar>
       </div>
 
-      <button
-        type="button"
-        onClick={() => setImageWidgetVisible((visible) => !visible)}
-        className="fixed right-3 bottom-18 z-30 inline-flex items-center gap-2 border border-gray-300 bg-white/95 px-3 py-2 text-xs font-medium text-gray-700 shadow-sm transition-colors hover:border-gray-400"
-      >
-        <PhosphorIcon name="folder-open" size={16} />
-        <span>{imageWidgetVisible ? "Hide images" : "Show images"}</span>
-      </button>
-
-      {imageWidgetVisible && (
-        <aside
-          ref={imageWidgetRef}
-          className="fixed z-30 w-72 border border-gray-200 bg-white/95 p-3 shadow-sm"
-          style={
-            imageWidgetPosition
-              ? { left: `${imageWidgetPosition.x}px`, top: `${imageWidgetPosition.y}px` }
-              : { right: "1.5rem", top: "6rem" }
-          }
-        >
-          <div
-            className="mb-3 flex cursor-move touch-none select-none items-center justify-between gap-3 border-b border-gray-200 pb-2"
-            onPointerDown={handleImageWidgetPointerDown}
-            onPointerMove={handleImageWidgetPointerMove}
-            onPointerUp={handleImageWidgetPointerUp}
-            onPointerCancel={handleImageWidgetPointerUp}
-          >
-            <div>
-              <p className="text-sm font-medium text-gray-800">Blog images</p>
-              <p className="mt-0.5 text-xs text-gray-400">Latest {BLOG_IMAGE_LIMIT}</p>
-            </div>
-            <div className="flex shrink-0 items-center gap-1">
-              <button
-                type="button"
-                onPointerDown={(event) => event.stopPropagation()}
-                onClick={(event) => {
-                  event.stopPropagation();
-                  void refreshBlogImages();
-                }}
-                disabled={imagesLoading}
-                title="Refresh images"
-                className="inline-flex h-8 w-8 items-center justify-center border border-gray-300 text-gray-500 transition-colors hover:border-gray-400 disabled:opacity-40"
-              >
-                <PhosphorIcon name="folder-open" size={16} />
-              </button>
-              <button
-                type="button"
-                onPointerDown={(event) => event.stopPropagation()}
-                onClick={(event) => {
-                  event.stopPropagation();
-                  setImageWidgetVisible(false);
-                }}
-                title="Hide images"
-                className="inline-flex h-8 w-8 items-center justify-center border border-gray-300 text-gray-500 transition-colors hover:border-gray-400"
-              >
-                <PhosphorIcon name="caret-right" size={16} />
-              </button>
-            </div>
-          </div>
-
-          <input
-            ref={imageInputRef}
-            type="file"
-            accept="image/*"
-            multiple
-            className="hidden"
-            onChange={handleImageUpload}
-          />
-          <button
-            type="button"
-            onClick={() => imageInputRef.current?.click()}
-            disabled={imagesLoading}
-            className="mb-2 inline-flex w-full items-center justify-center gap-2 border border-gray-300 px-2 py-1.5 text-xs text-gray-700 transition-colors hover:border-gray-400 disabled:opacity-40"
-          >
-            <PhosphorIcon name="upload-simple" size={16} />
-            <span>{imagesLoading ? "Working..." : "Upload images"}</span>
-          </button>
-
-          {imageError && <p className="mb-2 border border-red-200 bg-white/70 px-2 py-1.5 text-xs text-red-500">{imageError}</p>}
-          {imageStatus && <p className="mb-2 border border-green-200 bg-white/70 px-2 py-1.5 text-xs text-green-600">{imageStatus}</p>}
-
-          <div className="flex max-h-[calc(100vh-12rem)] flex-col gap-2 overflow-y-auto pr-1">
-            {blogImages.length === 0 ? (
-              <div className="border border-gray-200 bg-white/70 p-3 text-xs text-gray-500">
-                {imagesLoading ? "Loading images..." : "No blog images yet."}
-              </div>
-            ) : (
-              blogImages.map((image) => (
-                <div key={image.path} className="group flex min-w-0 gap-2 border border-gray-200 bg-white p-1.5">
-                  <div
-                    className="relative shrink-0 overflow-hidden bg-gray-100"
-                    style={{ width: "56px", height: "48px" }}
-                  >
-                    <img
-                      src={image.publicUrl}
-                      alt={getImageAltText(image.name)}
-                      className="absolute inset-0 h-full w-full object-cover"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => insertImageMarkdown(image)}
-                      className="absolute inset-1 inline-flex items-center justify-center gap-1 border border-gray-900 bg-white/90 px-1.5 py-1 text-xs font-medium text-gray-900 opacity-0 shadow-sm transition-opacity hover:bg-white group-hover:opacity-100 focus:opacity-100"
-                    >
-                      <PhosphorIcon name="file-plus" size={13} />
-                      <span>Add</span>
-                    </button>
-                  </div>
-                  <div className="flex min-w-0 flex-1 items-center">
-                    <p className="truncate text-xs text-gray-500" title={image.name}>
-                      {image.name}
-                    </p>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </aside>
-      )}
+      <FocusOverlays
+        breakOpen={breakOpen}
+        breakSeconds={breakSeconds}
+        congratsOpen={congratsOpen}
+        targetSessions={pomodoroTargetSessions}
+        onCancelBreak={cancelBreak}
+        onSkipBreak={skipBreak}
+        onCloseCongrats={() => setCongratsOpen(false)}
+        onResetPomodoro={resetPomodoro}
+      />
     </div>
   );
 }

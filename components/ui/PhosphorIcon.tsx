@@ -8,8 +8,13 @@ type PhosphorIconName =
   | "bookmark-simple"
   | "caret-left"
   | "caret-right"
+  | "caret-up"
+  | "caret-down"
   | "code"
+  | "clock"
   | "paper-plane-tilt"
+  | "paint-brush"
+  | "pause"
   | "file-plus"
   | "file-text"
   | "folder"
@@ -18,10 +23,13 @@ type PhosphorIconName =
   | "note-pencil"
   | "folder-simple-star"
   | "floppy-disk"
+  | "play"
+  | "arrow-counter-clockwise"
   | "trash"
   | "eye"
   | "eye-slash"
-  | "upload-simple";
+  | "upload-simple"
+  | "x";
 
 type PhosphorIconProps = Omit<HTMLAttributes<HTMLElement>, "children"> & {
   name: PhosphorIconName;

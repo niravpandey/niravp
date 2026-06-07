@@ -146,7 +146,7 @@ export default function AdminResumePage() {
             <p className="mt-1 text-sm text-gray-500">Upload the PDF served from the Assets bucket.</p>
           </div>
 
-          <div className="mb-8 border border-gray-200 bg-white/60 p-4 sm:p-5">
+          <div className="mb-8 border border-gray-200 bg-white/60 p-4 transition-colors hover:border-gray-300 sm:p-5">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-800">Current resume</p>
@@ -159,7 +159,7 @@ export default function AdminResumePage() {
                 href={RESUME_URL}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 border border-gray-300 px-3 py-1.5 text-sm text-gray-700 transition-colors hover:border-gray-400"
+                className="inline-flex items-center gap-2 border border-gray-300 bg-white/50 px-3 py-1.5 text-sm text-gray-700 transition-colors hover:border-gray-400 hover:bg-white/80"
               >
                 <PhosphorIcon name="file-text" size={16} />
                 <span>Open resume</span>
@@ -178,7 +178,7 @@ export default function AdminResumePage() {
                 setError("");
                 setSuccess("");
               }}
-              className="border border-gray-200 bg-transparent px-3 py-2 text-sm text-gray-900 file:mr-3 file:border-0 file:bg-transparent file:text-sm file:text-gray-600"
+              className="border border-gray-200 bg-white/40 px-3 py-2 text-sm text-gray-900 transition-colors file:mr-3 file:border-0 file:bg-transparent file:text-sm file:text-gray-600 focus:border-gray-400 focus:outline-none"
             />
 
             {selectedFile && <p className="text-xs text-gray-500">{selectedFile.name} · {formatFileSize(selectedFile.size)}</p>}
@@ -189,7 +189,7 @@ export default function AdminResumePage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="inline-flex items-center gap-2 border border-gray-300 px-3 py-1.5 text-sm text-gray-700 transition-colors hover:border-gray-400 disabled:opacity-40"
+                className="inline-flex items-center gap-2 border border-gray-300 bg-white/50 px-3 py-1.5 text-sm text-gray-700 transition-colors hover:border-gray-400 hover:bg-white/80 disabled:opacity-40"
               >
                 <PhosphorIcon name="upload-simple" size={16} />
                 <span>{loading ? "Working..." : "Upload PDF"}</span>

@@ -182,14 +182,14 @@ export default function AdminProjectsPage() {
               value={form.title}
               onChange={(event) => setForm({ ...form, title: event.target.value })}
               required
-              className="border border-gray-200 bg-transparent px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 transition-colors focus:border-gray-400 focus:outline-none"
+              className="border border-gray-200 bg-white/40 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 transition-colors focus:border-gray-400 focus:outline-none"
             />
             <input
               placeholder="Organisation"
               value={form.org}
               onChange={(event) => setForm({ ...form, org: event.target.value })}
               required
-              className="border border-gray-200 bg-transparent px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 transition-colors focus:border-gray-400 focus:outline-none"
+              className="border border-gray-200 bg-white/40 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 transition-colors focus:border-gray-400 focus:outline-none"
             />
             <textarea
               placeholder="Description"
@@ -197,21 +197,21 @@ export default function AdminProjectsPage() {
               onChange={(event) => setForm({ ...form, description: event.target.value })}
               required
               rows={4}
-              className="border border-gray-200 bg-transparent px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 transition-colors focus:border-gray-400 focus:outline-none"
+              className="border border-gray-200 bg-white/40 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 transition-colors focus:border-gray-400 focus:outline-none"
             />
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_120px]">
               <input
                 placeholder="Tags, comma separated"
                 value={form.tags}
                 onChange={(event) => setForm({ ...form, tags: event.target.value })}
-                className="border border-gray-200 bg-transparent px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 transition-colors focus:border-gray-400 focus:outline-none"
+                className="border border-gray-200 bg-white/40 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 transition-colors focus:border-gray-400 focus:outline-none"
               />
               <input
                 type="number"
                 placeholder="Order"
                 value={form.sort_order}
                 onChange={(event) => setForm({ ...form, sort_order: Number.parseInt(event.target.value, 10) || 0 })}
-                className="border border-gray-200 bg-transparent px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 transition-colors focus:border-gray-400 focus:outline-none"
+                className="border border-gray-200 bg-white/40 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 transition-colors focus:border-gray-400 focus:outline-none"
               />
             </div>
             <input
@@ -220,14 +220,14 @@ export default function AdminProjectsPage() {
               value={form.link}
               onChange={(event) => setForm({ ...form, link: event.target.value })}
               required
-              className="border border-gray-200 bg-transparent px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 transition-colors focus:border-gray-400 focus:outline-none"
+              className="border border-gray-200 bg-white/40 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 transition-colors focus:border-gray-400 focus:outline-none"
             />
             {error && <p className="text-xs text-red-500">{error}</p>}
             <div className="flex gap-2">
               <button
                 type="submit"
                 disabled={loading}
-                className="border border-gray-300 px-3 py-1.5 text-sm text-gray-600 transition-colors hover:border-gray-400 disabled:opacity-40"
+                className="border border-gray-300 bg-white/50 px-3 py-1.5 text-sm text-gray-600 transition-colors hover:border-gray-400 hover:bg-white/80 disabled:opacity-40"
               >
                 {loading ? "Saving..." : editingId ? "Update" : "Add"}
               </button>
@@ -235,7 +235,7 @@ export default function AdminProjectsPage() {
                 <button
                   type="button"
                   onClick={cancelEdit}
-                  className="border border-gray-300 px-3 py-1.5 text-sm text-gray-600 transition-colors hover:border-gray-400"
+                  className="border border-gray-300 bg-white/50 px-3 py-1.5 text-sm text-gray-600 transition-colors hover:border-gray-400 hover:bg-white/80"
                 >
                   Cancel
                 </button>
@@ -250,7 +250,7 @@ export default function AdminProjectsPage() {
               projects.map((project) => (
                 <div
                   key={project.id}
-                  className="border border-gray-200 bg-white/60 p-4 transition-colors hover:border-gray-300"
+                  className="border border-gray-200 bg-white/60 p-4 transition-colors hover:border-gray-300 hover:bg-white/80"
                 >
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <div className="min-w-0 flex-1">

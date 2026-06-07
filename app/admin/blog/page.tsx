@@ -30,7 +30,7 @@ export default async function AdminBlogPage() {
             </div>
             <Link
               href="/admin/blog/new"
-              className="inline-flex items-center gap-2 border border-gray-300 px-4 py-2 text-sm text-gray-700 transition-colors hover:border-gray-400"
+              className="inline-flex items-center gap-2 border border-gray-300 bg-white/50 px-4 py-2 text-sm text-gray-700 transition-colors hover:border-gray-400 hover:bg-white/80"
             >
               <PhosphorIcon name="file-plus" size={16} />
               <span>New post</span>
