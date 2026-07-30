@@ -10,6 +10,7 @@ export type Post = {
   tags: string[] | null;
   published: boolean;
   created_at: string;
+  cover_image: string | null;
 };
 
 export type PostSummary = Omit<Post, "content">;
@@ -19,7 +20,7 @@ export async function getPublishedPosts(): Promise<PostSummary[]> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("posts")
-    .select("id, title, slug, description, tags, published, created_at")
+    .select("id, title, slug, description, tags, published, created_at, cover_image")
     .eq("published", true)
     .order("created_at", { ascending: false });
 
@@ -46,7 +47,7 @@ export async function getAllPosts(): Promise<PostSummary[]> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("posts")
-    .select("id, title, slug, description, tags, published, created_at")
+    .select("id, title, slug, description, tags, published, created_at, cover_image")
     .order("created_at", { ascending: false });
 
   if (error) throw new Error(error.message);

@@ -15,6 +15,7 @@ export type PostFormData = {
   description: string;
   content: string;
   tags: string;
+  coverImage: string;
   published: boolean;
   createdAt: string;
 };
@@ -34,6 +35,7 @@ async function requireUser() {
 
 export async function savePost(data: PostFormData) {
   const supabase = await requireUser();
+
   const tags = data.tags
     .split(",")
     .map((tag) => tag.trim())
@@ -45,18 +47,26 @@ export async function savePost(data: PostFormData) {
     description: data.description,
     content: data.content,
     tags,
+    cover_image: data.coverImage,
     published: data.published,
     created_at: data.createdAt,
   };
 
   if (data.id && data.id !== "new") {
-    const { error } = await supabase.from("posts").update(payload).eq("id", data.id);
+    const { error } = await supabase
+      .from("posts")
+      .update(payload)
+      .eq("id", data.id);
 
     if (error) {
       throw new Error(error.message);
     }
   } else {
-    const { data: inserted, error } = await supabase.from("posts").insert(payload).select("id").single();
+    const { data: inserted, error } = await supabase
+      .from("posts")
+      .insert(payload)
+      .select("id")
+      .single();
 
     if (error) {
       throw new Error(error.message);
@@ -74,13 +84,21 @@ export async function savePost(data: PostFormData) {
 
 export async function deletePost(id: string) {
   const supabase = await requireUser();
-  const { data: post, error: loadError } = await supabase.from("posts").select("slug").eq("id", id).single();
+
+  const { data: post, error: loadError } = await supabase
+    .from("posts")
+    .select("slug")
+    .eq("id", id)
+    .single();
 
   if (loadError) {
     throw new Error(loadError.message);
   }
 
-  const { error } = await supabase.from("posts").delete().eq("id", id);
+  const { error } = await supabase
+    .from("posts")
+    .delete()
+    .eq("id", id);
 
   if (error) {
     throw new Error(error.message);
@@ -89,6 +107,7 @@ export async function deletePost(id: string) {
   revalidatePath("/admin/blog");
   revalidatePath("/blog");
   revalidatePath(`/blog/${post.slug}`);
+
   redirect("/admin/blog");
 }
 

@@ -47,6 +47,7 @@ export default function PostEditor({ post }: Props) {
   const [slug, setSlug] = useState(post?.slug ?? "");
   const [description, setDescription] = useState(post?.description ?? "");
   const [content, setContent] = useState(post?.content ?? "");
+  const [coverImage, setCoverImage] = useState(post?.cover_image ?? "");
   const [tags, setTags] = useState((post?.tags ?? []).join(", "));
   const [published, setPublished] = useState(post?.published ?? false);
   const [blogImages, setBlogImages] = useState<BlogImageItem[]>([]);
@@ -116,6 +117,11 @@ export default function PostEditor({ post }: Props) {
       return;
     }
 
+    if (publish && !coverImage) {
+      setError("Thumbnail is required before publishing.");
+      return;
+    }
+
     setError(null);
 
     const data: PostFormData = {
@@ -125,6 +131,7 @@ export default function PostEditor({ post }: Props) {
       description,
       content,
       tags,
+      coverImage,
       published: publish !== undefined ? publish : published,
       createdAt: new Date(createdAt).toISOString(),
     };
@@ -244,6 +251,38 @@ export default function PostEditor({ post }: Props) {
       setImageError(cause instanceof Error ? cause.message : "Failed to upload image.");
     } finally {
       event.target.value = "";
+      setImagesLoading(false);
+    }
+  }
+
+  async function handleImageDelete(image: BlogImageItem) {
+    if (!confirm(`Delete ${image.name} from the Blog bucket?`)) {
+      return;
+    }
+
+    setImagesLoading(true);
+    setImageError(null);
+    setImageStatus(null);
+
+    try {
+      const { data: deletedObjects, error: deleteError } = await supabase.storage
+        .from(BLOG_BUCKET_NAME)
+        .remove([image.path]);
+
+      if (deleteError) {
+        throw new Error(deleteError.message);
+      }
+
+      if (!deletedObjects || deletedObjects.length === 0) {
+        throw new Error("Supabase did not delete that image. Check the Blog bucket delete RLS policy.");
+      }
+
+      setBlogImages((images) => images.filter((item) => item.path !== image.path));
+      setImageStatus(null);
+      await refreshBlogImages();
+    } catch (cause: unknown) {
+      setImageError(cause instanceof Error ? cause.message : "Failed to delete image.");
+    } finally {
       setImagesLoading(false);
     }
   }
@@ -772,6 +811,24 @@ export default function PostEditor({ post }: Props) {
               />
             </div>
           </div>
+          
+          <div className="mb-6 flex flex-col items-center">
+            <label className="mb-1 block text-xs text-gray-500">Thumbnail</label>
+
+            <div className="flex items-center gap-4">
+              {coverImage ? (
+                <img
+                  src={coverImage}
+                  alt="Thumbnail preview"
+                  className="h-28 w-44 rounded border border-gray-200 object-cover"
+                />
+              ) : (
+                <div className="flex h-28 w-44 items-center justify-center rounded border border-dashed border-gray-300 text-xs text-gray-400">
+                  No thumbnail
+                </div>
+              )}
+            </div>
+          </div>
 
           <div>
             {editorPreviewPaneMode !== "split" && (
@@ -860,6 +917,8 @@ export default function PostEditor({ post }: Props) {
             onToggleOpen={() => toggleTool("images")}
             onUploadChange={handleImageUpload}
             onInsertImage={insertImageMarkdown}
+            onSelectCoverImage={(image) => setCoverImage(image.publicUrl)}
+            onDeleteImage={(image) => void handleImageDelete(image)}
           />
 
           <PomodoroTool

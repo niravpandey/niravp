@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import type { ComponentPropsWithoutRef } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { MDXRemote } from "next-mdx-remote/rsc";
@@ -10,6 +11,7 @@ import BlogImage from "@/components/blog/BlogImage";
 import Footer from "@/components/layout/Footer";
 import PhosphorIcon from "@/components/ui/PhosphorIcon";
 import { getPublishedPost } from "@/lib/blog";
+import BlogCoverImage from "@/components/blog/BlogCoverImage";
 
 const mdxOptions = {
   mdxOptions: {
@@ -136,6 +138,11 @@ export default async function BlogPostPage(props: PageProps<"/blog/[slug]">) {
                   </span>
                 ))}
               </div>
+            )}
+
+            {/* Sharp, compact cover image header */}
+            {post.cover_image && (
+              <BlogCoverImage src={post.cover_image} alt={post.title} />
             )}
           </header>
 

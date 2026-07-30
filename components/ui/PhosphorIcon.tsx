@@ -15,6 +15,7 @@ type PhosphorIconName =
   | "paper-plane-tilt"
   | "paint-brush"
   | "pause"
+  | "plus"
   | "file-plus"
   | "file-text"
   | "folder"
