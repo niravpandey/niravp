@@ -4,7 +4,7 @@ import PhosphorIcon from "@/components/ui/PhosphorIcon";
 import type { PostSummary } from "@/lib/blog";
 
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("en-AU", {
+  return new Date(iso).toLocaleDateString("en-US", {
     year: "numeric",
     month: "short",
     day: "numeric",

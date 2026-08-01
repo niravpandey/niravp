@@ -7,6 +7,7 @@ import SkillSection from "@/components/home/SkillSection";
 import BlogSection from "@/components/home/BlogSection";
 import ReadingSection from "@/components/home/ReadingSection";
 import GallerySection from "@/components/home/GallerySection";
+import NewsletterSection from "./home/NewsletterSection";
 import Footer from "@/components/layout/Footer";
 import type { PostSummary } from "@/lib/blog";
 import type { Project } from "@/lib/projects";
@@ -54,7 +55,7 @@ export default function HomeClient({
           </aside>
         </div>
       </main>
-
+      <NewsletterSection/>
       <Footer />
     </div>
   );
