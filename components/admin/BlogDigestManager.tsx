@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import PhosphorIcon from "@/components/ui/PhosphorIcon";
 import { sendDigestNewsletter } from "@/app/actions/admin-digest-newsletter";
+import { embedSinglePost } from "@/app/actions/embed-post";
 import { compileDigestHtml } from "@/lib/newsletter-compiler";
 
 interface Post {
@@ -13,18 +14,25 @@ interface Post {
   description: string | null;
   published: boolean | null;
   created_at: string | null;
+  umap_x?: number | null;
+  umap_y?: number | null;
+  embedding?: number[] | string | null;
 }
 
 interface Props {
   posts: Post[];
 }
 
+const MONTHS = [
+  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+];
+
+// Deterministic date formatting (prevents SSR/hydration mismatch)
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("en-GB", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return "No date";
+  return `${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
 }
 
 export default function BlogDigestManager({ posts }: Props) {
@@ -32,6 +40,10 @@ export default function BlogDigestManager({ posts }: Props) {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [status, setStatus] = useState<{ success?: boolean; message?: string } | null>(null);
+
+  // Track embedding status per post ID
+  const [embeddingLoading, setEmbeddingLoading] = useState<Record<string, boolean>>({});
+  const [embeddingStatus, setEmbeddingStatus] = useState<Record<string, "success" | "error" | null>>({});
 
   const toggleSelect = (id: string) => {
     setSelectedIds((prev) =>
@@ -67,6 +79,32 @@ export default function BlogDigestManager({ posts }: Props) {
     });
   };
 
+  // Embed handler via Server Action (avoids exposed client env secrets)
+  const handleEmbedPost = async (postId: string) => {
+    setEmbeddingLoading((prev) => ({ ...prev, [postId]: true }));
+    setEmbeddingStatus((prev) => ({ ...prev, [postId]: null }));
+
+    try {
+      const res = await embedSinglePost(postId);
+
+      if (res.success) {
+        setEmbeddingStatus((prev) => ({ ...prev, [postId]: "success" }));
+      } else {
+        setEmbeddingStatus((prev) => ({ ...prev, [postId]: "error" }));
+      }
+    } catch (err) {
+      console.error("Embedding request failed:", err);
+      setEmbeddingStatus((prev) => ({ ...prev, [postId]: "error" }));
+    } finally {
+      setEmbeddingLoading((prev) => ({ ...prev, [postId]: false }));
+
+      // Clear status badge after 4 seconds
+      setTimeout(() => {
+        setEmbeddingStatus((prev) => ({ ...prev, [postId]: null }));
+      }, 4000);
+    }
+  };
+
   const previewHtml = compileDigestHtml(
     selectedPosts,
     typeof window !== "undefined" ? window.location.origin : ""
@@ -93,6 +131,9 @@ export default function BlogDigestManager({ posts }: Props) {
       <div className="divide-y divide-gray-100 border border-gray-200 bg-white/60">
         {posts.map((post) => {
           const isSelected = selectedIds.includes(post.id);
+          const isEmbedding = embeddingLoading[post.id];
+          const embedState = embeddingStatus[post.id];
+
           return (
             <div
               key={post.id}
@@ -126,6 +167,35 @@ export default function BlogDigestManager({ posts }: Props) {
                 >
                   {post.published ? "Published" : "Draft"}
                 </span>
+
+                {/* Embed Action Button */}
+                <button
+                  type="button"
+                  onClick={() => handleEmbedPost(post.id)}
+                  disabled={isEmbedding}
+                  className="inline-flex items-center gap-1 border border-gray-200 bg-white px-2 py-1 text-xs text-gray-600 hover:border-gray-300 hover:text-gray-900 disabled:opacity-50 transition-colors"
+                  title="Generate vector embedding & update 2D PCA coordinates"
+                >
+                  <PhosphorIcon
+                    name={(isEmbedding ? "spinner-gap" : "cpu") as any}
+                    size={13}
+                    className={isEmbedding ? "animate-spin text-mauve-600" : "text-gray-500"}
+                  />
+                  <span>{isEmbedding ? "Embedding..." : "Embed"}</span>
+                </button>
+
+                {/* Status Feedback Badges */}
+                {embedState === "success" && (
+                  <span className="text-xs text-emerald-600 font-medium animate-pulse">
+                    ✓ Mapped
+                  </span>
+                )}
+                {embedState === "error" && (
+                  <span className="text-xs text-rose-600 font-medium">
+                    Failed
+                  </span>
+                )}
+
                 <Link
                   href={`/admin/blog/${post.id}`}
                   className="text-sm text-gray-500 transition-colors hover:text-gray-900"

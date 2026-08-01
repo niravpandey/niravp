@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import BlogCategoryDistribution from "@/components/blog/BlogCategoryDistribution";
+import BlogSemanticMap from "@/components/blog/BlogSemanticMap";
 
 export interface PostItem {
   id: string | number;
@@ -13,18 +14,23 @@ export interface PostItem {
   created_at: string;
   cover_image?: string | null;
   tags?: string[] | null;
+  embedding?: number[] | string | null; 
 }
 
+const MONTHS = [
+  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+];
+
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("en-AU", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return "";
+  return `${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
 }
 
 export default function BlogIndexClient({ posts }: { posts: PostItem[] }) {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<"distribution" | "semantic">("distribution");
 
   // Filter posts based on the active selection
   const filteredPosts = useMemo(() => {
@@ -33,25 +39,61 @@ export default function BlogIndexClient({ posts }: { posts: PostItem[] }) {
   }, [posts, selectedCategory]);
 
   const handleSelectCategory = (category: string) => {
-    // Toggle filter off if already selected, otherwise apply new selection
     setSelectedCategory((prev) => (prev === category ? null : category));
   };
 
   return (
-    <div>
-      {/* Interactive Donut & Category Selector */}
-      <BlogCategoryDistribution
-        posts={posts}
-        selectedCategory={selectedCategory}
-        onSelectCategory={handleSelectCategory}
-      />
+    <div className="mt-5">
+      {/* Visual Analytics Section with Tab Switcher */}
+      <div>
+        <div className="flex items-center justify-between border-b border-gray-200 pb-2">
+          <div className="flex gap-2">
+            <button
+              onClick={() => setActiveTab("distribution")}
+              className={`text-xs font-semibold uppercase tracking-wider transition-colors ${
+                activeTab === "distribution"
+                  ? "text-blue-900 underline underline-offset-4"
+                  : "text-gray-400 hover:text-gray-700"
+              }`}
+            >
+              Topics Distribution
+            </button>
+            <span className="text-xs text-gray-300">|</span>
+            <button
+              onClick={() => setActiveTab("semantic")}
+              className={`text-xs font-semibold uppercase tracking-wider transition-colors ${
+                activeTab === "semantic"
+                  ? "text-blue-900 underline underline-offset-4"
+                  : "text-gray-400 hover:text-gray-700"
+              }`}
+            >
+              Semantic Map
+            </button>
+          </div>
+        </div>
+
+        <div className="pt-4">
+          {activeTab === "distribution" ? (
+            <BlogCategoryDistribution
+              posts={posts}
+              selectedCategory={selectedCategory}
+              onSelectCategory={handleSelectCategory}
+            />
+          ) : (
+            <BlogSemanticMap
+              posts={posts}
+              selectedCategory={selectedCategory}
+            />
+          )}
+        </div>
+      </div>
 
       {/* Filter Header / Status Bar */}
       <div className="mt-8 flex items-center justify-between border-b border-gray-200 pb-3">
         <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">
           {selectedCategory ? (
             <>
-              Showing posts tagged with <span className="text-blue-900 font-bold">"{selectedCategory}"</span>
+              Showing posts tagged with <span className="font-bold text-blue-900">"{selectedCategory}"</span>
             </>
           ) : (
             "All Articles"
@@ -61,7 +103,7 @@ export default function BlogIndexClient({ posts }: { posts: PostItem[] }) {
         {selectedCategory && (
           <button
             onClick={() => setSelectedCategory(null)}
-            className="text-xs text-gray-400 hover:text-gray-700 underline underline-offset-2 transition-colors"
+            className="text-xs text-gray-400 underline underline-offset-2 transition-colors hover:text-gray-700"
           >
             Clear filter ({filteredPosts.length} of {posts.length})
           </button>
@@ -103,7 +145,8 @@ export default function BlogIndexClient({ posts }: { posts: PostItem[] }) {
                       <span
                         key={tag}
                         onClick={(e) => {
-                          e.preventDefault(); // Prevent navigating to article when clicking tag directly
+                          e.preventDefault();
+                          e.stopPropagation();
                           handleSelectCategory(tag);
                         }}
                         className={`shrink-0 border px-2 py-0.5 text-xs transition-colors ${
