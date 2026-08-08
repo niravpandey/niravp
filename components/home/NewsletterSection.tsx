@@ -7,49 +7,38 @@ export default function NewsletterSection() {
   const [state, formAction, isPending] = useActionState(requestVerification, null);
 
   return (
-    <section className="mt-0 pb-10">
-      <div className="border border-gray-200 bg-white/50 p-5 sm:p-6 transition-colors">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="max-w-3xl">
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-900">
-              Subscribe to my newsletter
-            </h3>
-            <p className="mt-1 text-xs text-gray-500">
-              I have one?
-            </p>
-          </div>
+    <section className="mx-auto w-88 max-w-[calc(100vw-2rem)] lg:w-full">
+      <div className="border border-blue-900 bg-blue-900 p-3 text-white shadow-[0_10px_30px_rgba(30,58,138,0.18)] transition-shadow hover:shadow-[0_14px_38px_rgba(30,58,138,0.28)]">
+        <form action={formAction} className="flex w-full min-w-0 flex-wrap items-center gap-2.5">
+          <span className="shrink-0 basis-full text-xs font-semibold uppercase tracking-wider text-white xl:basis-auto">
+            Subscribe to My Newsletter
+          </span>
+          <input
+            type="email"
+            name="email"
+            required
+            placeholder="email@domain.com"
+            disabled={isPending || state?.success}
+            className="min-w-36 flex-1 rounded-full border border-white/30 bg-white/95 px-3 py-1.5 text-xs text-blue-950 placeholder:text-blue-900/45 focus:border-white focus:outline-none focus:ring-2 focus:ring-white/35 disabled:opacity-50"
+          />
+          <button
+            type="submit"
+            disabled={isPending || state?.success}
+            className="shrink-0 rounded-full border border-white bg-white px-3 py-1.5 text-xs font-semibold text-blue-900 transition-colors hover:bg-blue-50 disabled:opacity-50"
+          >
+            {isPending ? "..." : "Subscribe"}
+          </button>
+        </form>
 
-          <form action={formAction} className="flex w-full flex-col gap-2 sm:max-w-xs">
-            <div className="flex w-full min-w-0 items-center gap-2">
-              <input
-                type="email"
-                name="email"
-                required
-                placeholder="nirav@example.com"
-                disabled={isPending || state?.success}
-                className="w-full rounded-full border border-gray-300 bg-white px-3 py-1.5 text-xs text-gray-900 placeholder:text-gray-400 focus:border-blue-900 focus:outline-none disabled:opacity-50"
-              />
-              <button
-                type="submit"
-                disabled={isPending || state?.success}
-                className="shrink-0 rounded-full bg-blue-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-800 transition-colors disabled:opacity-50"
-              >
-                {isPending ? "Sending..." : "Send"}
-              </button>
-            </div>
-
-            {/* Status Messages */}
-            {state && (
-              <p
-                className={`text-[11px] ${
-                  state.success ? "bg-emerald-500 px-2 w-full text-center rounded-full text-white font-semibold" : "text-red-600"
-                }`}
-              >
-                {state.message}
-              </p>
-            )}
-          </form>
-        </div>
+        {state && (
+          <p
+            className={`mt-2 text-center text-[11px] ${
+              state.success ? "rounded-full bg-white px-2 font-semibold text-blue-900" : "text-blue-100"
+            }`}
+          >
+            {state.message}
+          </p>
+        )}
       </div>
     </section>
   );

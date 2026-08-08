@@ -5,23 +5,19 @@ import HeroSection from "@/components/home/HeroSection";
 import ProjectSection from "@/components/home/ProjectSection";
 import SkillSection from "@/components/home/SkillSection";
 import BlogSection from "@/components/home/BlogSection";
-import ReadingSection from "@/components/home/ReadingSection";
 import GallerySection from "@/components/home/GallerySection";
 import NewsletterSection from "./home/NewsletterSection";
 import Footer from "@/components/layout/Footer";
 import type { PostSummary } from "@/lib/blog";
 import type { Project } from "@/lib/projects";
-import type { Book } from "@/lib/books";
 
 type HomeClientProps = {
   posts: PostSummary[];
-  books: Book[];
   projects: Project[];
 };
 
 export default function HomeClient({
   posts,
-  books,
   projects,
 }: HomeClientProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -33,7 +29,7 @@ export default function HomeClient({
 
   return (
     <div className="flex min-h-screen flex-1 flex-col items-center justify-center font-sans">
-      <main className="flex w-full flex-1 flex-col items-center px-4 py-16 sm:items-start sm:px-8 sm:py-32 lg:px-16">
+      <main className="flex w-full flex-1 flex-col items-center px-4 pt-16 pb-6 sm:items-start sm:px-8 sm:pt-32 sm:pb-8 lg:px-16">
         <HeroSection />
 
         <div className="w-full lg:grid lg:grid-cols-[minmax(0,1fr)_240px] lg:gap-8">
@@ -45,17 +41,21 @@ export default function HomeClient({
                 currentIndex={safeCurrentIndex}
                 setCurrentIndex={setCurrentIndex}
               />
-              <ReadingSection books={books} />
-              <BlogSection posts={posts} />
+            </div>
+
+            <BlogSection posts={posts} />
+
+            <div className="mt-6 lg:hidden">
+              <NewsletterSection />
             </div>
           </div>
 
-          <aside className="mt-8 hidden lg:block">
+          <aside className="mt-8 hidden lg:flex lg:flex-col lg:gap-6">
             <GallerySection />
+            <NewsletterSection />
           </aside>
         </div>
       </main>
-      <NewsletterSection/>
       <Footer />
     </div>
   );
