@@ -14,6 +14,8 @@ type PhosphorIconName =
   | "clock"
   | "paper-plane-tilt"
   | "paint-brush"
+  | "crosshair"
+  | "trophy"
   | "pause"
   | "plus"
   | "file-plus"
