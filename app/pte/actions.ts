@@ -31,6 +31,17 @@ function getClassLabel(classType: string) {
   return classType;
 }
 
+function getAvailabilityLabel(value: string) {
+  return value
+    .split("-")
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
+function getValueListLabel(values: string[]) {
+  return values.length ? values.map(getAvailabilityLabel).join(", ") : "Not provided";
+}
+
 function escapeHtml(value: string) {
   return value
     .replaceAll("&", "&amp;")
@@ -50,6 +61,20 @@ export async function submitPteEnquiry(
   const phone = formData.get("phone")?.toString().trim() ?? "";
   const classType = formData.get("classType")?.toString().trim() ?? "";
   const classLabel = getClassLabel(classType);
+  const availability = formData
+    .getAll("availability")
+    .map((value) => value.toString().trim())
+    .filter(Boolean);
+  const availabilityLabel = availability.length
+    ? availability.map(getAvailabilityLabel).join(", ")
+    : "Not provided";
+  const focusAreas = formData
+    .getAll("focusAreas")
+    .map((value) => value.toString().trim())
+    .filter(Boolean);
+  const focusAreasLabel = getValueListLabel(focusAreas);
+  const scoreGoal = formData.get("scoreGoal")?.toString().trim() ?? "";
+  const scoreGoalLabel = scoreGoal || "Not provided";
 
   if (!firstName || !lastName || !email || !classType) {
     return {
@@ -78,6 +103,9 @@ export async function submitPteEnquiry(
     email,
     phone,
     classType,
+    focusAreas,
+    scoreGoal,
+    availability,
     submittedAt: new Date().toISOString(),
   });
 
@@ -86,6 +114,9 @@ export async function submitPteEnquiry(
   const safeEmail = escapeHtml(email);
   const safePhone = escapeHtml(phone);
   const safeClassLabel = escapeHtml(classLabel);
+  const safeAvailabilityLabel = escapeHtml(availabilityLabel);
+  const safeFocusAreasLabel = escapeHtml(focusAreasLabel);
+  const safeScoreGoalLabel = escapeHtml(scoreGoalLabel);
 
   try {
     await Promise.all([
@@ -101,6 +132,9 @@ export async function submitPteEnquiry(
           `Email: ${email}`,
           `Phone: ${phone || "Not provided"}`,
           `Class type: ${classLabel}`,
+          `Focus areas: ${focusAreasLabel}`,
+          `Score goal: ${scoreGoalLabel}`,
+          `Availability: ${availabilityLabel}`,
         ].join("\n"),
         html: `
           <div style="font-family: sans-serif; font-size: 14px; color: #111; line-height: 1.5;">
@@ -109,6 +143,9 @@ export async function submitPteEnquiry(
             <p><strong>Email:</strong> <a href="mailto:${safeEmail}">${safeEmail}</a></p>
             <p><strong>Phone:</strong> ${safePhone || "Not provided"}</p>
             <p><strong>Class type:</strong> ${safeClassLabel}</p>
+            <p><strong>Focus areas:</strong> ${safeFocusAreasLabel}</p>
+            <p><strong>Score goal:</strong> ${safeScoreGoalLabel}</p>
+            <p><strong>Availability:</strong> ${safeAvailabilityLabel}</p>
           </div>
         `,
       }),
