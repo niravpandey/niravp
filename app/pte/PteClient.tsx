@@ -7,8 +7,9 @@ import {
   BottomCta,
   HeroSection,
   ScoreReportSection,
+  TestimonialsSection,
 } from "./components/PteLandingSections";
-import type { ClassType } from "./components/pteContent";
+import type { ClassType, PteTestimonialCard } from "./components/pteContent";
 
 function useScoreActivation() {
   const scoreSectionRef = useRef<HTMLElement | null>(null);
@@ -44,7 +45,11 @@ function useScoreActivation() {
   return { scoreSectionRef, scoresActive };
 }
 
-export default function PteClient() {
+export default function PteClient({
+  testimonials,
+}: {
+  testimonials: PteTestimonialCard[];
+}) {
   const previouslyFocusedRef = useRef<HTMLElement | null>(null);
   const { scoreSectionRef, scoresActive } = useScoreActivation();
   const [selectedClassType, setSelectedClassType] = useState("");
@@ -76,6 +81,7 @@ export default function PteClient() {
           sectionRef={scoreSectionRef}
           active={scoresActive}
         />
+        <TestimonialsSection testimonials={testimonials} />
         <BottomCta onEnquire={() => openEnquiry()} />
       </main>
 

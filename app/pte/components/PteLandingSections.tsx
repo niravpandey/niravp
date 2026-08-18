@@ -3,14 +3,21 @@ import Image from "next/image";
 import PhosphorIcon from "@/components/ui/PhosphorIcon";
 import {
   benefits,
+  classTypes,
+  formatClassPrice,
+  groupSavingsContextLabel,
+  groupSavingsLabel,
   HEADSHOT_URL,
+  introSession,
   scores,
   type ClassType,
+  type PteTestimonialCard,
 } from "./pteContent";
+import { cx, pteFocusRing } from "./pteUi";
 
 function NiravMark() {
   return (
-    <span className="inline-block [font-family:var(--font-caveat)] text-[1.15em] font-medium text-mauve-500 transition-transform duration-200 hover:-rotate-2 hover:scale-105 motion-reduce:transition-none motion-reduce:hover:rotate-0 motion-reduce:hover:scale-100">
+    <span className="inline-block [font-family:var(--font-caveat)] text-[1.15em] font-medium text-mauve-500">
       Nirav
     </span>
   );
@@ -41,11 +48,12 @@ export function HeroSection({
           <PteMark /> with <NiravMark />
         </h1>
         <p className="mt-4 max-w-3xl text-xl text-gray-700">
-          I am <NiravMark />, originally from Nepal and now studying at Melbourne University. I scored 90 across all sections of the <PteMark />, and I offer bilingual support for Nepali students.
+          I am <NiravMark />, studying Data Science at Melbourne University. Recently, I scored full marks across all sections of the <PteMark />.
+          I take great passion in teaching
+          I firmly believe you can achieve your desired score under my guidance.
         </p>
-        <p className="mt-3 max-w-3xl text-gray-600">
-          With the correct guidance, anything is possible and I would love to help you get your desired score.
-        </p>
+
+        <IntroSessionCallout />
 
         <PricingOptions
           selectedClassType={selectedClassType}
@@ -63,6 +71,26 @@ export function HeroSection({
   );
 }
 
+function IntroSessionCallout() {
+  return (
+    <div className="mt-6 max-w-3xl border border-gray-200 bg-white p-4">
+      <div className="flex gap-3">
+        <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center border border-mauve-500/30 bg-mauve-500/10 text-mauve-500">
+          <PhosphorIcon name="clock" size={16} />
+        </span>
+        <div>
+          <p className="text-base font-semibold text-blue-900">
+            {introSession.title}
+          </p>
+          <p className="mt-1 text-sm text-gray-600">
+            {introSession.description}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function PricingOptions({
   selectedClassType,
   onSelect,
@@ -72,20 +100,18 @@ function PricingOptions({
 }) {
   return (
     <div className="mt-6 grid max-w-3xl gap-4 sm:grid-cols-2">
-      <PriceRing
-        title="One-on-one"
-        price="A$35"
-        description="Personal tutoring"
-        selected={selectedClassType === "one-on-one"}
-        onSelect={() => onSelect("one-on-one")}
-      />
-      <PriceRing
-        title="Group"
-        price="A$25"
-        description="2-5 students only"
-        selected={selectedClassType === "group"}
-        onSelect={() => onSelect("group")}
-      />
+      {classTypes.map((classType) => (
+        <PriceRing
+          key={classType.value}
+          title={classType.label}
+          price={formatClassPrice(classType.price)}
+          description={classType.description}
+          savingsLabel={classType.value === "group" ? groupSavingsLabel : undefined}
+          savingsContextLabel={classType.value === "group" ? groupSavingsContextLabel : undefined}
+          selected={selectedClassType === classType.value}
+          onSelect={() => onSelect(classType.value)}
+        />
+      ))}
     </div>
   );
 }
@@ -94,12 +120,16 @@ function PriceRing({
   title,
   price,
   description,
+  savingsLabel,
+  savingsContextLabel,
   selected,
   onSelect,
 }: {
   title: string;
   price: string;
   description: string;
+  savingsLabel?: string;
+  savingsContextLabel?: string;
   selected: boolean;
   onSelect: () => void;
 }) {
@@ -108,18 +138,41 @@ function PriceRing({
       type="button"
       aria-pressed={selected}
       onClick={onSelect}
-      className={`group flex w-full items-center gap-4 border bg-white p-3 text-left transition-colors hover:border-blue-900 hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-900 focus-visible:ring-offset-2 ${
-        selected ? "border-blue-900 ring-2 ring-blue-900/15" : "border-transparent"
-      }`}
+      className={cx(
+        "group flex w-full items-center gap-4 border p-3 text-left transition-colors",
+        "hover:border-blue-900 hover:bg-blue-50",
+        selected
+          ? "border-blue-900 bg-blue-50 ring-2 ring-blue-900/15"
+          : "border-gray-200 bg-white",
+        pteFocusRing,
+      )}
     >
       <div
         aria-hidden="true"
-        className="flex h-28 w-28 shrink-0 items-center justify-center rounded-full border-[10px] border-blue-900 bg-white text-center text-2xl font-semibold leading-none text-blue-900 transition-transform duration-300 group-hover:rotate-6 motion-reduce:transition-none motion-reduce:group-hover:rotate-0"
+        className={cx(
+          "flex h-28 w-28 shrink-0 items-center justify-center rounded-full border-[10px] border-blue-900 text-center text-2xl font-semibold leading-none transition-colors",
+          selected
+            ? "bg-blue-900 text-white"
+            : "bg-white text-blue-900 group-hover:bg-blue-900 group-hover:text-white",
+        )}
       >
         {price}
       </div>
       <div>
-        <h2 className="text-base font-semibold text-gray-900">{title}</h2>
+        <div className="flex flex-wrap items-center gap-2">
+          <h2 className="text-base font-semibold text-gray-900">{title}</h2>
+          {savingsLabel && (
+            <p className="w-fit border border-mauve-500/40 bg-mauve-500/10 px-2 py-0.5 text-xs font-semibold text-mauve-600">
+              {savingsLabel}
+              {savingsContextLabel && (
+                <span className="sr-only">
+                  {savingsContextLabel.slice(savingsLabel.length)}
+                </span>
+              )}
+            </p>
+          )}
+        </div>
+        <p className="sr-only">{price}</p>
         <p className="mt-1 text-sm text-gray-600">{description}</p>
       </div>
     </button>
@@ -192,8 +245,8 @@ export function ScoreReportSection({
       <h2 id="pte-scores" className="text-3xl font-semibold text-blue-900">
         Score Report
       </h2>
-      <p className="mt-2 max-w-2xl text-gray-600">
-        PTE registration ID: 541211700. This is not an official report, and my results can be requested on demand.
+      <p className="mt-2 max-w-5xl text-gray-600">
+        This is not an official report, and my results can be requested on demand.
       </p>
 
       <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -207,6 +260,83 @@ export function ScoreReportSection({
         ))}
       </div>
     </section>
+  );
+}
+
+export function TestimonialsSection({
+  testimonials,
+}: {
+  testimonials: PteTestimonialCard[];
+}) {
+  if (testimonials.length === 0) {
+    return null;
+  }
+
+  const galleryItems = testimonials.length > 1 ? [...testimonials, ...testimonials] : testimonials;
+
+  return (
+    <section aria-labelledby="pte-testimonials" className="border-b border-gray-200 py-8">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wider text-mauve-500">
+            Student feedback
+          </p>
+          <h2 id="pte-testimonials" className="mt-1 text-3xl font-semibold text-blue-900">
+            Testimonials
+          </h2>
+        </div>
+        <span className="text-sm font-semibold text-gray-500">{testimonials.length} featured</span>
+      </div>
+
+      <div className="mt-6 overflow-hidden border border-gray-200 bg-white">
+        <div className="flex w-max animate-[testimonial-gallery_28s_linear_infinite] gap-3 p-3 hover:[animation-play-state:paused] motion-reduce:animate-none">
+          {galleryItems.map((testimonial, index) => (
+            <TestimonialCard key={`${testimonial.id}-${index}`} testimonial={testimonial} />
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function TestimonialCard({
+  testimonial,
+}: {
+  testimonial: PteTestimonialCard;
+}) {
+  return (
+    <article className="grid w-72 shrink-0 gap-3 border border-gray-200 bg-gray-50 p-4">
+      <div className="flex items-center gap-3">
+        <div className="relative h-12 w-12 shrink-0 overflow-hidden border border-gray-300 bg-white">
+          {testimonial.imageUrl ? (
+            <Image
+              src={testimonial.imageUrl}
+              alt={testimonial.studentName}
+              fill
+              sizes="48px"
+              className="object-cover"
+            />
+          ) : (
+            <span className="flex h-full w-full items-center justify-center text-sm font-semibold text-blue-900">
+              {testimonial.studentName
+                .split(" ")
+                .map((part) => part.charAt(0))
+                .join("")
+                .slice(0, 2)
+                .toUpperCase()}
+            </span>
+          )}
+        </div>
+        <div className="min-w-0">
+          <h3 className="truncate text-sm font-semibold text-gray-900">{testimonial.studentName}</h3>
+          <p className="mt-0.5 text-xs font-semibold text-mauve-500">
+            {"★".repeat(testimonial.rating)}
+            <span className="sr-only">{testimonial.rating} out of 5 stars</span>
+          </p>
+        </div>
+      </div>
+      <p className="line-clamp-5 text-sm leading-6 text-gray-600">{testimonial.text}</p>
+    </article>
   );
 }
 
@@ -264,7 +394,6 @@ function ScoreRing({
 
       <div>
         <h3 className="text-base font-semibold text-gray-900">{label}</h3>
-        <p className="text-sm text-gray-600">90/90</p>
       </div>
     </div>
   );
@@ -273,21 +402,26 @@ function ScoreRing({
 export function BottomCta({ onEnquire }: { onEnquire: () => void }) {
   return (
     <section className="py-8">
-      <div className="border border-gray-200 bg-white p-5 sm:p-6">
-        <h2 className="text-3xl font-semibold text-blue-900">
-          Ready to work towards your PTE score?
-        </h2>
-        <p className="mt-2 max-w-2xl text-gray-600">
-          Tell me what you’re aiming for and when you’re available. It takes about a minute.
-        </p>
-        <button
-          type="button"
-          onClick={onEnquire}
-          className="mt-5 inline-flex w-fit items-center border border-mauve-500 bg-mauve-500 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-mauve-600 focus:outline-none focus:ring-2 focus:ring-mauve-500 focus:ring-offset-2"
-        >
-          Enquire about classes →
-        </button>
-      </div>
+      <button
+        type="button"
+        onClick={onEnquire}
+        className={cx(
+          "group grid w-full gap-5 border border-gray-200 bg-white p-4 text-left transition-transform hover:-translate-y-0.5 hover:scale-[1.01] sm:grid-cols-[1fr_auto] sm:items-center sm:p-5",
+          pteFocusRing,
+        )}
+      >
+        <span className="min-w-0">
+          <span className="block text-3xl font-semibold text-blue-900">
+            Ready to work towards your PTE score?
+          </span>
+          <span className="mt-2 block max-w-2xl text-sm leading-6 text-gray-600 sm:text-base">
+            {introSession.ctaDescription}
+          </span>
+        </span>
+        <span className="inline-flex w-fit items-center justify-center border border-mauve-500 bg-mauve-500 px-4 py-2 text-sm font-semibold text-white transition-colors group-hover:bg-mauve-600">
+          Enquire about classes
+        </span>
+      </button>
     </section>
   );
 }

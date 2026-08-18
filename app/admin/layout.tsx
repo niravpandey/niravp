@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import AdminProviders from "./AdminProviders";
 
 export default async function AdminLayout({
   children,
@@ -13,5 +14,5 @@ export default async function AdminLayout({
 
   if (!user) redirect("/login");
 
-  return <>{children}</>;
+  return <AdminProviders>{children}</AdminProviders>;
 }

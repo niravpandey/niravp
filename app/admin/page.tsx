@@ -75,6 +75,14 @@ export default async function AdminPage() {
               <span className="font-medium text-gray-900 transition-colors group-hover:text-blue-900">Resume</span>
               <span className="text-sm text-gray-500">Upload the public PDF</span>
             </Link>
+
+            <Link
+              href="/admin/pte"
+              className="group flex flex-col gap-1 border border-gray-200 bg-white/60 p-5 transition-colors hover:border-gray-400 hover:bg-white/80"
+            >
+              <span className="font-medium text-gray-900 transition-colors group-hover:text-blue-900">PTE leads</span>
+              <span className="text-sm text-gray-500">Track enquiries, follow-ups, bookings, and payments</span>
+            </Link>
           </div>
         </div>
       </main>

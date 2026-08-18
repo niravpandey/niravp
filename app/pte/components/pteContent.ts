@@ -51,30 +51,91 @@ export const availabilityDays = [
   "Sunday",
 ] as const;
 
-export const availabilityPeriods = [
-  { label: "Morning", value: "morning", icon: "sun-horizon" },
-  { label: "Afternoon", value: "afternoon", icon: "sun" },
-  { label: "Evening", value: "evening", icon: "sun-dim" },
-] as const satisfies ReadonlyArray<{
+function formatTimeSlot(totalMinutes: number) {
+  const hour24 = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  const hour12 = hour24 % 12 || 12;
+  const suffix = hour24 < 12 ? "AM" : "PM";
+
+  return `${hour12}:${String(minutes).padStart(2, "0")} ${suffix}`;
+}
+
+export const availabilityTimeSlots = Array.from({ length: 26 }, (_, index) => {
+  const totalMinutes = 8 * 60 + index * 30;
+  const hour = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+
+  return {
+    label: formatTimeSlot(totalMinutes),
+    value: `${String(hour).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`,
+  };
+}) as ReadonlyArray<{
   label: string;
   value: string;
-  icon: PhosphorIconName;
 }>;
 
 export const classTypes = [
-  { label: "One-on-one", value: "one-on-one" },
-  { label: "Group", value: "group" },
+  {
+    label: "One-on-one",
+    value: "one-on-one",
+    price: 35,
+    description: "Personal tutoring",
+  },
+  {
+    label: "Group",
+    value: "group",
+    price: 25,
+    description: "2-5 students only",
+  },
 ] as const;
 
+export const introSession = {
+  title: "Free 20–30 min introductory session",
+  shortTitle: "Free introductory session",
+  description:
+    "Meet me, discuss your target score, and see if tutoring is the right fit.",
+  ctaDescription:
+    "Start with a free 20–30 min introductory session. We'll talk about your target score, where you need help, and whether tutoring is the right fit.",
+} as const;
+
 export const focusAreas = ["Speaking", "Writing", "Reading", "Listening", "Not sure"] as const;
-export const scoreGoals = ["50+", "65+", "79+", "90"] as const;
 export const enquirySteps = [
-  "Class type",
-  "Weak areas",
+  "Improvement areas",
   "Target score",
+  "Class type",
   "Availability",
   "Contact details",
 ] as const;
 
 export type ClassType = (typeof classTypes)[number]["value"];
 export type EnquiryState = Awaited<ReturnType<typeof submitPteEnquiry>>;
+export type PteTestimonialCard = {
+  id: string;
+  studentName: string;
+  text: string;
+  rating: number;
+  imageUrl: string | null;
+};
+
+export function formatClassPrice(price: number) {
+  return `A$${price}`;
+}
+
+export function getClassTypeByValue(value: string) {
+  return classTypes.find((classType) => classType.value === value);
+}
+
+function calculateGroupSavingsPercent() {
+  const oneOnOnePrice = getClassTypeByValue("one-on-one")?.price;
+  const groupPrice = getClassTypeByValue("group")?.price;
+
+  if (!oneOnOnePrice || !groupPrice || groupPrice >= oneOnOnePrice) {
+    return 0;
+  }
+
+  return Math.round(((oneOnOnePrice - groupPrice) / oneOnOnePrice) * 100);
+}
+
+export const groupSavingsPercent = calculateGroupSavingsPercent();
+export const groupSavingsLabel = `SAVE ${groupSavingsPercent}%`;
+export const groupSavingsContextLabel = `${groupSavingsLabel} compared with one-on-one`;

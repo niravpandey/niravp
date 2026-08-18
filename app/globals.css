@@ -5,3 +5,13 @@
   --font-sans: var(--font-source-sans);
   --font-mono: var(--font-jetbrains-mono);
 }
+
+@keyframes testimonial-gallery {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(-50%);
+  }
+}

@@ -1,17 +1,14 @@
 "use server";
 
 import OpenAI from "openai";
-import { createClient } from "@supabase/supabase-js";
 import { revalidatePath } from "next/cache";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 export async function embedSinglePost(postId: string) {
   try {
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
+    const supabase = createAdminClient();
 
     const { data: post, error: fetchError } = await supabase
       .from("posts")
@@ -37,7 +34,7 @@ export async function embedSinglePost(postId: string) {
     // Update Supabase vector column
     const { error: updateError } = await supabase
       .from("posts")
-      .update({ embedding: vector as any })
+      .update({ embedding: vector })
       .eq("id", postId);
 
     if (updateError) {
@@ -50,8 +47,8 @@ export async function embedSinglePost(postId: string) {
     revalidatePath("/blog");
 
     return { success: true };
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("[embedSinglePost] Exception caught:", err);
-    return { success: false, error: err.message || "Internal server error" };
+    return { success: false, error: err instanceof Error ? err.message : "Internal server error" };
   }
 }

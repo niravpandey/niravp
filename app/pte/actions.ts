@@ -1,6 +1,14 @@
 "use server";
 
+import { headers } from "next/headers";
 import nodemailer from "nodemailer";
+import { Ratelimit } from "@upstash/ratelimit";
+import { Redis } from "@upstash/redis";
+import { createAdminClient } from "@/lib/supabase/admin";
+import {
+  formatClassPrice,
+  getClassTypeByValue,
+} from "./components/pteContent";
 
 export type PteEnquiryState = {
   success: boolean;
@@ -8,8 +16,16 @@ export type PteEnquiryState = {
 };
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const PHONE_PATTERN = /^[+()\d\s-]{7,}$/;
+const AU_MOBILE_PATTERN = /^4\d{8}$/;
 const OWNER_EMAIL = "nrvpandey2005@gmail.com";
+const NOT_SURE_SCORE_GOAL = "not-sure-yet";
+const MIN_TARGET_SCORE = 10;
+const MAX_TARGET_SCORE = 90;
+
+const ratelimit = new Ratelimit({
+  redis: Redis.fromEnv(),
+  limiter: Ratelimit.slidingWindow(4, "1 h"),
+});
 
 const transporter = nodemailer.createTransport({
   service: "gmail",
@@ -20,18 +36,28 @@ const transporter = nodemailer.createTransport({
 });
 
 function getClassLabel(classType: string) {
-  if (classType === "one-on-one") {
-    return "One-on-one tutoring - from A$35 a class";
-  }
+  const classTypeMeta = getClassTypeByValue(classType);
 
-  if (classType === "group") {
-    return "Group tutoring - up to 5 students, from A$25/hour";
+  if (classTypeMeta) {
+    return `${classTypeMeta.label} tutoring - ${formatClassPrice(classTypeMeta.price)} - ${classTypeMeta.description}`;
   }
 
   return classType;
 }
 
 function getAvailabilityLabel(value: string) {
+  const timeSlotMatch = /^([a-z]+)-(\d{2}):(\d{2})$/.exec(value);
+
+  if (timeSlotMatch) {
+    const [, day, hourText, minuteText] = timeSlotMatch;
+    const hour24 = Number(hourText);
+    const hour12 = hour24 % 12 || 12;
+    const suffix = hour24 < 12 ? "AM" : "PM";
+    const dayLabel = day.charAt(0).toUpperCase() + day.slice(1);
+
+    return `${dayLabel} ${hour12}:${minuteText} ${suffix}`;
+  }
+
   return value
     .split("-")
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
@@ -51,6 +77,36 @@ function escapeHtml(value: string) {
     .replaceAll("'", "&#39;");
 }
 
+function isValidScoreGoal(scoreGoal: string) {
+  if (scoreGoal === NOT_SURE_SCORE_GOAL) {
+    return true;
+  }
+
+  if (!/^\d+$/.test(scoreGoal)) {
+    return false;
+  }
+
+  const score = Number(scoreGoal);
+  return score >= MIN_TARGET_SCORE && score <= MAX_TARGET_SCORE;
+}
+
+function getScoreGoalLabel(scoreGoal: string) {
+  if (scoreGoal === NOT_SURE_SCORE_GOAL) {
+    return "Not sure yet";
+  }
+
+  return scoreGoal ? `${scoreGoal}/90` : "Not provided";
+}
+
+async function getClientIp() {
+  const headerList = await headers();
+  return (
+    headerList.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    headerList.get("x-real-ip") ||
+    "127.0.0.1"
+  );
+}
+
 export async function submitPteEnquiry(
   _prevState: PteEnquiryState | null,
   formData: FormData,
@@ -58,7 +114,8 @@ export async function submitPteEnquiry(
   const firstName = formData.get("firstName")?.toString().trim() ?? "";
   const lastName = formData.get("lastName")?.toString().trim() ?? "";
   const email = formData.get("email")?.toString().trim().toLowerCase() ?? "";
-  const phone = formData.get("phone")?.toString().trim() ?? "";
+  const phoneLocal = formData.get("phone")?.toString().replace(/\D/g, "") ?? "";
+  const phone = phoneLocal ? `+61${phoneLocal}` : "";
   const classType = formData.get("classType")?.toString().trim() ?? "";
   const classLabel = getClassLabel(classType);
   const availability = formData
@@ -74,7 +131,7 @@ export async function submitPteEnquiry(
     .filter(Boolean);
   const focusAreasLabel = getValueListLabel(focusAreas);
   const scoreGoal = formData.get("scoreGoal")?.toString().trim() ?? "";
-  const scoreGoalLabel = scoreGoal || "Not provided";
+  const scoreGoalLabel = getScoreGoalLabel(scoreGoal);
 
   if (!firstName || !lastName || !email || !classType) {
     return {
@@ -90,10 +147,28 @@ export async function submitPteEnquiry(
     };
   }
 
-  if (phone && !PHONE_PATTERN.test(phone)) {
+  if (phoneLocal && !AU_MOBILE_PATTERN.test(phoneLocal)) {
     return {
       success: false,
-      message: "Please enter a valid phone number.",
+      message: "Please enter a 9 digit Australian mobile number starting with 4.",
+    };
+  }
+
+  if (!isValidScoreGoal(scoreGoal)) {
+    return {
+      success: false,
+      message: "Please enter a target score from 10 to 90, or select Not sure yet.",
+    };
+  }
+
+  const ip = await getClientIp();
+  const { success: isAllowed, reset } = await ratelimit.limit(`pte-enquiry:${ip}`);
+
+  if (!isAllowed) {
+    const minutes = Math.ceil((reset - Date.now()) / 1000 / 60);
+    return {
+      success: false,
+      message: `Too many enquiries. Try again in ${minutes}m.`,
     };
   }
 
@@ -119,6 +194,27 @@ export async function submitPteEnquiry(
   const safeScoreGoalLabel = escapeHtml(scoreGoalLabel);
 
   try {
+    const supabase = createAdminClient();
+    const { error: insertError } = await supabase.from("pte_leads").insert({
+      first_name: firstName,
+      last_name: lastName,
+      email,
+      phone: phone || null,
+      class_type: classType,
+      class_label: classLabel,
+      focus_areas: focusAreas,
+      score_goal: scoreGoal || NOT_SURE_SCORE_GOAL,
+      availability,
+    });
+
+    if (insertError) {
+      console.error("PTE enquiry database error:", insertError);
+      return {
+        success: false,
+        message: "Could not save your enquiry. Please try again later.",
+      };
+    }
+
     await Promise.all([
       transporter.sendMail({
         from: `"Nirav Pandey" <${process.env.GMAIL_USER}>`,
@@ -182,6 +278,6 @@ export async function submitPteEnquiry(
 
   return {
     success: true,
-    message: "Thanks. I have emailed you and will get back to you soon.",
+    message: "I have emailed you with the next steps, and will get back to you soon.",
   };
 }
