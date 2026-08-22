@@ -305,6 +305,7 @@ function AdminAvailabilityEditor({
         <p className="text-sm text-gray-600">Select every 30 minute block that usually works.</p>
         <div className="overflow-x-auto pb-1">
           <AvailabilityMatrix
+            active={false}
             selectedAvailability={selectedAvailability}
             onAvailabilityChange={setSelectedAvailability}
           />

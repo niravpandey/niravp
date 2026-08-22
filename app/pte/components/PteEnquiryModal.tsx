@@ -744,6 +744,7 @@ function AvailabilityStep({
 
       <div className="overflow-x-auto pb-1">
         <AvailabilityMatrix
+          active={active}
           selectedAvailability={selectedAvailability}
           onAvailabilityChange={onAvailabilityChange}
         />

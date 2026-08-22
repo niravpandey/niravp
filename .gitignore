@@ -33,6 +33,8 @@ yarn-error.log*
 # env files (can opt-in for committing if needed)
 .env*
 PTE_ADMIN_TODO.md
+PTE_USER_FEATURE_PLAN.md
+PTE_CALENDAR_BLOCKING_PLAN.md
 
 # vercel
 .vercel
