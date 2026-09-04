@@ -2,8 +2,27 @@
 @plugin "@tailwindcss/typography";
 
 @theme inline {
-  --font-sans: var(--font-source-sans);
-  --font-mono: var(--font-jetbrains-mono);
+  --font-sans: var(--font-dm-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+.home-dreamy-bg {
+  position: relative;
+  isolation: isolate;
+  background-color: #ffffff;
+  background-attachment: fixed;
+}
+
+.home-dreamy-bg::before {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(circle at 5% 3%, rgb(224 231 255 / 0.58), transparent 34rem),
+    radial-gradient(circle at 95% 12%, rgb(251 226 232 / 0.48), transparent 32rem),
+    radial-gradient(circle at 55% 72%, rgb(221 239 255 / 0.36), transparent 42rem),
+    linear-gradient(180deg, #ffffff 0%, #fffdfd 48%, #fbfdff 100%);
+  content: "";
 }
 
 @keyframes testimonial-gallery {

@@ -21,11 +21,14 @@ const OWNER_EMAIL = "nrvpandey2005@gmail.com";
 const NOT_SURE_SCORE_GOAL = "not-sure-yet";
 const MIN_TARGET_SCORE = 10;
 const MAX_TARGET_SCORE = 90;
+const MIN_PASSWORD_LENGTH = 8;
 
 const ratelimit = new Ratelimit({
   redis: Redis.fromEnv(),
   limiter: Ratelimit.slidingWindow(4, "1 h"),
 });
+
+const studentAuthConfirmPath = "/pte/auth/confirm";
 
 const transporter = nodemailer.createTransport({
   service: "gmail",
@@ -107,6 +110,14 @@ async function getClientIp() {
   );
 }
 
+function shouldRateLimitEnquiries() {
+  return process.env.NODE_ENV === "production" && process.env.DISABLE_PTE_RATE_LIMIT !== "true";
+}
+
+function getSiteUrl() {
+  return process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+}
+
 export async function submitPteEnquiry(
   _prevState: PteEnquiryState | null,
   formData: FormData,
@@ -132,6 +143,8 @@ export async function submitPteEnquiry(
   const focusAreasLabel = getValueListLabel(focusAreas);
   const scoreGoal = formData.get("scoreGoal")?.toString().trim() ?? "";
   const scoreGoalLabel = getScoreGoalLabel(scoreGoal);
+  const password = formData.get("password")?.toString() ?? "";
+  const confirmPassword = formData.get("confirmPassword")?.toString() ?? "";
 
   if (!firstName || !lastName || !email || !classType) {
     return {
@@ -161,15 +174,31 @@ export async function submitPteEnquiry(
     };
   }
 
-  const ip = await getClientIp();
-  const { success: isAllowed, reset } = await ratelimit.limit(`pte-enquiry:${ip}`);
-
-  if (!isAllowed) {
-    const minutes = Math.ceil((reset - Date.now()) / 1000 / 60);
+  if (password.length < MIN_PASSWORD_LENGTH) {
     return {
       success: false,
-      message: `Too many enquiries. Try again in ${minutes}m.`,
+      message: "Please create a password with at least 8 characters.",
     };
+  }
+
+  if (password !== confirmPassword) {
+    return {
+      success: false,
+      message: "Passwords do not match.",
+    };
+  }
+
+  if (shouldRateLimitEnquiries()) {
+    const ip = await getClientIp();
+    const { success: isAllowed, reset } = await ratelimit.limit(`pte-enquiry:${ip}`);
+
+    if (!isAllowed) {
+      const minutes = Math.ceil((reset - Date.now()) / 1000 / 60);
+      return {
+        success: false,
+        message: `Too many enquiries. Try again in ${minutes}m.`,
+      };
+    }
   }
 
   console.info("PTE enquiry", {
@@ -215,6 +244,47 @@ export async function submitPteEnquiry(
       };
     }
 
+    const { data: signupLinkData, error: signUpError } = await supabase.auth.admin.generateLink({
+      type: "signup",
+      email,
+      password,
+      options: {
+        data: {
+          first_name: firstName,
+          last_name: lastName,
+          role: "pte-student",
+        },
+      },
+    });
+
+    if (signUpError) {
+      console.error("PTE account creation error:", signUpError);
+
+      if (signUpError.message.toLowerCase().includes("already")) {
+        return {
+          success: true,
+          message: "Your enquiry is saved. An account already exists for this email, so please sign in or reset your password.",
+        };
+      }
+
+      return {
+        success: false,
+        message: "Your enquiry was saved, but I could not create your login. Please try signing up from the student login page.",
+      };
+    }
+
+    const tokenHash = signupLinkData.properties?.hashed_token;
+
+    if (!tokenHash) {
+      return {
+        success: false,
+        message: "Your enquiry was saved, but I could not create your verification link. Please try signing up from the student login page.",
+      };
+    }
+
+    const verificationLink = `${getSiteUrl()}${studentAuthConfirmPath}?token_hash=${encodeURIComponent(tokenHash)}&type=signup`;
+    const safeVerificationLink = escapeHtml(verificationLink);
+
     await Promise.all([
       transporter.sendMail({
         from: `"Nirav Pandey" <${process.env.GMAIL_USER}>`,
@@ -248,11 +318,12 @@ export async function submitPteEnquiry(
       transporter.sendMail({
         from: `"Nirav Pandey" <${process.env.GMAIL_USER}>`,
         to: email,
-        subject: "Thanks for your PTE tutoring enquiry",
+        subject: "Verify your PTE student account",
         text: [
           `Hi ${firstName},`,
           "",
-          "Thanks for your PTE tutoring enquiry. I have received your details and will get back to you soon.",
+          "Thanks for your PTE tutoring enquiry. Please verify your student account using this secure link:",
+          verificationLink,
           "",
           `Class type: ${classLabel}`,
           "",
@@ -261,7 +332,8 @@ export async function submitPteEnquiry(
         html: `
           <div style="font-family: sans-serif; font-size: 14px; color: #111; line-height: 1.5;">
             <p>Hi ${safeFirstName},</p>
-            <p>Thanks for your PTE tutoring enquiry. I have received your details and will get back to you soon.</p>
+            <p>Thanks for your PTE tutoring enquiry. Please verify your student account using this secure link:</p>
+            <p><a href="${safeVerificationLink}">Verify student account</a></p>
             <p><strong>Class type:</strong> ${safeClassLabel}</p>
             <p>Nirav</p>
           </div>
@@ -278,6 +350,6 @@ export async function submitPteEnquiry(
 
   return {
     success: true,
-    message: "I have emailed you with the next steps, and will get back to you soon.",
+    message: "Your enquiry is saved. Check your email and click the verification link to activate your student dashboard.",
   };
 }

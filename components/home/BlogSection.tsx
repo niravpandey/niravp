@@ -15,9 +15,9 @@ export default function BlogSection({ posts }: { posts: PostSummary[] }) {
   const displayedPosts = (posts ?? []).slice(0, 4);
 
   return (
-    <section className="w-full pt-8">
+    <section className="w-full border-b border-gray-200 py-8">
       <div className="flex items-center justify-between border-b border-gray-200 pb-3">
-        <h1 className="flex items-center gap-2 text-2xl font-semibold text-blue-900">
+        <h1 className="flex items-center gap-2 text-3xl font-semibold text-blue-900">
           <PhosphorIcon
             name="note-pencil"
             size={24}
@@ -51,7 +51,7 @@ export default function BlogSection({ posts }: { posts: PostSummary[] }) {
             </h2>
 
             {post.description && (
-              <p className="hidden min-w-0 flex-1 truncate text-xs text-gray-500 md:block">
+              <p className="hidden min-w-0 flex-1 truncate text-xs text-gray-500">
                 {post.description}
               </p>
             )}

@@ -9,6 +9,7 @@ import PhosphorIcon from "@/components/ui/PhosphorIcon";
 import { AvailabilityMatrix } from "@/app/pte/components/AvailabilityMatrix";
 import { availabilityDays, availabilityTimeSlots } from "@/app/pte/components/pteContent";
 import {
+  approvePteBookingRequest,
   cancelPteBooking,
   createPteBooking,
   createPteInvoice,
@@ -16,6 +17,7 @@ import {
   markPteInvoicePaid,
   ratePteBookingInteraction,
   removePteBookingFromAdmin,
+  sendPteStudentAccountInvite,
   sendPteInvoice,
   updatePteLead,
   updatePteBooking,
@@ -47,9 +49,18 @@ export type PteLeadTableRow = {
     booking_at: string;
     status: "confirmed" | "cancelled" | "removed";
     notes: string | null;
+    meeting_url?: string | null;
+    google_calendar_event_link?: string | null;
     interaction_rating: number | null;
     interaction_notes: string | null;
     interaction_rated_at: string | null;
+  }>;
+  pte_booking_requests?: Array<{
+    id: string;
+    requested_start_at: string;
+    duration_minutes: number;
+    status: "pending" | "approved" | "declined";
+    student_note: string;
   }>;
 };
 
@@ -305,7 +316,6 @@ function AdminAvailabilityEditor({
         <p className="text-sm text-gray-600">Select every 30 minute block that usually works.</p>
         <div className="overflow-x-auto pb-1">
           <AvailabilityMatrix
-            active={false}
             selectedAvailability={selectedAvailability}
             onAvailabilityChange={setSelectedAvailability}
           />
@@ -456,7 +466,8 @@ function BookingSection({
   const displayBooking = getDisplayBooking(lead);
   const currentBooking = displayBooking?.booking ?? null;
   const isPastBooking = displayBooking?.timing === "past";
-  const currentMeetingUrl = currentBooking?.notes ?? "";
+  const currentMeetingUrl = currentBooking?.meeting_url || currentBooking?.notes || "";
+  const currentEventLink = currentBooking?.google_calendar_event_link ?? "";
 
   return (
     <section className="grid gap-3 border border-gray-200 bg-white p-4">
@@ -565,10 +576,26 @@ function BookingSection({
             </label>
             <PrimaryButton>Adjust and email</PrimaryButton>
           </form>
+          {currentMeetingUrl || currentEventLink ? (
+            <div className="flex flex-wrap gap-2">
+              {currentMeetingUrl ? (
+                <a href={currentMeetingUrl} target="_blank" rel="noreferrer" className="w-fit border border-emerald-700 bg-emerald-700 px-3 py-1.5 text-sm font-semibold text-white transition-colors hover:bg-emerald-600">
+                  Attend Meet
+                </a>
+              ) : null}
+              {currentEventLink ? (
+                <a href={currentEventLink} target="_blank" rel="noreferrer" className="w-fit border border-gray-300 bg-white px-3 py-1.5 text-sm font-semibold text-gray-700 transition-colors hover:border-blue-900 hover:bg-blue-50 hover:text-blue-900">
+                  Calendar event
+                </a>
+              ) : null}
+            </div>
+          ) : null}
         </div>
       ) : (
         <p className="text-sm text-gray-500">No confirmed future booking.</p>
       )}
+
+      <BookingRequestsSection lead={lead} />
 
       <form action={createPteBooking} className="grid gap-3 lg:grid-cols-[15rem_10rem_1fr_auto] lg:items-end">
         <input type="hidden" name="leadId" value={lead.id} />
@@ -591,6 +618,43 @@ function BookingSection({
       </form>
     </section>
   );
+}
+
+function BookingRequestsSection({ lead }: { lead: PteLeadTableRow }) {
+  const pendingRequests = (lead.pte_booking_requests ?? [])
+    .filter((request) => request.status === "pending")
+    .sort((a, b) => new Date(a.requested_start_at).getTime() - new Date(b.requested_start_at).getTime());
+
+  if (pendingRequests.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="grid gap-2 border border-amber-200 bg-amber-50 p-3">
+      <p className="text-sm font-semibold text-amber-950">Pending student booking requests</p>
+      {pendingRequests.map((request) => (
+        <form key={request.id} action={approvePteBookingRequest} className="grid gap-2 border border-amber-200 bg-white p-3 sm:grid-cols-[1fr_auto_auto] sm:items-center">
+          <input type="hidden" name="requestId" value={request.id} />
+          <div>
+            <p className="text-sm font-semibold text-gray-900">{formatDateTime(request.requested_start_at)}</p>
+            <p className="mt-1 text-xs font-semibold text-gray-500">{formatClassDuration(request.duration_minutes)}</p>
+            {request.student_note ? (
+              <p className="mt-1 text-xs text-gray-600">{request.student_note}</p>
+            ) : null}
+          </div>
+          <select name="bookingCostType" defaultValue="paid" className="border border-gray-300 bg-white px-2 py-1.5 text-sm font-semibold text-gray-800">
+            <option value="paid">Paid</option>
+            <option value="free">Free</option>
+          </select>
+          <SecondarySubmitButton>Approve and email Meet</SecondarySubmitButton>
+        </form>
+      ))}
+    </div>
+  );
+}
+
+function formatClassDuration(durationMinutes: number) {
+  return durationMinutes === 60 ? "1 hour" : "1 hour 30 min";
 }
 
 function TestimonialSection({
@@ -1022,6 +1086,17 @@ export default function PteLeadsTable({
                         />
                         <DetailItem label="Next booking" value={formatNextBooking(lead.first_session_at)} />
                       </section>
+
+                      <form action={sendPteStudentAccountInvite} className="flex flex-wrap items-center justify-between gap-3 border border-emerald-200 bg-emerald-50 p-4">
+                        <input type="hidden" name="leadId" value={lead.id} />
+                        <div>
+                          <p className="text-sm font-semibold text-emerald-900">Student dashboard access</p>
+                          <p className="mt-1 text-xs text-emerald-800">
+                            Email {lead.first_name} a secure link to set a password and open their dashboard.
+                          </p>
+                        </div>
+                        <SecondarySubmitButton>Send dashboard invite</SecondarySubmitButton>
+                      </form>
 
                       <BookingSection lead={lead} controlClass={controlClass} labelClass={labelClass} />
 

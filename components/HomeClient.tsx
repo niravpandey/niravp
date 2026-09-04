@@ -4,46 +4,61 @@ import { useState } from "react";
 import HeroSection from "@/components/home/HeroSection";
 import ProjectSection from "@/components/home/ProjectSection";
 import SkillSection from "@/components/home/SkillSection";
+import ExperienceSection from "@/components/home/ExperienceSection";
 import BlogSection from "@/components/home/BlogSection";
 import GallerySection from "@/components/home/GallerySection";
 import NewsletterSection from "./home/NewsletterSection";
 import Footer from "@/components/layout/Footer";
 import type { PostSummary } from "@/lib/blog";
 import type { Project } from "@/lib/projects";
+import type { SkillCategory } from "@/lib/skills";
+import type { Experience } from "@/lib/experience";
 
 type HomeClientProps = {
   posts: PostSummary[];
   projects: Project[];
+  skillCategories: SkillCategory[];
+  experiences: Experience[];
 };
 
 export default function HomeClient({
   posts,
   projects,
+  skillCategories,
+  experiences,
 }: HomeClientProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
 
   const safeCurrentIndex =
     projects.length > 0 ? Math.min(currentIndex, projects.length - 1) : 0;
 
-  const activeSkills = new Set(projects[safeCurrentIndex]?.tags ?? []);
+  const activeSkillIds = new Set(projects[safeCurrentIndex]?.skill_ids ?? []);
+  const activeSkillNames = new Set(projects[safeCurrentIndex]?.tags ?? []);
 
   return (
-    <div className="flex min-h-screen flex-1 flex-col items-center justify-center font-sans">
+    <div className="home-dreamy-bg flex min-h-screen flex-1 flex-col items-center justify-center font-sans">
       <main className="flex w-full flex-1 flex-col items-center px-4 pt-16 pb-6 sm:items-start sm:px-8 sm:pt-32 sm:pb-8 lg:px-16">
         <HeroSection />
 
         <div className="w-full lg:grid lg:grid-cols-[minmax(0,1fr)_240px] lg:gap-8">
           <div className="min-w-0">
             <div className="grid w-full grid-cols-1 gap-6 border-b border-gray-200 pb-5 lg:grid-cols-2">
-              <SkillSection activeSkills={activeSkills} />
+              <SkillSection
+                categories={skillCategories}
+                activeSkillIds={activeSkillIds}
+                activeSkillNames={activeSkillNames}
+              />
               <ProjectSection
                 projects={projects}
                 currentIndex={safeCurrentIndex}
                 setCurrentIndex={setCurrentIndex}
               />
-            </div>
+          </div>
 
+          <div className="grid w-full gap-8 lg:grid-cols-2">
+            <ExperienceSection experiences={experiences} />
             <BlogSection posts={posts} />
+          </div>
 
             <div className="mt-6 lg:hidden">
               <NewsletterSection />

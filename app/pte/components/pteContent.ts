@@ -100,11 +100,11 @@ export const introSession = {
 
 export const focusAreas = ["Speaking", "Writing", "Reading", "Listening", "Not sure"] as const;
 export const enquirySteps = [
+  "Account",
   "Improvement areas",
   "Target score",
   "Class type",
   "Availability",
-  "Contact details",
 ] as const;
 
 export type ClassType = (typeof classTypes)[number]["value"];

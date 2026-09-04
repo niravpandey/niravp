@@ -29,6 +29,7 @@ const notSureScoreGoal = "not-sure-yet";
 const minTargetScore = 10;
 const maxTargetScore = 90;
 const initialTargetScore = 70;
+const minimumAvailabilitySlots = 6;
 
 function isValidTargetScore(scoreGoal: string) {
   if (scoreGoal === notSureScoreGoal) {
@@ -128,6 +129,7 @@ export function EnquiryModal({
   const [selectedScoreGoal, setSelectedScoreGoal] = useState(String(initialTargetScore));
   const [selectedAvailability, setSelectedAvailability] = useState<string[]>([]);
   const [state, formAction, isPending] = useActionState(submitPteEnquiry, null);
+  const [availabilityAttempted, setAvailabilityAttempted] = useState(false);
   const formDisabled = isPending || Boolean(state?.success);
   const isFirstStep = currentStep === 0;
   const isLastStep = currentStep === enquirySteps.length - 1;
@@ -175,13 +177,22 @@ export function EnquiryModal({
           selectedFocusAreas={selectedFocusAreas}
           selectedScoreGoal={selectedScoreGoal}
           state={state}
-          onAvailabilityChange={setSelectedAvailability}
-          onBack={() => setCurrentStep((step) => Math.max(step - 1, 0))}
+        onAvailabilityChange={setSelectedAvailability}
+        onBack={() => setCurrentStep((step) => Math.max(step - 1, 0))}
           onClassTypeChange={onClassTypeChange}
           onFocusAreasChange={setSelectedFocusAreas}
-          onNext={() => setCurrentStep((step) => Math.min(step + 1, enquirySteps.length - 1))}
-          onScoreGoalChange={setSelectedScoreGoal}
-        />
+          onNext={() => {
+            if (currentStep === 4 && selectedAvailability.length < minimumAvailabilitySlots) {
+              setAvailabilityAttempted(true);
+              return;
+            }
+
+            setAvailabilityAttempted(false);
+            setCurrentStep((step) => Math.min(step + 1, enquirySteps.length - 1));
+          }}
+        onScoreGoalChange={setSelectedScoreGoal}
+        availabilityAttempted={availabilityAttempted}
+      />
       </div>
     </div>
   );
@@ -286,6 +297,7 @@ function EnquiryForm({
   selectedScoreGoal,
   state,
   onAvailabilityChange,
+  availabilityAttempted,
   onBack,
   onClassTypeChange,
   onFocusAreasChange,
@@ -304,6 +316,7 @@ function EnquiryForm({
   selectedScoreGoal: string;
   state: EnquiryState | null;
   onAvailabilityChange: React.Dispatch<React.SetStateAction<string[]>>;
+  availabilityAttempted: boolean;
   onBack: () => void;
   onClassTypeChange: (classType: ClassType) => void;
   onFocusAreasChange: (focusAreas: string[]) => void;
@@ -312,45 +325,49 @@ function EnquiryForm({
 }) {
   const canGoNext =
     currentStep === 0
-      ? selectedFocusAreas.length > 0
+      ? true
       : currentStep === 1
-        ? isValidTargetScore(selectedScoreGoal)
+        ? selectedFocusAreas.length > 0
         : currentStep === 2
-          ? Boolean(selectedClassType)
+          ? isValidTargetScore(selectedScoreGoal)
           : currentStep === 3
-            ? selectedAvailability.length > 0
+            ? Boolean(selectedClassType)
+            : currentStep === 4
+              ? selectedAvailability.length >= minimumAvailabilitySlots
             : true;
 
   return (
     <form action={formAction} className="mt-5 grid gap-5">
+      <ContactDetailsStep active={currentStep === 0} disabled={formDisabled} />
       <ImprovementAreasStep
-        active={currentStep === 0}
+        active={currentStep === 1}
         disabled={formDisabled}
         selectedFocusAreas={selectedFocusAreas}
         onFocusAreasChange={onFocusAreasChange}
       />
       <TargetScoreStep
-        active={currentStep === 1}
+        active={currentStep === 2}
         disabled={formDisabled}
         selectedScoreGoal={selectedScoreGoal}
         onScoreGoalChange={onScoreGoalChange}
       />
       <ClassTypeStep
-        active={currentStep === 2}
+        active={currentStep === 3}
         disabled={formDisabled}
         selectedClassType={selectedClassType}
         onClassTypeChange={onClassTypeChange}
       />
       <AvailabilityStep
-        active={currentStep === 3}
+        active={currentStep === 4}
         disabled={formDisabled}
+        showMinimumWarning={availabilityAttempted && selectedAvailability.length < minimumAvailabilitySlots}
         selectedAvailability={selectedAvailability}
         onAvailabilityChange={onAvailabilityChange}
       />
-      <ContactDetailsStep active={currentStep === 4} disabled={formDisabled} />
 
       <StepControls
         canGoNext={canGoNext}
+        canAttemptNext={currentStep === 4}
         formDisabled={formDisabled}
         isFirstStep={isFirstStep}
         isLastStep={isLastStep}
@@ -724,14 +741,70 @@ function TargetScoreDial({
 function AvailabilityStep({
   active,
   disabled,
+  showMinimumWarning,
   selectedAvailability,
   onAvailabilityChange,
 }: {
   active: boolean;
   disabled: boolean;
+  showMinimumWarning: boolean;
   selectedAvailability: string[];
   onAvailabilityChange: React.Dispatch<React.SetStateAction<string[]>>;
 }) {
+  const [blockedAvailability, setBlockedAvailability] = useState<string[]>([]);
+  const [blockingStatus, setBlockingStatus] = useState<"idle" | "loading" | "ready" | "error">("idle");
+
+  useEffect(() => {
+    if (!active) {
+      return;
+    }
+
+    let isCancelled = false;
+
+    async function loadBlockedAvailability() {
+      setBlockingStatus("loading");
+
+      try {
+        const response = await fetch("/api/pte/calendar-blocks", {
+          cache: "no-store",
+        });
+        const data = (await response.json()) as {
+          blockedSlots?: Array<{ day: string; time: string }>;
+        };
+
+        if (isCancelled) {
+          return;
+        }
+
+        if (!response.ok) {
+          setBlockingStatus("error");
+          return;
+        }
+
+        setBlockedAvailability(
+          Array.from(
+            new Set(
+              (data.blockedSlots ?? [])
+                .map((slot) => `${slot.day}-${slot.time}`)
+                .filter(Boolean),
+            ),
+          ),
+        );
+        setBlockingStatus("ready");
+      } catch {
+        if (!isCancelled) {
+          setBlockingStatus("error");
+        }
+      }
+    }
+
+    void loadBlockedAvailability();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [active]);
+
   return (
     <StepFieldset
       active={active}
@@ -741,10 +814,33 @@ function AvailabilityStep({
       <p className="text-sm text-gray-600">
         Select every 30 minute block that usually works for you.
       </p>
+      {blockingStatus === "loading" ? (
+        <p className="text-xs font-semibold text-gray-500">Checking Nirav&apos;s calendar...</p>
+      ) : blockingStatus === "error" ? (
+        <p className="text-xs font-semibold text-red-700">
+          This week&apos;s calendar blocks could not be loaded. Nirav will confirm exact times after your enquiry.
+        </p>
+      ) : blockedAvailability.length > 0 ? (
+        <p className="text-xs font-semibold text-gray-500">
+          Grey blocks are unavailable from Nirav&apos;s current weekly calendar.
+        </p>
+      ) : null}
+      {showMinimumWarning ? (
+        <p className="flex items-start gap-2 border border-red-200 bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">
+          <i
+            aria-hidden="true"
+            className="ph-warning-circle mt-0.5 inline-flex shrink-0 items-center justify-center leading-none"
+            style={{ width: "16px", height: "16px", fontSize: "16px" }}
+          />
+          <span>
+          Please select at least 3 hours of availability so I have enough options to schedule your class.
+          </span>
+        </p>
+      ) : null}
 
       <div className="overflow-x-auto pb-1">
         <AvailabilityMatrix
-          active={active}
+          disabledAvailability={blockedAvailability}
           selectedAvailability={selectedAvailability}
           onAvailabilityChange={onAvailabilityChange}
         />
@@ -761,9 +857,9 @@ function ContactDetailsStep({
   disabled: boolean;
 }) {
   return (
-    <StepFieldset active={active} disabled={disabled} legend="How can I get in touch?">
+    <StepFieldset active={active} disabled={disabled} legend="Create your student account">
       <p className="text-sm text-gray-600">
-        I&apos;ll use these details to follow up about tutoring.
+        I&apos;ll save your enquiry and email you a verification link for your dashboard.
       </p>
 
       <div className="grid gap-4 sm:grid-cols-2">
@@ -792,6 +888,27 @@ function ContactDetailsStep({
         autoComplete="email"
       />
       <PhoneField />
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <TextField
+          id="password"
+          label="Password"
+          name="password"
+          type="password"
+          required
+          autoComplete="new-password"
+          minLength={8}
+        />
+        <TextField
+          id="confirmPassword"
+          label="Confirm password"
+          name="confirmPassword"
+          type="password"
+          required
+          autoComplete="new-password"
+          minLength={8}
+        />
+      </div>
     </StepFieldset>
   );
 }
@@ -817,7 +934,7 @@ function PhoneField() {
           autoComplete="tel-national"
           pattern="4[0-9]{8}"
           maxLength={9}
-          placeholder="449009169"
+          placeholder="4XXXXXXXX"
           aria-describedby="phoneHint"
           className="min-w-0 flex-1 bg-transparent px-3 py-2 text-gray-900 outline-none placeholder:text-gray-400 disabled:opacity-60"
         />
@@ -857,6 +974,7 @@ function TextField({
   type = "text",
   required,
   autoComplete,
+  minLength,
 }: {
   id: string;
   label: string;
@@ -864,6 +982,7 @@ function TextField({
   type?: string;
   required?: boolean;
   autoComplete?: string;
+  minLength?: number;
 }) {
   return (
     <div>
@@ -876,6 +995,7 @@ function TextField({
         type={type}
         required={Boolean(required)}
         autoComplete={autoComplete}
+        minLength={minLength}
         className="mt-1 w-full border border-gray-300 bg-white px-3 py-2 text-gray-900 outline-none transition-colors placeholder:text-gray-400 focus:border-blue-900 focus:ring-2 focus:ring-blue-900/15 disabled:opacity-60"
       />
     </div>
@@ -884,6 +1004,7 @@ function TextField({
 
 function StepControls({
   canGoNext,
+  canAttemptNext = false,
   formDisabled,
   isFirstStep,
   isLastStep,
@@ -892,6 +1013,7 @@ function StepControls({
   onNext,
 }: {
   canGoNext: boolean;
+  canAttemptNext?: boolean;
   formDisabled: boolean;
   isFirstStep: boolean;
   isLastStep: boolean;
@@ -911,18 +1033,29 @@ function StepControls({
       </button>
 
       {isLastStep ? (
-        <button
-          type="submit"
-          disabled={formDisabled}
-          className={pteAccentButtonClassName}
-        >
-          {isPending ? "Sending..." : "Submit enquiry"}
-        </button>
+        canGoNext ? (
+          <button
+            type="submit"
+            disabled={formDisabled}
+            className={pteAccentButtonClassName}
+          >
+            {isPending ? "Sending..." : "Submit enquiry"}
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={onNext}
+            disabled={formDisabled || !canAttemptNext}
+            className={pteAccentButtonClassName}
+          >
+            Submit enquiry
+          </button>
+        )
       ) : (
         <button
           type="button"
           onClick={onNext}
-          disabled={formDisabled || !canGoNext}
+          disabled={formDisabled || (!canGoNext && !canAttemptNext)}
           className={ptePrimaryButtonClassName}
         >
           Next

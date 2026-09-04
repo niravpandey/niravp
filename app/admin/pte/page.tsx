@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import Footer from "@/components/layout/Footer";
 import PhosphorIcon from "@/components/ui/PhosphorIcon";
+import { getPteCalendarConnection } from "@/lib/google/calendar";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -40,9 +41,18 @@ type PteLead = {
     booking_at: string;
     status: "confirmed" | "cancelled" | "removed";
     notes: string | null;
+    meeting_url?: string | null;
+    google_calendar_event_link?: string | null;
     interaction_rating: number | null;
     interaction_notes: string | null;
     interaction_rated_at: string | null;
+  }>;
+  pte_booking_requests?: Array<{
+    id: string;
+    requested_start_at: string;
+    duration_minutes: number;
+    status: "pending" | "approved" | "declined";
+    student_note: string;
   }>;
 };
 
@@ -62,7 +72,7 @@ type PteAuditLog = {
   created_at: string;
   actor_email: string | null;
   action: string;
-  entity_type: "lead" | "invoice" | "statement";
+  entity_type: "lead" | "invoice" | "statement" | "booking" | "testimonial" | "calendar";
   entity_id: string | null;
   metadata: Record<string, unknown>;
 };
@@ -369,6 +379,7 @@ export default async function PteAdminPage(props: PageProps<"/admin/pte">) {
   }
 
   const supabase = createAdminClient();
+  const calendarConnection = await getPteCalendarConnection();
 
   const { data: matchingInvoiceLeadData, error: matchingInvoiceLeadError } = invoiceQuery
     ? await supabase
@@ -397,7 +408,7 @@ export default async function PteAdminPage(props: PageProps<"/admin/pte">) {
 
   let leadQuery = supabase
     .from("pte_leads")
-    .select("*, pte_invoices(id), pte_bookings(id,booking_at,status,notes,interaction_rating,interaction_notes,interaction_rated_at)", { count: "exact" })
+    .select("*, pte_invoices(id), pte_bookings(id,booking_at,status,notes,meeting_url,google_calendar_event_link,interaction_rating,interaction_notes,interaction_rated_at), pte_booking_requests(id,requested_start_at,duration_minutes,status,student_note)", { count: "exact" })
     .order("created_at", { ascending: false })
     .range(pageFrom, pageTo);
 
@@ -649,6 +660,70 @@ export default async function PteAdminPage(props: PageProps<"/admin/pte">) {
             invoiceClassOptions={invoiceClassOptions}
             bankDetailsReady={bankDetailsReady}
           />
+        </section>
+
+        <section className="mt-10 grid gap-3 border border-gray-200 bg-white p-4 shadow-sm shadow-gray-100/60">
+          <div className="grid gap-2 sm:grid-cols-[1fr_auto] sm:items-center">
+            <div>
+              <h2 className="text-lg font-semibold text-blue-900">Google Calendar blocking</h2>
+              <p className="mt-1 text-sm text-gray-500">
+                Blocks this week&apos;s customer availability slots from the daily cached Google Calendar sync.
+              </p>
+            </div>
+            <a
+              href="/api/admin/pte/google-calendar/connect"
+              className="inline-flex items-center justify-center border border-blue-900 bg-blue-900 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-900 focus-visible:ring-offset-2"
+            >
+              {calendarConnection?.has_refresh_token ? "Reconnect Google" : "Connect Google"}
+            </a>
+          </div>
+
+          <div className="grid gap-3 text-sm sm:grid-cols-3">
+            <div className="border border-gray-200 bg-gray-50 p-3">
+              <p className="font-semibold text-gray-900">Connection</p>
+              <div className="mt-1 flex items-center gap-2 text-gray-600">
+                {calendarConnection?.has_refresh_token ? (
+                  <>
+                    <div className="grid h-5 w-5 place-items-center rounded-full bg-emerald-600">
+                      <PhosphorIcon name="check" size={11} className="text-white" />
+                    </div>
+                    <span>Connected</span>
+                  </>
+                ) : (
+                  "Not connected"
+                )}
+              </div>
+            </div>
+            <div className="border border-gray-200 bg-gray-50 p-3">
+              <p className="font-semibold text-gray-900">Last sync</p>
+              <p className="mt-1 text-gray-600">
+                {calendarConnection?.last_sync_at ? formatDateTime(calendarConnection.last_sync_at) : "Never"}
+              </p>
+            </div>
+            <div className="border border-gray-200 bg-gray-50 p-3">
+              <p className="font-semibold text-gray-900">Last error</p>
+              <p className="mt-1 text-gray-600">
+                {calendarConnection?.last_error || "None"}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            <form action="/api/admin/pte/google-calendar/refresh" method="post">
+              <button
+                type="submit"
+                className="border border-gray-300 bg-white px-3 py-2 text-sm font-semibold text-gray-700 transition-colors hover:border-blue-900 hover:bg-blue-50 hover:text-blue-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-900 focus-visible:ring-offset-2"
+              >
+                Refresh blocked slots
+              </button>
+            </form>
+            <a
+              href="/api/admin/pte/google-calendar/calendars"
+              className="border border-gray-300 bg-white px-3 py-2 text-sm font-semibold text-gray-700 transition-colors hover:border-blue-900 hover:bg-blue-50 hover:text-blue-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-900 focus-visible:ring-offset-2"
+            >
+              View calendar IDs
+            </a>
+          </div>
         </section>
       </main>
       <Footer />

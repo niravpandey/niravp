@@ -11,6 +11,7 @@ create table if not exists public.pte_leads (
   focus_areas text[] not null default '{}',
   score_goal text not null default 'not-sure-yet',
   availability text[] not null default '{}',
+  availability_next_two_weeks text[] not null default '{}',
   followed_up boolean not null default false,
   next_follow_up_at timestamptz,
   first_session_booked boolean not null default false,
@@ -20,7 +21,8 @@ create table if not exists public.pte_leads (
 );
 
 alter table public.pte_leads
-  add column if not exists next_follow_up_at timestamptz;
+  add column if not exists next_follow_up_at timestamptz,
+  add column if not exists availability_next_two_weeks text[] not null default '{}';
 
 create index if not exists pte_leads_created_at_idx on public.pte_leads (created_at desc);
 create index if not exists pte_leads_class_type_idx on public.pte_leads (class_type);
@@ -77,7 +79,7 @@ alter table public.pte_admin_audit_logs
 
 alter table public.pte_admin_audit_logs
   add constraint pte_admin_audit_logs_entity_type_check
-  check (entity_type in ('lead', 'invoice', 'statement', 'booking', 'testimonial'));
+  check (entity_type in ('lead', 'invoice', 'statement', 'booking', 'booking_request', 'testimonial', 'calendar'));
 
 create table if not exists public.pte_financial_year_statements (
   id uuid primary key default gen_random_uuid(),
@@ -122,7 +124,10 @@ alter table public.pte_bookings
   add column if not exists cancellation_sent_at timestamptz,
   add column if not exists interaction_rating integer,
   add column if not exists interaction_notes text not null default '',
-  add column if not exists interaction_rated_at timestamptz;
+  add column if not exists interaction_rated_at timestamptz,
+  add column if not exists meeting_url text,
+  add column if not exists google_calendar_event_id text,
+  add column if not exists google_calendar_event_link text;
 
 alter table public.pte_bookings
   drop constraint if exists pte_bookings_status_check;
@@ -145,6 +150,30 @@ end $$;
 create index if not exists pte_bookings_lead_id_idx on public.pte_bookings (lead_id);
 create index if not exists pte_bookings_booking_at_idx on public.pte_bookings (booking_at);
 create unique index if not exists pte_bookings_confirmation_token_idx on public.pte_bookings (confirmation_token);
+
+create table if not exists public.pte_booking_requests (
+  id uuid primary key default gen_random_uuid(),
+  lead_id uuid not null references public.pte_leads(id) on delete cascade,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  requested_start_at timestamptz not null,
+  duration_minutes integer not null default 90 check (duration_minutes between 30 and 240),
+  status text not null default 'pending' check (status in ('pending', 'approved', 'declined')),
+  student_note text not null default '',
+  admin_note text not null default '',
+  approved_booking_id uuid references public.pte_bookings(id) on delete set null,
+  notified_at timestamptz,
+  resolved_at timestamptz
+);
+
+alter table public.pte_booking_requests
+  add column if not exists admin_note text not null default '',
+  add column if not exists approved_booking_id uuid references public.pte_bookings(id) on delete set null,
+  add column if not exists notified_at timestamptz,
+  add column if not exists resolved_at timestamptz;
+
+create index if not exists pte_booking_requests_lead_id_idx on public.pte_booking_requests (lead_id);
+create index if not exists pte_booking_requests_status_idx on public.pte_booking_requests (status, requested_start_at);
 
 create table if not exists public.pte_testimonials (
   id uuid primary key default gen_random_uuid(),
@@ -196,6 +225,12 @@ before update on public.pte_testimonials
 for each row
 execute function public.set_pte_leads_updated_at();
 
+drop trigger if exists set_pte_booking_requests_updated_at on public.pte_booking_requests;
+create trigger set_pte_booking_requests_updated_at
+before update on public.pte_booking_requests
+for each row
+execute function public.set_pte_leads_updated_at();
+
 alter table public.pte_leads enable row level security;
 alter table public.pte_leads force row level security;
 alter table public.pte_invoices enable row level security;
@@ -204,6 +239,8 @@ alter table public.pte_bookings enable row level security;
 alter table public.pte_bookings force row level security;
 alter table public.pte_testimonials enable row level security;
 alter table public.pte_testimonials force row level security;
+alter table public.pte_booking_requests enable row level security;
+alter table public.pte_booking_requests force row level security;
 alter table public.pte_admin_audit_logs enable row level security;
 alter table public.pte_admin_audit_logs force row level security;
 alter table public.pte_financial_year_statements enable row level security;
@@ -213,6 +250,7 @@ revoke all on public.pte_leads from anon, authenticated;
 revoke all on public.pte_invoices from anon, authenticated;
 revoke all on public.pte_bookings from anon, authenticated;
 revoke all on public.pte_testimonials from anon, authenticated;
+revoke all on public.pte_booking_requests from anon, authenticated;
 revoke all on public.pte_admin_audit_logs from anon, authenticated;
 revoke all on public.pte_financial_year_statements from anon, authenticated;
 revoke all on function public.set_pte_leads_updated_at() from public;
@@ -234,6 +272,24 @@ as $$
 $$;
 
 revoke all on function public.pte_availability_is_valid(text[]) from public;
+
+create or replace function public.pte_dated_availability_is_valid(slots text[])
+returns boolean
+language sql
+immutable
+strict
+as $$
+  select cardinality(slots) = 0
+    or coalesce(
+      (
+        select bool_and(value ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}-((08|09|1[0-9]|20):(00|30))$')
+        from unnest(slots) as slot(value)
+      ),
+      false
+    );
+$$;
+
+revoke all on function public.pte_dated_availability_is_valid(text[]) from public;
 
 alter table public.pte_leads
   drop constraint if exists pte_leads_availability_values;
@@ -270,6 +326,16 @@ alter table public.pte_leads
   check (
     cardinality(availability) between 1 and 182
     and public.pte_availability_is_valid(availability)
+  );
+
+alter table public.pte_leads
+  drop constraint if exists pte_leads_availability_next_two_weeks_values;
+
+alter table public.pte_leads
+  add constraint pte_leads_availability_next_two_weeks_values
+  check (
+    cardinality(availability_next_two_weeks) between 0 and 364
+    and public.pte_dated_availability_is_valid(availability_next_two_weeks)
   );
 
 do $$

@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import { isAdminEmail } from "@/lib/auth/admin";
 import { createClient } from "@/lib/supabase/server";
 import Footer from "@/components/layout/Footer";
 import PhosphorIcon from "@/components/ui/PhosphorIcon";
@@ -11,6 +12,7 @@ export default async function AdminPage() {
   } = await supabase.auth.getUser();
 
   if (!user) redirect("/login");
+  if (!isAdminEmail(user.email)) redirect("/pte/dashboard");
 
   async function signOut() {
     "use server";
@@ -59,6 +61,20 @@ export default async function AdminPage() {
             >
               <span className="font-medium text-gray-900 transition-colors group-hover:text-blue-900">Projects</span>
               <span className="text-sm text-gray-500">Manage portfolio projects and their order</span>
+            </Link>
+            <Link
+              href="/admin/skills"
+              className="group flex flex-col gap-1 border border-gray-200 bg-white/60 p-5 transition-colors hover:border-gray-400 hover:bg-white/80"
+            >
+              <span className="font-medium text-gray-900 transition-colors group-hover:text-blue-900">Skills</span>
+              <span className="text-sm text-gray-500">Manage categories, skills, and icons</span>
+            </Link>
+            <Link
+              href="/admin/experience"
+              className="group flex flex-col gap-1 border border-gray-200 bg-white/60 p-5 transition-colors hover:border-gray-400 hover:bg-white/80"
+            >
+              <span className="font-medium text-gray-900 transition-colors group-hover:text-blue-900">Experience</span>
+              <span className="text-sm text-gray-500">Manage roles, organisations, and logos</span>
             </Link>
             <Link
               href="/admin/gallery"

@@ -76,7 +76,7 @@ export default function BlogImage({
       }}
     >
       <img
-        className={["m-0 block h-auto w-full", className].filter(Boolean).join(" ")}
+        className={["m-0 block h-auto max-h-[28rem] w-full object-contain object-center", className].filter(Boolean).join(" ")}
         style={{
           ...style,
           width: "100%",

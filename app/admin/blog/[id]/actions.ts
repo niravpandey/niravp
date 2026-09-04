@@ -6,6 +6,7 @@ import { serialize } from "next-mdx-remote/serialize";
 import rehypeKatex from "rehype-katex";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
+import { isAdminEmail } from "@/lib/auth/admin";
 import { createClient } from "@/lib/supabase/server";
 
 export type PostFormData = {
@@ -28,6 +29,10 @@ async function requireUser() {
 
   if (!user) {
     redirect("/login");
+  }
+
+  if (!isAdminEmail(user.email)) {
+    redirect("/pte/dashboard");
   }
 
   return supabase;

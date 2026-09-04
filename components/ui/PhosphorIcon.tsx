@@ -6,6 +6,7 @@ type PhosphorIconName =
   | "arrow-right"
   | "arrow-square-out"
   | "bookmark-simple"
+  | "briefcase"
   | "caret-left"
   | "caret-right"
   | "caret-up"
@@ -41,6 +42,7 @@ type PhosphorIconName =
   | "eye"
   | "eye-slash"
   | "upload-simple"
+  | "warning-circle"
   | "x";
 
 type PhosphorIconProps = Omit<HTMLAttributes<HTMLElement>, "children"> & {

@@ -1,9 +1,12 @@
 "use server";
 
+import { randomBytes } from "crypto";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import nodemailer from "nodemailer";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { isAdminEmail } from "@/lib/auth/admin";
+import { createPteGoogleMeetEvent } from "@/lib/google/calendar";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -28,6 +31,7 @@ const transporter = nodemailer.createTransport({
 });
 
 const ptePdfBucket = "pte-pdfs";
+const studentAuthConfirmPath = "/pte/auth/confirm";
 
 async function requireAdminUser() {
   const supabase = await createClient();
@@ -37,6 +41,10 @@ async function requireAdminUser() {
 
   if (!user) {
     redirect("/login");
+  }
+
+  if (!isAdminEmail(user.email)) {
+    redirect("/pte/dashboard");
   }
 
   return user;
@@ -51,7 +59,7 @@ async function logPteAdminAction({
 }: {
   actorEmail?: string | null;
   action: string;
-  entityType: "lead" | "invoice" | "statement" | "booking" | "testimonial";
+  entityType: "lead" | "invoice" | "statement" | "booking" | "booking_request" | "testimonial";
   entityId?: string | null;
   metadata?: Record<string, unknown>;
 }) {
@@ -135,6 +143,142 @@ function escapeHtml(value: string) {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
+}
+
+function createTemporaryPassword() {
+  return `${randomBytes(32).toString("base64url")}Aa1!`;
+}
+
+function createStudentAuthConfirmLink(tokenHash: string, type: "signup" | "recovery") {
+  const params = new URLSearchParams({
+    token_hash: tokenHash,
+    type,
+  });
+
+  return `${getSiteUrl()}${studentAuthConfirmPath}?${params.toString()}`;
+}
+
+async function sendPteStudentAccountSetupEmail({
+  firstName,
+  setupLink,
+  to,
+}: {
+  firstName: string;
+  setupLink: string;
+  to: string;
+}) {
+  const safeFirstName = escapeHtml(firstName);
+  const safeSetupLink = escapeHtml(setupLink);
+
+  await transporter.sendMail({
+    from: `"Nirav Pandey" <${process.env.GMAIL_USER}>`,
+    to,
+    subject: "Set up your PTE student dashboard",
+    text: [
+      `Hi ${firstName},`,
+      "",
+      "I have created your PTE student dashboard. Use this secure link to set your password and sign in:",
+      setupLink,
+      "",
+      "Nirav Pandey",
+    ].join("\n"),
+    html: `
+      <div style="font-family: sans-serif; font-size: 14px; color: #111; line-height: 1.5;">
+        <p>Hi ${safeFirstName},</p>
+        <p>I have created your PTE student dashboard. Use this secure link to set your password and sign in:</p>
+        <p><a href="${safeSetupLink}">Set up student dashboard</a></p>
+        <p>Nirav Pandey</p>
+      </div>
+    `,
+  });
+}
+
+async function generateStudentPasswordSetupLink({
+  email,
+  firstName,
+  lastName,
+}: {
+  email: string;
+  firstName: string;
+  lastName: string;
+}) {
+  const supabase = createAdminClient();
+  const normalizedEmail = email.toLowerCase();
+  const { error: createUserError } = await supabase.auth.admin.createUser({
+    email: normalizedEmail,
+    password: createTemporaryPassword(),
+    email_confirm: true,
+    user_metadata: {
+      first_name: firstName,
+      last_name: lastName,
+      role: "pte-student",
+    },
+  });
+
+  if (createUserError && !createUserError.message.toLowerCase().includes("already")) {
+    throw createUserError;
+  }
+
+  const { data, error } = await supabase.auth.admin.generateLink({
+    type: "recovery",
+    email: normalizedEmail,
+  });
+
+  if (error) {
+    throw error;
+  }
+
+  const tokenHash = data.properties?.hashed_token;
+
+  if (!tokenHash) {
+    throw new Error("Could not create password setup link.");
+  }
+
+  return createStudentAuthConfirmLink(tokenHash, "recovery");
+}
+
+export async function sendPteStudentAccountInvite(formData: FormData) {
+  const user = await requireAdminUser();
+  const leadId = formData.get("leadId")?.toString();
+
+  if (!leadId) {
+    throw new Error("Missing lead id.");
+  }
+
+  const supabase = createAdminClient();
+  const { data: lead, error: leadError } = await supabase
+    .from("pte_leads")
+    .select("id,first_name,last_name,email")
+    .eq("id", leadId)
+    .single();
+
+  if (leadError || !lead) {
+    throw new Error(leadError?.message ?? "Could not find student.");
+  }
+
+  const setupLink = await generateStudentPasswordSetupLink({
+    email: lead.email,
+    firstName: lead.first_name,
+    lastName: lead.last_name,
+  });
+
+  await sendPteStudentAccountSetupEmail({
+    firstName: lead.first_name,
+    setupLink,
+    to: lead.email,
+  });
+
+  await logPteAdminAction({
+    actorEmail: user.email,
+    action: "student_account.invite_sent",
+    entityType: "lead",
+    entityId: leadId,
+    metadata: {
+      emailedTo: lead.email.toLowerCase(),
+    },
+  });
+
+  revalidatePath("/admin/pte");
 }
 
 function normalizeMeetingUrl(value: string) {
@@ -303,6 +447,28 @@ async function sendPteBookingConfirmationEmail({
   });
 }
 
+async function createMeetForBooking({
+  bookingAt,
+  durationMinutes = 90,
+  firstName,
+  lastName,
+  to,
+}: {
+  bookingAt: string;
+  durationMinutes?: number;
+  firstName: string;
+  lastName: string;
+  to: string;
+}) {
+  return createPteGoogleMeetEvent({
+    attendeeEmail: to,
+    bookingAt,
+    description: `PTE tutoring session with ${firstName} ${lastName}`,
+    durationMinutes,
+    summary: `PTE tutoring: ${firstName} ${lastName}`,
+  });
+}
+
 async function sendPteBookingCancellationEmail({
   bookingAt,
   firstName,
@@ -355,7 +521,7 @@ export async function createPteBooking(formData: FormData) {
   const normalizedBookingAt = bookingAt ? normalizeMelbourneDatetimeLocal(bookingAt) : "";
   const bookingCostType = formData.get("bookingCostType") === "free" ? "free" : "paid";
   const meetingUrlInput = formData.get("meetingUrl")?.toString().trim() ?? "";
-  const meetingUrl = normalizeMeetingUrl(meetingUrlInput);
+  let meetingUrl = normalizeMeetingUrl(meetingUrlInput);
 
   if (!leadId || !bookingAt) {
     throw new Error("Missing booking details.");
@@ -372,6 +538,16 @@ export async function createPteBooking(formData: FormData) {
     throw new Error(leadError?.message ?? "Could not find student.");
   }
 
+  const googleEvent = meetingUrl
+    ? { eventId: "", eventLink: "", meetLink: meetingUrl }
+    : await createMeetForBooking({
+        bookingAt: normalizedBookingAt,
+        firstName: lead.first_name,
+        lastName: lead.last_name,
+        to: lead.email,
+      });
+  meetingUrl = googleEvent.meetLink;
+
   const { data: booking, error: bookingError } = await supabase
     .from("pte_bookings")
     .insert({
@@ -379,6 +555,9 @@ export async function createPteBooking(formData: FormData) {
       booking_at: normalizedBookingAt,
       duration_minutes: 90,
       notes: meetingUrl,
+      meeting_url: meetingUrl,
+      google_calendar_event_id: googleEvent.eventId || null,
+      google_calendar_event_link: googleEvent.eventLink || null,
     })
     .select("id,confirmation_token,booking_at")
     .single();
@@ -418,7 +597,124 @@ export async function createPteBooking(formData: FormData) {
       bookingAt: booking.booking_at,
       bookingCostType,
       meetingUrl: meetingUrl || null,
+      googleCalendarEventId: googleEvent.eventId || null,
+      googleCalendarEventLink: googleEvent.eventLink || null,
       confirmationSentAt: sentAt,
+    },
+  });
+
+  revalidatePath("/admin/pte");
+}
+
+export async function approvePteBookingRequest(formData: FormData) {
+  const user = await requireAdminUser();
+  const requestId = formData.get("requestId")?.toString();
+  const bookingCostType = formData.get("bookingCostType") === "free" ? "free" : "paid";
+
+  if (!requestId) {
+    throw new Error("Missing booking request id.");
+  }
+
+  const supabase = createAdminClient();
+  const { data: request, error: requestError } = await supabase
+    .from("pte_booking_requests")
+    .select("id,lead_id,requested_start_at,duration_minutes,status,student_note,pte_leads(first_name,last_name,email)")
+    .eq("id", requestId)
+    .single<{
+      id: string;
+      lead_id: string;
+      requested_start_at: string;
+      duration_minutes: number;
+      status: string;
+      student_note: string;
+      pte_leads: { first_name: string; last_name: string; email: string } | null;
+    }>();
+
+  if (requestError || !request) {
+    throw new Error(requestError?.message ?? "Could not find booking request.");
+  }
+
+  if (request.status !== "pending") {
+    throw new Error("This booking request has already been resolved.");
+  }
+
+  const lead = request.pte_leads;
+
+  if (!lead) {
+    throw new Error("Booking request is missing student details.");
+  }
+
+  const googleEvent = await createMeetForBooking({
+    bookingAt: request.requested_start_at,
+    durationMinutes: request.duration_minutes,
+    firstName: lead.first_name,
+    lastName: lead.last_name,
+    to: lead.email,
+  });
+
+  const { data: booking, error: bookingError } = await supabase
+    .from("pte_bookings")
+    .insert({
+      lead_id: request.lead_id,
+      booking_at: request.requested_start_at,
+      duration_minutes: request.duration_minutes,
+      notes: googleEvent.meetLink,
+      meeting_url: googleEvent.meetLink,
+      google_calendar_event_id: googleEvent.eventId,
+      google_calendar_event_link: googleEvent.eventLink || null,
+    })
+    .select("id,confirmation_token,booking_at")
+    .single();
+
+  if (bookingError || !booking) {
+    throw new Error(bookingError?.message ?? "Could not approve booking request.");
+  }
+
+  await sendPteBookingConfirmationEmail({
+    bookingAt: booking.booking_at,
+    bookingCostType,
+    confirmationToken: booking.confirmation_token,
+    firstName: lead.first_name,
+    meetingUrl: googleEvent.meetLink,
+    to: lead.email,
+  });
+
+  const sentAt = new Date().toISOString();
+  const { error: updateError } = await supabase
+    .from("pte_bookings")
+    .update({ confirmation_sent_at: sentAt })
+    .eq("id", booking.id);
+
+  if (updateError) {
+    throw new Error(updateError.message);
+  }
+
+  const { error: requestUpdateError } = await supabase
+    .from("pte_booking_requests")
+    .update({
+      status: "approved",
+      approved_booking_id: booking.id,
+      resolved_at: sentAt,
+    })
+    .eq("id", request.id);
+
+  if (requestUpdateError) {
+    throw new Error(requestUpdateError.message);
+  }
+
+  await syncLeadNextBooking(supabase, request.lead_id);
+
+  await logPteAdminAction({
+    actorEmail: user.email,
+    action: "booking_request.approved",
+    entityType: "booking_request",
+    entityId: request.id,
+    metadata: {
+      bookingId: booking.id,
+      bookingAt: booking.booking_at,
+      googleCalendarEventId: googleEvent.eventId,
+      googleCalendarEventLink: googleEvent.eventLink || null,
+      meetLink: googleEvent.meetLink,
     },
   });
 
@@ -455,6 +751,7 @@ export async function updatePteBooking(formData: FormData) {
     .update({
       booking_at: normalizedBookingAt,
       notes: meetingUrl,
+      meeting_url: meetingUrl || null,
       status: "confirmed",
     })
     .eq("id", bookingId)

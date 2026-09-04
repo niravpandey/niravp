@@ -1,19 +1,14 @@
 import PhosphorIcon from "@/components/ui/PhosphorIcon";
+import Image from "next/image";
+import type { SkillCategory } from "@/lib/skills";
 
 interface Props {
-  activeSkills: Set<string>;
+  categories: SkillCategory[];
+  activeSkillIds: Set<string>;
+  activeSkillNames: Set<string>;
 }
 
-export default function SkillSection({ activeSkills }: Props) {
-  const skills = [
-  { category: "Languages", items: ["Python", "Java", "SQL", "JavaScript", "C"] },
-  { category: "Frontend", items: ["React", "Next.js", "HTML/CSS"] },
-  { category: "Backend", items: ["FastAPI", "Node.js", "REST APIs"] },
-  { category: "Databases", items: ["PostgreSQL", "MongoDB", "MySQL", "Supabase"] },
-  { category: "Tools & Platforms", items: ["Git", "GitHub Actions", "Postman", "Figma"] },
-  { category: "Other", items: ["OpenAI API", "Email Automation", "Scheduled Jobs"] },
-];
-
+export default function SkillSection({ categories, activeSkillIds, activeSkillNames }: Props) {
   return (
     <div>
       <h1 className="flex items-center gap-2 pt-4 text-3xl font-semibold text-blue-900">
@@ -21,22 +16,28 @@ export default function SkillSection({ activeSkills }: Props) {
         
       </h1>
       <div className="mt-4 flex flex-col gap-3">
-        {skills.map(({ category, items }) => (
-          <div key={category} className="flex gap-4">
-            <span className="text-sm text-gray-500 w-32 shrink-0">{category}</span>
+        {categories.map((category) => (
+          <div key={category.id} className="flex gap-4">
+            <span className="w-32 shrink-0 text-sm text-gray-500">{category.name}</span>
             <div className="flex flex-wrap gap-2">
-              {items.map((item) => (
+              {category.skills.map((skill) => {
+                const active = activeSkillIds.has(skill.id) || activeSkillNames.has(skill.name);
+                return (
                 <span
-                  key={item}
-                  className={`text-xs border rounded-full px-2 py-0.5 transition-colors duration-150 ${
-                    activeSkills.has(item)
+                  key={skill.id}
+                  className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs transition-colors duration-150 ${
+                    active
                       ? "border-mauve-500 text-mauve-500 bg-mauve-200"
                       : "border-gray-300 text-gray-600"
                   }`}
                 >
-                  {item}
+                  {skill.icon_url && (
+                    <Image src={skill.icon_url} alt="" width={12} height={12} unoptimized className="h-3 w-3 object-contain" />
+                  )}
+                  {skill.name}
                 </span>
-              ))}
+                );
+              })}
             </div>
           </div>
         ))}

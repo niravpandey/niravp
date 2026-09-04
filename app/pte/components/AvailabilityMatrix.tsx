@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import type { Dispatch, SetStateAction } from "react";
 import { availabilityDays, availabilityTimeSlots } from "./pteContent";
 import { cx } from "./pteUi";
@@ -8,17 +8,15 @@ import { cx } from "./pteUi";
 type AvailabilityTimeSlot = (typeof availabilityTimeSlots)[number];
 
 export function AvailabilityMatrix({
-  active = true,
+  disabledAvailability = [],
   selectedAvailability,
   onAvailabilityChange,
 }: {
-  active?: boolean;
+  disabledAvailability?: string[];
   selectedAvailability: string[];
   onAvailabilityChange: Dispatch<SetStateAction<string[]>>;
 }) {
   const [dragMode, setDragMode] = useState<"select" | "clear" | null>(null);
-  const [guideFrame, setGuideFrame] = useState(1);
-  const [hasDismissedGuide, setHasDismissedGuide] = useState(false);
   const [hoveredSlot, setHoveredSlot] = useState<{
     day: (typeof availabilityDays)[number];
     hourLabel: string;
@@ -27,40 +25,15 @@ export function AvailabilityMatrix({
   const allAvailabilityValues = availabilityDays.flatMap((day) =>
     availabilityTimeSlots.map((slot) => getAvailabilityValue(day, slot.value)),
   );
-  const showSelectionGuide =
-    active && selectedAvailability.length === 0 && !hasDismissedGuide;
-
-  useEffect(() => {
-    if (!showSelectionGuide) {
-      return;
-    }
-
-    const guideInterval = window.setInterval(() => {
-      setGuideFrame((currentFrame) => (currentFrame % 10) + 1);
-    }, 260);
-
-    return () => {
-      window.clearInterval(guideInterval);
-    };
-  }, [showSelectionGuide]);
-
-  useEffect(() => {
-    if (!showSelectionGuide) {
-      return;
-    }
-
-    function dismissGuide() {
-      setHasDismissedGuide(true);
-    }
-
-    document.addEventListener("pointerdown", dismissGuide, { once: true });
-
-    return () => {
-      document.removeEventListener("pointerdown", dismissGuide);
-    };
-  }, [showSelectionGuide]);
-
+  const disabledAvailabilitySet = new Set(disabledAvailability);
+  const enabledAvailabilityValues = allAvailabilityValues.filter(
+    (value) => !disabledAvailabilitySet.has(value),
+  );
   function updateAvailabilityValue(value: string, shouldSelect: boolean) {
+    if (disabledAvailabilitySet.has(value)) {
+      return;
+    }
+
     if (shouldSelect) {
       onAvailabilityChange((current) =>
         current.includes(value) ? current : [...current, value],
@@ -73,14 +46,14 @@ export function AvailabilityMatrix({
 
   return (
     <div className="grid gap-2">
-      {selectedAvailability.map((value) => (
+      {selectedAvailability.filter((value) => !disabledAvailabilitySet.has(value)).map((value) => (
         <input key={value} type="hidden" name="availability" value={value} />
       ))}
 
       <div className="flex flex-wrap gap-1.5">
         <button
           type="button"
-          onClick={() => onAvailabilityChange(allAvailabilityValues)}
+          onClick={() => onAvailabilityChange(enabledAvailabilityValues)}
           className="border border-gray-300 bg-white px-2 py-1 text-xs font-semibold text-gray-700 transition-colors hover:border-emerald-700 hover:bg-emerald-50 hover:text-emerald-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700 focus-visible:ring-offset-2"
         >
           Select all
@@ -142,9 +115,8 @@ export function AvailabilityMatrix({
                 <AvailabilityHourCell
                   key={`${day}-${group.hourLabel}`}
                   day={day}
+                  disabledAvailability={disabledAvailabilitySet}
                   dragMode={dragMode}
-                  guideFrame={guideFrame}
-                  showSelectionGuide={showSelectionGuide}
                   slots={group.slots}
                   selectedAvailability={selectedAvailability}
                   onDragModeChange={setDragMode}
@@ -187,9 +159,8 @@ function getAvailabilityValue(day: (typeof availabilityDays)[number], slotValue:
 
 function AvailabilityHourCell({
   day,
+  disabledAvailability,
   dragMode,
-  guideFrame,
-  showSelectionGuide,
   slots,
   selectedAvailability,
   onDragModeChange,
@@ -197,9 +168,8 @@ function AvailabilityHourCell({
   onSlotDrag,
 }: {
   day: (typeof availabilityDays)[number];
+  disabledAvailability: Set<string>;
   dragMode: "select" | "clear" | null;
-  guideFrame: number;
-  showSelectionGuide: boolean;
   slots: AvailabilityTimeSlot[];
   selectedAvailability: string[];
   onDragModeChange: (mode: "select" | "clear" | null) => void;
@@ -211,24 +181,22 @@ function AvailabilityHourCell({
       {slots.map((slot) => {
         const value = getAvailabilityValue(day, slot.value);
         const isSelected = selectedAvailability.includes(value);
-        const guideOrder = showSelectionGuide ? getAvailabilityGuideOrder(day, slot.value) : null;
-        const guideCellState =
-          guideOrder === null ? null : getAvailabilityGuideCellState(guideOrder, guideFrame);
-        const guideBackgroundColor =
-          guideCellState === "bright"
-            ? "rgb(52 211 153)"
-            : guideCellState === "dim"
-              ? "rgb(167 243 208)"
-              : undefined;
+        const isDisabled = disabledAvailability.has(value);
 
         return (
           <button
             key={slot.value}
             type="button"
-            aria-pressed={isSelected}
-            aria-label={`${day} ${slot.label}`}
-            title={`${day} ${slot.label}`}
+            aria-disabled={isDisabled}
+            aria-pressed={isSelected && !isDisabled}
+            aria-label={`${day} ${slot.label}${isDisabled ? " unavailable" : ""}`}
+            disabled={isDisabled}
+            title={`${day} ${slot.label}${isDisabled ? " unavailable from Nirav's calendar" : ""}`}
             onPointerDown={(event) => {
+              if (isDisabled) {
+                return;
+              }
+
               if (event.pointerType === "mouse" && event.button !== 0) {
                 return;
               }
@@ -241,7 +209,7 @@ function AvailabilityHourCell({
             onPointerEnter={() => {
               onHoverChange(day);
 
-              if (!dragMode) {
+              if (!dragMode || isDisabled) {
                 return;
               }
 
@@ -252,48 +220,15 @@ function AvailabilityHourCell({
             onPointerUp={() => onDragModeChange(null)}
             className={cx(
               "min-h-[0.86rem] transition-colors focus:outline-none focus-visible:relative focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-emerald-700 focus-visible:ring-offset-1",
-              isSelected
-                ? "bg-emerald-700 hover:bg-emerald-600"
-                : "bg-white hover:bg-emerald-50",
+              isDisabled
+                ? "cursor-not-allowed bg-gray-300 opacity-80"
+                : isSelected
+                  ? "bg-emerald-700 hover:bg-emerald-600"
+                  : "bg-white hover:bg-emerald-50",
             )}
-            style={
-              guideBackgroundColor
-                ? { backgroundColor: guideBackgroundColor }
-                : undefined
-            }
           />
         );
       })}
     </div>
   );
-}
-
-function getAvailabilityGuideOrder(
-  day: (typeof availabilityDays)[number],
-  slotValue: string,
-) {
-  const mondaySlots = ["10:00", "10:30", "11:00", "11:30", "12:00", "12:30"];
-
-  if (day !== "Monday") {
-    return null;
-  }
-
-  const index = mondaySlots.indexOf(slotValue);
-  return index === -1 ? null : index;
-}
-
-function getAvailabilityGuideCellState(guideOrder: number, guideFrame: number) {
-  if (guideFrame >= 1 && guideFrame <= 6) {
-    return guideOrder < guideFrame ? "dim" : null;
-  }
-
-  if (guideFrame === 7 || guideFrame === 9) {
-    return "bright";
-  }
-
-  if (guideFrame === 8) {
-    return "dim";
-  }
-
-  return null;
 }

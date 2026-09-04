@@ -70,7 +70,7 @@ export async function GET(request: NextRequest) {
 
   let query = supabase
     .from("pte_leads")
-    .select("*, pte_invoices(id), pte_bookings(id,booking_at,status,notes,interaction_rating,interaction_notes,interaction_rated_at)", { count: "exact" })
+    .select("*, pte_invoices(id), pte_bookings(id,booking_at,status,notes,meeting_url,google_calendar_event_link,interaction_rating,interaction_notes,interaction_rated_at), pte_booking_requests(id,requested_start_at,duration_minutes,status,student_note)", { count: "exact" })
     .range(from, to);
 
   if (allowedSorts.has(sort)) {

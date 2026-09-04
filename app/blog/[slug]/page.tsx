@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import type { ComponentPropsWithoutRef } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { MDXRemote } from "next-mdx-remote/rsc";
@@ -32,7 +31,7 @@ const mdxComponents = {
   pre: ({ className, ...props }: ComponentPropsWithoutRef<"pre">) => (
     <pre
       className={[
-        "overflow-x-auto border border-gray-200 bg-gray-950 px-4 py-3 text-sm leading-6 text-gray-100",
+        "overflow-x-auto bg-transparent px-0 py-3 font-mono text-[0.85rem] leading-7 text-gray-700",
         className,
       ]
         .filter(Boolean)
@@ -46,8 +45,8 @@ const mdxComponents = {
     return (
       <code
         className={[
-          "font-mono",
-          isBlockCode ? "text-gray-100" : "border border-gray-200 bg-gray-100 px-1.5 py-0.5 text-[0.9em] text-gray-900",
+          "font-mono text-[0.9em] tracking-[-0.01em]",
+          isBlockCode ? "text-gray-700" : "text-mauve-700",
           className,
         ]
           .filter(Boolean)
@@ -147,7 +146,7 @@ export default async function BlogPostPage(props: PageProps<"/blog/[slug]">) {
           </header>
 
           <div className="mt-10 border border-gray-200 bg-white/50 p-5 sm:p-8">
-            <div className="prose prose-gray max-w-none prose-headings:scroll-mt-24 prose-headings:font-medium prose-headings:text-gray-900 prose-h1:text-4xl prose-h2:border-b prose-h2:border-gray-200 prose-h2:pb-2 prose-a:no-underline prose-p:leading-7 prose-li:leading-7 prose-code:before:content-none prose-code:after:content-none prose-pre:my-6 prose-pre:rounded-none prose-img:my-8 prose-img:rounded-none">
+            <div className="prose prose-gray max-w-none prose-headings:scroll-mt-24 prose-headings:font-medium prose-headings:text-gray-900 prose-h1:text-4xl prose-h2:border-b prose-h2:border-gray-200 prose-h2:pb-2 prose-a:no-underline prose-p:leading-7 prose-li:leading-7 prose-code:before:content-none prose-code:after:content-none prose-pre:my-6 prose-pre:rounded-none prose-pre:bg-transparent prose-img:my-8 prose-img:rounded-none">
               <MDXRemote source={post.content ?? ""} options={mdxOptions} components={mdxComponents} />
             </div>
           </div>
