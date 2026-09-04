@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import type { ComponentPropsWithoutRef } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { MDXRemote } from "next-mdx-remote/rsc";
@@ -10,6 +11,7 @@ import BlogImage from "@/components/blog/BlogImage";
 import Footer from "@/components/layout/Footer";
 import PhosphorIcon from "@/components/ui/PhosphorIcon";
 import { getPublishedPost } from "@/lib/blog";
+import { getAuthorProfile } from "@/lib/site-settings";
 import BlogCoverImage from "@/components/blog/BlogCoverImage";
 
 const mdxOptions = {
@@ -116,6 +118,8 @@ export default async function BlogPostPage(props: PageProps<"/blog/[slug]">) {
     notFound();
   }
 
+  const authorProfile = await getAuthorProfile();
+
   return (
     <div className="flex flex-1 flex-col font-sans">
       <main className="flex flex-1 flex-col items-center px-4 py-16 sm:px-8 sm:py-24 lg:px-16">
@@ -150,6 +154,19 @@ export default async function BlogPostPage(props: PageProps<"/blog/[slug]">) {
               <MDXRemote source={post.content ?? ""} options={mdxOptions} components={mdxComponents} />
             </div>
           </div>
+
+          <aside className="mt-8 flex items-center gap-4 border border-gray-200 bg-white/60 p-4 sm:p-5">
+            <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-full border border-gray-200 bg-gray-100">
+              <Image
+                src={authorProfile.headshotUrl}
+                alt="Nirav Pandey"
+                fill
+                sizes="64px"
+                className="object-cover"
+              />
+            </div>
+            <p className="text-sm leading-6 text-gray-600">{authorProfile.bio}</p>
+          </aside>
         </article>
       </main>
       <Footer />

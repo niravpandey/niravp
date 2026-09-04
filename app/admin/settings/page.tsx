@@ -1,17 +1,26 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import Image from "next/image";
 import Link from "next/link";
 import Footer from "@/components/layout/Footer";
 import PhosphorIcon from "@/components/ui/PhosphorIcon";
-import { getHomeBlogLimit, MAX_HOME_BLOG_LIMIT } from "@/lib/site-settings";
-import { saveHomeBlogLimitAction } from "@/app/admin/portfolio-actions";
+import { getAuthorProfile, getHomeBlogLimit, MAX_HOME_BLOG_LIMIT } from "@/lib/site-settings";
+import { saveAuthorProfileAction, saveHomeBlogLimitAction } from "@/app/admin/portfolio-actions";
 
 export default async function AdminSettingsPage() {
   const homeBlogLimit = await getHomeBlogLimit();
+  const authorProfile = await getAuthorProfile();
 
   async function saveSettings(formData: FormData) {
     "use server";
     await saveHomeBlogLimitAction(formData);
+    revalidatePath("/admin/settings");
+    redirect("/admin/settings?saved=1");
+  }
+
+  async function saveAuthorSettings(formData: FormData) {
+    "use server";
+    await saveAuthorProfileAction(formData);
     revalidatePath("/admin/settings");
     redirect("/admin/settings?saved=1");
   }
@@ -27,7 +36,7 @@ export default async function AdminSettingsPage() {
 
           <div className="mt-6 mb-8 border-b border-gray-200 pb-5">
             <h1 className="text-3xl font-semibold text-mauve-500">Settings</h1>
-            <p className="mt-1 text-sm text-gray-500">Control what appears on the home page.</p>
+            <p className="mt-1 text-sm text-gray-500">Control the home page and article author profile.</p>
           </div>
 
           <form action={saveSettings} className="grid max-w-xl gap-4 border-b border-gray-200 pb-8">
@@ -51,6 +60,33 @@ export default async function AdminSettingsPage() {
             <p className="text-xs text-gray-400">Use 0 to hide the writing list. Maximum {MAX_HOME_BLOG_LIMIT} posts.</p>
             <button type="submit" className="w-fit border border-gray-300 bg-white/60 px-3 py-2 text-sm text-gray-700 transition-colors hover:border-gray-400 hover:bg-white/80">
               Save settings
+            </button>
+          </form>
+
+          <form action={saveAuthorSettings} encType="multipart/form-data" className="mt-10 grid max-w-xl gap-4 border-b border-gray-200 pb-8">
+            <div>
+              <h2 className="text-sm font-medium text-gray-800">Article author</h2>
+              <p className="mt-1 text-sm text-gray-500">This card appears below every published article.</p>
+            </div>
+            <div className="flex items-center gap-4">
+              <Image src={authorProfile.headshotUrl} alt="Current author headshot" width={72} height={72} className="h-18 w-18 rounded-full border border-gray-200 object-cover" />
+              <label className="text-xs text-gray-500">
+                Replace headshot
+                <input name="authorHeadshot" type="file" accept="image/*" className="mt-1 block w-full text-sm text-gray-600" />
+              </label>
+            </div>
+            <label className="text-xs text-gray-500">
+              Author text
+              <textarea
+                name="authorBio"
+                required
+                rows={4}
+                defaultValue={authorProfile.bio}
+                className="mt-1 w-full resize-y border border-gray-200 bg-white/70 px-3 py-2 text-sm leading-6 text-gray-900 focus:border-gray-400 focus:outline-none"
+              />
+            </label>
+            <button type="submit" className="w-fit border border-gray-300 bg-white/60 px-3 py-2 text-sm text-gray-700 transition-colors hover:border-gray-400 hover:bg-white/80">
+              Save author profile
             </button>
           </form>
         </div>

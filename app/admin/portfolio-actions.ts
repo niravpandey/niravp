@@ -49,7 +49,7 @@ function uploadExtension(file: File) {
   return file.name.split(".").pop()?.toLowerCase().replace(/[^a-z0-9]/g, "") || "png";
 }
 
-async function uploadAsset(file: File, folder: "skill-icons" | "project-images" | "experience-logos", maxBytes: number) {
+async function uploadAsset(file: File, folder: "skill-icons" | "project-images" | "experience-logos" | "author-headshots", maxBytes: number) {
   if (!file.type.startsWith("image/")) throw new Error("Only image files can be uploaded.");
   if (file.size > maxBytes) throw new Error(`The image must be ${Math.floor(maxBytes / 1024 / 1024)}MB or smaller.`);
 
@@ -102,6 +102,46 @@ export async function saveHomeBlogLimitAction(formData: FormData) {
 
   revalidatePath("/");
   revalidatePath("/admin/settings");
+}
+
+export async function saveAuthorProfileAction(formData: FormData) {
+  const admin = await getVerifiedAdminClient();
+  const bio = requiredString(formData.get("authorBio"), "Author bio");
+  const image = formData.get("authorHeadshot");
+
+  const { data: current, error: readError } = await admin
+    .from("author_profile")
+    .select("headshot_path")
+    .eq("id", 1)
+    .maybeSingle();
+  if (readError) throw new Error(readError.message);
+
+  let uploadedPath: string | null = null;
+  let headshotPath = current?.headshot_path ?? "headshot.png";
+
+  try {
+    if (image instanceof File && image.size > 0) {
+      uploadedPath = await uploadAsset(image, "author-headshots", 2 * 1024 * 1024);
+      headshotPath = uploadedPath;
+    }
+
+    const { error } = await admin.from("author_profile").upsert(
+      { id: 1, bio, headshot_path: headshotPath },
+      { onConflict: "id" },
+    );
+    if (error) throw new Error(error.message);
+
+    if (current?.headshot_path && current.headshot_path !== headshotPath && current.headshot_path !== "headshot.png") {
+      await removeAssets([current.headshot_path]);
+    }
+  } catch (cause) {
+    if (uploadedPath) await removeAssets([uploadedPath]);
+    throw cause;
+  }
+
+  revalidatePath("/", "page");
+  revalidatePath("/blog", "page");
+  revalidatePath("/admin/settings", "page");
 }
 
 export async function saveSkillAction(formData: FormData) {

@@ -12,6 +12,21 @@ insert into public.site_settings (key, value)
 values ('home_blog_limit', 4)
 on conflict (key) do nothing;
 
+create table if not exists public.author_profile (
+  id integer primary key default 1 check (id = 1),
+  bio text not null,
+  headshot_path text not null default 'headshot.png',
+  updated_at timestamptz not null default now()
+);
+
+insert into public.author_profile (id, bio, headshot_path)
+values (
+  1,
+  'This article was written by Nirav Pandey. He is a third year undergraduate studying Data Science.',
+  'headshot.png'
+)
+on conflict (id) do nothing;
+
 create table if not exists public.projects (
   id uuid primary key default gen_random_uuid(),
   title text not null,
@@ -58,21 +73,32 @@ create index if not exists project_skills_skill_idx
 grant select on public.projects, public.skill_categories, public.skills, public.project_skills
   to anon, authenticated;
 grant select on public.site_settings to anon, authenticated;
+grant select on public.author_profile to anon, authenticated;
 grant insert, update, delete on public.projects, public.skill_categories, public.skills, public.project_skills
   to authenticated;
 grant insert, update, delete on public.site_settings to authenticated;
+grant insert, update, delete on public.author_profile to authenticated;
 
 alter table public.projects enable row level security;
 alter table public.skill_categories enable row level security;
 alter table public.skills enable row level security;
 alter table public.project_skills enable row level security;
 alter table public.site_settings enable row level security;
+alter table public.author_profile enable row level security;
 
 drop policy if exists "site settings are public" on public.site_settings;
 create policy "site settings are public" on public.site_settings
   for select using (true);
 drop policy if exists "admins manage site settings" on public.site_settings;
 create policy "admins manage site settings" on public.site_settings
+  for all to authenticated
+  using ((select auth.jwt() -> 'app_metadata' ->> 'role') = 'admin')
+  with check ((select auth.jwt() -> 'app_metadata' ->> 'role') = 'admin');
+drop policy if exists "author profile is public" on public.author_profile;
+create policy "author profile is public" on public.author_profile
+  for select using (true);
+drop policy if exists "admins manage author profile" on public.author_profile;
+create policy "admins manage author profile" on public.author_profile
   for all to authenticated
   using ((select auth.jwt() -> 'app_metadata' ->> 'role') = 'admin')
   with check ((select auth.jwt() -> 'app_metadata' ->> 'role') = 'admin');
