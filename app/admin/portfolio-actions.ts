@@ -3,6 +3,8 @@
 import { isAdminEmail } from "@/lib/auth/admin";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import { MAX_HOME_BLOG_LIMIT } from "@/lib/site-settings";
+import { revalidatePath } from "next/cache";
 
 const ASSETS_BUCKET = "Assets";
 
@@ -82,6 +84,24 @@ export async function saveSkillCategoryAction(input: {
 
   const { error } = await admin.from("skill_categories").insert(payload);
   if (error) throw new Error(error.message);
+}
+
+export async function saveHomeBlogLimitAction(formData: FormData) {
+  const admin = await getVerifiedAdminClient();
+  const value = Number(formData.get("homeBlogLimit"));
+
+  if (!Number.isInteger(value) || value < 0 || value > MAX_HOME_BLOG_LIMIT) {
+    throw new Error(`Choose a whole number between 0 and ${MAX_HOME_BLOG_LIMIT}.`);
+  }
+
+  const { error } = await admin.from("site_settings").upsert(
+    { key: "home_blog_limit", value },
+    { onConflict: "key" },
+  );
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/");
+  revalidatePath("/admin/settings");
 }
 
 export async function saveSkillAction(formData: FormData) {

@@ -8,11 +8,12 @@ function formatDate(iso: string) {
     year: "numeric",
     month: "short",
     day: "numeric",
+    timeZone: "UTC",
   });
 }
 
 export default function BlogSection({ posts }: { posts: PostSummary[] }) {
-  const displayedPosts = (posts ?? []).slice(0, 4);
+  const writingPosts = posts ?? [];
 
   return (
     <section className="w-full border-b border-gray-200 py-8">
@@ -36,7 +37,7 @@ export default function BlogSection({ posts }: { posts: PostSummary[] }) {
       </div>
 
       <div className="divide-y divide-gray-100">
-        {displayedPosts.map((post) => (
+        {writingPosts.map((post) => (
           <Link
             key={post.slug}
             href={`/blog/${post.slug}`}

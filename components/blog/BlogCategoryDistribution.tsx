@@ -19,16 +19,37 @@ interface CategoryStat {
   color: string;
 }
 
-const COLOR_PALETTE = [
-  "#1e3a8a", // blue-900
-  "#3b82f6", // blue-500
-  "#8b5cf6", // purple-500
-  "#d946ef", // fuchsia-500
-  "#64748b", // slate-500
-  "#0f766e", // teal-700
-  "#b45309", // amber-700
-  "#475569", // slate-600
-];
+// Keep every category in the same visual family. The small lightness stagger
+// gives adjacent segments enough separation without falling back to unrelated
+// colours when a site grows beyond the original palette length.
+function categoryColor(index: number, categoryCount: number) {
+  const progress = categoryCount <= 1 ? 0 : index / (categoryCount - 1);
+  const hue = 220 + progress * 72; // blue -> mauve
+  const saturation = 78 - progress * 16;
+  const lightness = 48 + progress * 7 + (index % 2 === 1 ? 4 : 0);
+
+  return `hsl(${hue.toFixed(1)} ${saturation.toFixed(1)}% ${lightness.toFixed(1)}%)`;
+}
+
+function ringSegmentPath(startAngle: number, endAngle: number, innerRadius: number, outerRadius: number) {
+  const point = (radius: number, angle: number) => [
+    50 + radius * Math.cos(angle),
+    50 + radius * Math.sin(angle),
+  ];
+  const [outerStartX, outerStartY] = point(outerRadius, startAngle);
+  const [outerEndX, outerEndY] = point(outerRadius, endAngle);
+  const [innerStartX, innerStartY] = point(innerRadius, startAngle);
+  const [innerEndX, innerEndY] = point(innerRadius, endAngle);
+  const largeArc = endAngle - startAngle > Math.PI ? 1 : 0;
+
+  return [
+    `M ${outerStartX} ${outerStartY}`,
+    `A ${outerRadius} ${outerRadius} 0 ${largeArc} 1 ${outerEndX} ${outerEndY}`,
+    `L ${innerEndX} ${innerEndY}`,
+    `A ${innerRadius} ${innerRadius} 0 ${largeArc} 0 ${innerStartX} ${innerStartY}`,
+    "Z",
+  ].join(" ");
+}
 
 export default function BlogCategoryDistribution({
   posts,
@@ -51,21 +72,23 @@ export default function BlogCategoryDistribution({
 
     if (totalTagsCount === 0) return [];
 
-    return Object.entries(tagCounts)
-      .sort((a, b) => b[1] - a[1])
-      .map(([name, count], index) => ({
+    const entries = Object.entries(tagCounts).sort((a, b) => b[1] - a[1]);
+
+    return entries.map(([name, count], index) => ({
         name,
         count,
         percentage: Math.round((count / totalTagsCount) * 100),
-        color: COLOR_PALETTE[index % COLOR_PALETTE.length],
-      }));
+        color: categoryColor(index, entries.length),
+    }));
   }, [posts]);
 
   if (stats.length === 0) return null;
 
-  let cumulativePercent = 0;
-  const radius = 40;
-  const circumference = 2 * Math.PI * radius;
+  const totalTagsCount = stats.reduce((total, stat) => total + stat.count, 0);
+  const innerRadius = 29.5;
+  const outerRadius = 42.5;
+  const fullAngle = 2 * Math.PI;
+  const gapAngle = stats.length > 1 ? Math.min(0.035, (fullAngle / stats.length) * 0.22) : 0;
 
   const activeDisplayCategory =
     hoveredCategory ?? stats.find((s) => s.name === selectedCategory) ?? null;
@@ -81,34 +104,85 @@ export default function BlogCategoryDistribution({
         </span>
       </div>
 
-      <div className="mt-6 flex flex-col items-center justify-between gap-8 md:flex-row">
+      <div className="mt-6 flex flex-col items-center justify-between gap-8 md:flex-row md:items-start">
         {/* SVG Donut Chart */}
-        <div className="relative flex items-center justify-center">
-          <svg viewBox="0 0 100 100" className="h-44 w-44 -rotate-90 transform overflow-visible">
-            {stats.map((stat) => {
-              const strokeDasharray = `${(stat.percentage / 100) * circumference} ${circumference}`;
-              const strokeDashoffset = -((cumulativePercent / 100) * circumference);
-              cumulativePercent += stat.percentage;
+        <div className="relative flex w-full max-w-52 shrink-0 items-center justify-center sm:max-w-56 md:w-56">
+          <svg
+            viewBox="0 0 100 100"
+            className="h-auto w-full overflow-visible"
+            role="img"
+            aria-label="Blog topics distribution"
+          >
+            <circle
+              cx="50"
+              cy="50"
+              r={(innerRadius + outerRadius) / 2}
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={outerRadius - innerRadius}
+              className="text-slate-100"
+              pointerEvents="none"
+            />
+            {stats.map((stat, index) => {
+              const precedingCount = stats
+                .slice(0, index)
+                .reduce((total, precedingStat) => total + precedingStat.count, 0);
+              const segmentAngle = (stat.count / totalTagsCount) * fullAngle;
+              const startAngle = -Math.PI / 2 + (precedingCount / totalTagsCount) * fullAngle + gapAngle / 2;
+              const endAngle = startAngle + Math.max(segmentAngle - gapAngle, segmentAngle * 0.35);
 
               const isHovered = hoveredCategory?.name === stat.name;
-              const isSelected = selectedCategory === stat.name;
 
               return (
-                <circle
-                  key={stat.name}
-                  cx="50"
-                  cy="50"
-                  r={radius}
-                  fill="transparent"
-                  stroke={stat.color}
-                  strokeWidth={isHovered || isSelected ? "14" : "10"}
-                  strokeDasharray={strokeDasharray}
-                  strokeDashoffset={strokeDashoffset}
-                  className="cursor-pointer transition-all duration-200 ease-out"
-                  onMouseEnter={() => setHoveredCategory(stat)}
-                  onMouseLeave={() => setHoveredCategory(null)}
-                  onClick={() => onSelectCategory(stat.name)}
-                />
+                stats.length === 1 ? (
+                  <circle
+                    key={stat.name}
+                    cx="50"
+                    cy="50"
+                    r={(innerRadius + outerRadius) / 2}
+                    fill="none"
+                    stroke={stat.color}
+                    strokeWidth={outerRadius - innerRadius}
+                    className="cursor-pointer"
+                    tabIndex={0}
+                    aria-label={`${stat.name}: ${stat.count} ${stat.count === 1 ? "post" : "posts"}`}
+                    onMouseEnter={() => setHoveredCategory(stat)}
+                    onMouseLeave={() => setHoveredCategory(null)}
+                    onFocus={() => setHoveredCategory(stat)}
+                    onBlur={() => setHoveredCategory(null)}
+                    onClick={() => onSelectCategory(stat.name)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        onSelectCategory(stat.name);
+                      }
+                    }}
+                  />
+                ) : (
+                  <path
+                    key={stat.name}
+                    d={ringSegmentPath(startAngle, endAngle, innerRadius, outerRadius)}
+                    fill={stat.color}
+                    stroke={stat.color}
+                    strokeWidth="0.35"
+                    className={`cursor-pointer transition-opacity duration-200 ease-out ${
+                      hoveredCategory && !isHovered ? "opacity-45" : "opacity-100"
+                    }`}
+                    tabIndex={0}
+                    aria-label={`${stat.name}: ${stat.count} ${stat.count === 1 ? "post" : "posts"}`}
+                    onMouseEnter={() => setHoveredCategory(stat)}
+                    onMouseLeave={() => setHoveredCategory(null)}
+                    onFocus={() => setHoveredCategory(stat)}
+                    onBlur={() => setHoveredCategory(null)}
+                    onClick={() => onSelectCategory(stat.name)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        onSelectCategory(stat.name);
+                      }
+                    }}
+                  />
+                )
               );
             })}
           </svg>

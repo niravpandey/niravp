@@ -3,6 +3,15 @@
 
 create extension if not exists pgcrypto;
 
+create table if not exists public.site_settings (
+  key text primary key,
+  value integer not null
+);
+
+insert into public.site_settings (key, value)
+values ('home_blog_limit', 4)
+on conflict (key) do nothing;
+
 create table if not exists public.projects (
   id uuid primary key default gen_random_uuid(),
   title text not null,
@@ -48,13 +57,25 @@ create index if not exists project_skills_skill_idx
 
 grant select on public.projects, public.skill_categories, public.skills, public.project_skills
   to anon, authenticated;
+grant select on public.site_settings to anon, authenticated;
 grant insert, update, delete on public.projects, public.skill_categories, public.skills, public.project_skills
   to authenticated;
+grant insert, update, delete on public.site_settings to authenticated;
 
 alter table public.projects enable row level security;
 alter table public.skill_categories enable row level security;
 alter table public.skills enable row level security;
 alter table public.project_skills enable row level security;
+alter table public.site_settings enable row level security;
+
+drop policy if exists "site settings are public" on public.site_settings;
+create policy "site settings are public" on public.site_settings
+  for select using (true);
+drop policy if exists "admins manage site settings" on public.site_settings;
+create policy "admins manage site settings" on public.site_settings
+  for all to authenticated
+  using ((select auth.jwt() -> 'app_metadata' ->> 'role') = 'admin')
+  with check ((select auth.jwt() -> 'app_metadata' ->> 'role') = 'admin');
 
 drop policy if exists "portfolio projects are public" on public.projects;
 create policy "portfolio projects are public" on public.projects
