@@ -3,7 +3,9 @@
 
 @theme inline {
   --font-sans: var(--font-dm-sans);
+  --font-serif: var(--font-heading-serif);
   --font-mono: var(--font-geist-mono);
+  --font-crt: var(--font-vt323);
 }
 
 .home-dreamy-bg {
@@ -25,12 +27,23 @@
   content: "";
 }
 
-@keyframes testimonial-gallery {
-  from {
-    transform: translateX(0);
-  }
-
+/* Home page gallery strip: slides left forever, pauses on hover. */
+@keyframes gallery-marquee {
   to {
     transform: translateX(-50%);
+  }
+}
+
+.gallery-marquee {
+  animation: gallery-marquee 80s linear infinite;
+}
+
+.gallery-marquee:hover {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gallery-marquee {
+    animation: none;
   }
 }

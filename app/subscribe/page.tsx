@@ -16,8 +16,8 @@ export default function SubscribePage() {
             </p>
 
             <p className="mt-3 max-w-xl text-sm leading-6 text-gray-600">
-              I don't send emails on a schedule. When I write something new,
-              build a project, or find something worth sharing, I'll send you
+              I don&apos;t send emails on a schedule. When I write something new,
+              build a project, or find something worth sharing, I&apos;ll send you
               an update.
             </p>
 
@@ -26,8 +26,8 @@ export default function SubscribePage() {
             </div>
 
             <p className="mt-6 text-xs text-gray-500">
-              You'll receive a confirmation email first. Just updates
-              when there's something new.
+              You&apos;ll receive a confirmation email first. Just updates
+              when there&apos;s something new.
             </p>
           </div>
         </section>

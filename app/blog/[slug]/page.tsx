@@ -7,12 +7,13 @@ import { MDXRemote } from "next-mdx-remote/rsc";
 import rehypeKatex from "rehype-katex";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
+import BlogCoverImage from "@/components/blog/BlogCoverImage";
 import BlogImage from "@/components/blog/BlogImage";
 import Footer from "@/components/layout/Footer";
 import PhosphorIcon from "@/components/ui/PhosphorIcon";
 import { getPublishedPost } from "@/lib/blog";
 import { getAuthorProfile } from "@/lib/site-settings";
-import BlogCoverImage from "@/components/blog/BlogCoverImage";
+import { cn, formatDate } from "@/lib/utils";
 
 const mdxOptions = {
   mdxOptions: {
@@ -24,84 +25,71 @@ const mdxOptions = {
 const mdxComponents = {
   a: ({ className, ...props }: ComponentPropsWithoutRef<"a">) => (
     <a
-      className={["font-medium text-blue-900 underline decoration-gray-300 underline-offset-4 transition-colors hover:decoration-blue-900", className]
-        .filter(Boolean)
-        .join(" ")}
+      className={cn(
+        "font-medium text-blue-900 underline decoration-gray-300 underline-offset-4 transition-colors hover:decoration-blue-900",
+        className,
+      )}
       {...props}
     />
   ),
   pre: ({ className, ...props }: ComponentPropsWithoutRef<"pre">) => (
     <pre
-      className={[
-        "overflow-x-auto bg-transparent px-0 py-3 font-mono text-[0.85rem] leading-7 text-gray-700",
-        className,
-      ]
-        .filter(Boolean)
-        .join(" ")}
+      className={cn("overflow-x-auto bg-transparent px-0 py-3 font-mono text-[0.85rem] leading-7 text-gray-700", className)}
       {...props}
     />
   ),
   code: ({ className, ...props }: ComponentPropsWithoutRef<"code">) => {
+    // Fenced code blocks carry a "language-*" class; inline code does not.
     const isBlockCode = className?.includes("language-");
 
     return (
       <code
-        className={[
+        className={cn(
           "font-mono text-[0.9em] tracking-[-0.01em]",
           isBlockCode ? "text-gray-700" : "text-mauve-700",
           className,
-        ]
-          .filter(Boolean)
-          .join(" ")}
+        )}
         {...props}
       />
     );
   },
   blockquote: ({ className, ...props }: ComponentPropsWithoutRef<"blockquote">) => (
-    <blockquote
-      className={["border-l-2 border-blue-900 pl-5 text-gray-700 italic", className].filter(Boolean).join(" ")}
-      {...props}
-    />
+    <blockquote className={cn("border-l-2 border-blue-900 pl-5 text-gray-700 italic", className)} {...props} />
   ),
   BlogImage,
   img: BlogImage,
   table: ({ className, ...props }: ComponentPropsWithoutRef<"table">) => (
     <div className="my-8 overflow-x-auto bg-white">
-      <table className={["my-0 min-w-full border-collapse text-sm", className].filter(Boolean).join(" ")} {...props} />
+      <table className={cn("my-0 min-w-full border-collapse text-sm", className)} {...props} />
     </div>
   ),
   tr: ({ className, ...props }: ComponentPropsWithoutRef<"tr">) => (
-    <tr className={["even:bg-gray-50/60", className].filter(Boolean).join(" ")} {...props} />
+    <tr className={cn("even:bg-gray-50/60", className)} {...props} />
   ),
   th: ({ className, ...props }: ComponentPropsWithoutRef<"th">) => (
     <th
-      className={["border-b border-gray-200 bg-gray-50 px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600", className]
-        .filter(Boolean)
-        .join(" ")}
+      className={cn(
+        "border-b border-gray-200 bg-gray-50 px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600",
+        className,
+      )}
       {...props}
     />
   ),
   td: ({ className, ...props }: ComponentPropsWithoutRef<"td">) => (
-    <td className={["border-t border-gray-100 px-4 py-3 align-top leading-6 text-gray-700", className].filter(Boolean).join(" ")} {...props} />
+    <td className={cn("border-t border-gray-100 px-4 py-3 align-top leading-6 text-gray-700", className)} {...props} />
   ),
 };
 
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("en-AU", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
-}
+type BlogPostPageProps = {
+  params: Promise<{ slug: string }>;
+};
 
-export async function generateMetadata(props: PageProps<"/blog/[slug]">): Promise<Metadata> {
+export async function generateMetadata(props: BlogPostPageProps): Promise<Metadata> {
   const { slug } = await props.params;
   const post = await getPublishedPost(slug);
 
   if (!post) {
-    return {
-      title: "Post not found | Nirav Pandey",
-    };
+    return { title: "Post not found | Nirav Pandey" };
   }
 
   return {
@@ -110,13 +98,11 @@ export async function generateMetadata(props: PageProps<"/blog/[slug]">): Promis
   };
 }
 
-export default async function BlogPostPage(props: PageProps<"/blog/[slug]">) {
+export default async function BlogPostPage(props: BlogPostPageProps) {
   const { slug } = await props.params;
   const post = await getPublishedPost(slug);
 
-  if (!post) {
-    notFound();
-  }
+  if (!post) notFound();
 
   const authorProfile = await getAuthorProfile();
 
@@ -130,12 +116,12 @@ export default async function BlogPostPage(props: PageProps<"/blog/[slug]">) {
           </Link>
 
           <header className="mt-8 border-b border-gray-200 pb-10 text-center">
-            <p className="text-xs text-gray-400">{formatDate(post.created_at)}</p>
-            <h1 className="mx-auto mt-4 max-w-3xl text-4xl font-medium leading-tight text-blue-900 sm:text-5xl">{post.title}</h1>
+            <p className="text-xs text-gray-400">{formatDate(post.created_at, "long")}</p>
+            <h1 className="mx-auto mt-4 max-w-3xl font-serif text-4xl font-medium leading-tight text-blue-900 sm:text-5xl">{post.title}</h1>
             {post.description && <p className="mx-auto mt-4 max-w-2xl text-base text-gray-600">{post.description}</p>}
-            {(post.tags ?? []).length > 0 && (
+            {post.tags && post.tags.length > 0 && (
               <div className="mt-5 flex flex-wrap justify-center gap-2">
-                {(post.tags ?? []).map((tag) => (
+                {post.tags.map((tag) => (
                   <span key={tag} className="border border-gray-300 px-2 py-0.5 text-xs text-gray-500">
                     {tag}
                   </span>
@@ -143,10 +129,7 @@ export default async function BlogPostPage(props: PageProps<"/blog/[slug]">) {
               </div>
             )}
 
-            {/* Sharp, compact cover image header */}
-            {post.cover_image && (
-              <BlogCoverImage src={post.cover_image} alt={post.title} />
-            )}
+            {post.cover_image && <BlogCoverImage src={post.cover_image} alt={post.title} />}
           </header>
 
           <div className="mt-10 border border-gray-200 bg-white/50 p-5 sm:p-8">

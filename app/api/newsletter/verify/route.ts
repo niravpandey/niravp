@@ -1,50 +1,35 @@
-import { NextRequest, NextResponse } from "next/server";
-import jwt from "jsonwebtoken";
-import { createClient } from "@supabase/supabase-js";
+import { NextResponse, type NextRequest } from "next/server";
+import { readNewsletterToken } from "@/lib/newsletter-token";
+import { createClient } from "@/lib/supabase/server";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+type VerifyStatus = "verified" | "invalid" | "error";
 
+/** Confirmation link from the subscribe email: marks the address as a verified subscriber. */
 export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url);
-  const token = searchParams.get("token");
+  const redirectWith = (status: VerifyStatus) => NextResponse.redirect(new URL(`/?newsletter=${status}`, request.url));
 
-  if (!token) {
-    return NextResponse.redirect(new URL("/?newsletter=invalid", request.url));
-  }
+  const token = request.nextUrl.searchParams.get("token");
+  if (!token) return redirectWith("invalid");
 
+  let email: string | null;
   try {
-    // 1. Verify JWT signature
-    const secret = process.env.JWT_SECRET || "local-fallback-secret";
-    const decoded = jwt.verify(token, secret) as { email: string };
-
-    if (!decoded.email) {
-      return NextResponse.redirect(new URL("/?newsletter=invalid", request.url));
-    }
-
-    // 2. Write to Supabase matching your EXACT table schema
-    const { error } = await supabase.from("subscribers").upsert(
-      {
-        email: decoded.email,
-        verified: true,
-        token: token, // Satisfies the NOT NULL & UNIQUE constraint on 'token'
-      },
-      { onConflict: "email" }
-    );
-
-    if (error) {
-      console.error("❌ Supabase DB Write Error:", error.message);
-      return NextResponse.redirect(new URL("/?newsletter=error", request.url));
-    }
-
-    console.log("✅ Subscriber verified and written to Supabase:", decoded.email);
-
-    // 3. Success Redirect
-    return NextResponse.redirect(new URL("/?newsletter=verified", request.url));
-  } catch (err) {
-    console.error("❌ JWT Error:", err);
-    return NextResponse.redirect(new URL("/?newsletter=expired", request.url));
+    email = readNewsletterToken(token, "subscribe");
+  } catch (error) {
+    console.error("Newsletter verify error:", error);
+    return redirectWith("error");
   }
+  if (!email) return redirectWith("invalid");
+
+  const supabase = await createClient();
+  // The subscribers table requires a unique, non-null token, so the signed token is stored too.
+  const { error } = await supabase
+    .from("subscribers")
+    .upsert({ email, verified: true, token }, { onConflict: "email" });
+
+  if (error) {
+    console.error("Newsletter verify error:", error.message);
+    return redirectWith("error");
+  }
+
+  return redirectWith("verified");
 }

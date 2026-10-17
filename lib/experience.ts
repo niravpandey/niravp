@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { getOptionalAssetUrl } from "@/lib/supabase/storage";
 
 export type Experience = {
   id: string;
@@ -12,6 +13,9 @@ export type Experience = {
   sort_order: number;
 };
 
+// Postgres / PostgREST codes for "table does not exist".
+const MISSING_TABLE_CODES = new Set(["42P01", "PGRST205"]);
+
 export async function getExperiences(): Promise<Experience[]> {
   const supabase = await createClient();
   const { data, error } = await supabase
@@ -22,15 +26,13 @@ export async function getExperiences(): Promise<Experience[]> {
 
   if (error) {
     // Keep the homepage working before the migration is applied.
-    if (error.code === "42P01" || error.code === "PGRST205") return [];
+    if (MISSING_TABLE_CODES.has(error.code)) return [];
     throw new Error(error.message);
   }
 
   return (data ?? []).map((experience) => ({
     ...experience,
     logo_path: experience.logo_path ?? null,
-    logo_url: experience.logo_path
-      ? supabase.storage.from("Assets").getPublicUrl(experience.logo_path).data.publicUrl
-      : null,
+    logo_url: getOptionalAssetUrl(experience.logo_path),
   }));
 }

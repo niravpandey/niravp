@@ -1,36 +1,37 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# niravpandey.com
 
-## Getting Started
+Personal site and blog, built with Next.js (App Router), Tailwind CSS and Supabase.
 
-First, run the development server:
+## Running locally
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+pnpm install
 pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Then open http://localhost:3000.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Other scripts: `pnpm build`, `pnpm start`, `pnpm lint`.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Environment variables
 
-## Learn More
+Put these in `.env.local`:
 
-To learn more about Next.js, take a look at the following resources:
+| Variable | Used for |
+| --- | --- |
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL (data and storage) |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase public anon key |
+| `NEXT_PUBLIC_APP_URL` | Site URL used in emailed links (defaults to https://niravpandey.com) |
+| `JWT_SECRET` | Signs newsletter confirm and unsubscribe links |
+| `GMAIL_USER`, `GMAIL_APP_PASSWORD` | Sends newsletter confirmation emails |
+| `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` | Rate-limits newsletter sign-ups |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Layout
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- `app/`: routes. Home (`page.tsx`), blog index and posts, `/subscribe`, the newsletter server action, and the newsletter verify and unsubscribe API routes.
+- `components/home/`: home page sections.
+- `components/blog/`: blog index (topic chart, semantic map, post list) and MDX image components.
+- `components/layout/`, `components/ui/`: navbar, footer and shared UI.
+- `lib/`: Supabase data loaders (`blog`, `projects`, `skills`, `experience`, `site-settings`), Supabase clients and storage URLs, newsletter tokens, and small utilities.
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Content (posts, projects, skills, experience, gallery images) lives in Supabase. Blog posts are stored as MDX and rendered with `next-mdx-remote`.

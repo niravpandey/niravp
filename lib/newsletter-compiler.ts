@@ -1,3 +1,5 @@
+import jwt from "jsonwebtoken";
+
 export interface NewsletterPost {
   id?: string;
   title: string;
@@ -58,9 +60,10 @@ export function compileDigestHtml(posts: NewsletterPost[], appUrl: string, recip
     )
     .join("");
 
-  const unsubUrl = recipientEmail 
-    ? `${appUrl}/api/unsubscribe?email=${encodeURIComponent(recipientEmail)}`
-    : `${appUrl}/api/unsubscribe`;
+  const unsubSecret = process.env.JWT_SECRET;
+  const unsubUrl = recipientEmail && unsubSecret
+    ? `${appUrl}/api/unsubscribe?token=${jwt.sign({ email: recipientEmail, purpose: "unsubscribe" }, unsubSecret)}`
+    : `${appUrl}/subscribe`;
 
   return `
     <!DOCTYPE html>

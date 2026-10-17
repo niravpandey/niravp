@@ -1,4 +1,5 @@
-import type { ComponentPropsWithoutRef } from "react";
+import type { ComponentPropsWithoutRef, CSSProperties } from "react";
+import { cn } from "@/lib/utils";
 
 type BlogImageProps = Omit<ComponentPropsWithoutRef<"img">, "width"> & {
   align?: "left" | "center" | "right";
@@ -7,49 +8,20 @@ type BlogImageProps = Omit<ComponentPropsWithoutRef<"img">, "width"> & {
   width?: number | string;
 };
 
-function getRenderedImageWidth(width: BlogImageProps["width"]) {
-  if (typeof width === "number") {
-    return `${width}px`;
-  }
-
-  if (typeof width === "string" && /^\d+$/.test(width)) {
-    return `${width}px`;
-  }
-
-  if (typeof width === "string" && width.trim()) {
-    return width;
-  }
-
-  return "100%";
+/** Plain numbers (or numeric strings) are pixels; any other CSS width passes through. */
+function toCssWidth(width: BlogImageProps["width"]) {
+  if (typeof width === "number" || /^\d+$/.test(width ?? "")) return `${width}px`;
+  return width?.trim() || "100%";
 }
 
-function getImageMargin(align: BlogImageProps["align"]) {
-  if (align === "left") {
-    return { marginLeft: 0, marginRight: "auto" };
-  }
-
-  if (align === "right") {
-    return { marginLeft: "auto", marginRight: 0 };
-  }
-
-  return { marginLeft: "auto", marginRight: "auto" };
-}
-
-function getImageFloatStyle(align: BlogImageProps["align"], textWrap: boolean) {
-  if (!textWrap || align === "center") {
-    return {};
-  }
-
-  if (align === "right") {
-    return {
-      float: "right" as const,
-      margin: "0 0 1rem 1.5rem",
-    };
-  }
+/** Floated layout when text should wrap beside the image, otherwise a block aligned with margins. */
+function getPlacementStyle(align: NonNullable<BlogImageProps["align"]>, textWrap: boolean): CSSProperties {
+  if (textWrap && align === "left") return { float: "left", margin: "0 1.5rem 1rem 0" };
+  if (textWrap && align === "right") return { float: "right", margin: "0 0 1rem 1.5rem" };
 
   return {
-    float: "left" as const,
-    margin: "0 1.5rem 1rem 0",
+    marginLeft: align === "left" ? 0 : "auto",
+    marginRight: align === "right" ? 0 : "auto",
   };
 }
 
@@ -63,20 +35,17 @@ export default function BlogImage({
   width = "100%",
   ...props
 }: BlogImageProps) {
-  const floatStyle = getImageFloatStyle(align, textWrap);
-  const shouldWrapText = Object.keys(floatStyle).length > 0;
+  const isFloated = textWrap && align !== "center";
 
   return (
     <figure
-      className={shouldWrapText ? "my-0 block" : "my-8 block"}
-      style={{
-        width: getRenderedImageWidth(width),
-        maxWidth: "100%",
-        ...(shouldWrapText ? floatStyle : getImageMargin(align)),
-      }}
+      className={isFloated ? "my-0 block" : "my-8 block"}
+      style={{ width: toCssWidth(width), maxWidth: "100%", ...getPlacementStyle(align, textWrap) }}
     >
+      {/* A plain <img> because MDX images can come from any host at any size, which next/image can't take. */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        className={["m-0 block h-auto max-h-[28rem] w-full object-contain object-center", className].filter(Boolean).join(" ")}
+        className={cn("m-0 block h-auto max-h-[28rem] w-full object-contain object-center", className)}
         style={{
           ...style,
           width: "100%",

@@ -12,96 +12,53 @@ export type Post = {
   created_at: string;
   cover_image: string | null;
   embedding: number[] | string | null;
-  umap_x: number | null;
-  umap_y: number | null;
 };
 
 export type PostSummary = Omit<Post, "content">;
 
-/** Public: only published posts, ordered newest first */
+const SUMMARY_COLUMNS = "id, title, slug, description, tags, published, created_at, cover_image, embedding";
+
+/** All published posts, newest first. */
 export async function getPublishedPosts(): Promise<PostSummary[]> {
   const supabase = await createClient();
-
   const { data, error } = await supabase
     .from("posts")
-    .select(`
-      id,
-      title,
-      slug,
-      description,
-      tags,
-      published,
-      created_at,
-      cover_image,
-      embedding,
-      umap_x,
-      umap_y
-    `)
+    .select(SUMMARY_COLUMNS)
     .eq("published", true)
     .order("created_at", { ascending: false });
 
   if (error) throw new Error(error.message);
-
   return data ?? [];
 }
 
-/** Public: single published post by slug — returns null if missing or unpublished */
-export const getPublishedPost = cache(
-  async (slug: string): Promise<Post | null> => {
-    const supabase = await createClient();
-
-    const { data, error } = await supabase
-      .from("posts")
-      .select("*")
-      .eq("slug", slug)
-      .eq("published", true)
-      .single();
-
-    if (error) return null;
-
-    return data;
-  }
-);
-
-/** Admin: all posts regardless of published state */
-export async function getAllPosts(): Promise<PostSummary[]> {
+/** A single published post, or null if it doesn't exist or isn't published. Cached per request. */
+export const getPublishedPost = cache(async (slug: string): Promise<Post | null> => {
   const supabase = await createClient();
-
   const { data, error } = await supabase
     .from("posts")
-    .select(`
-      id,
-      title,
-      slug,
-      description,
-      tags,
-      published,
-      created_at,
-      cover_image,
-      embedding,
-      umap_x,
-      umap_y
-    `)
+    .select(`${SUMMARY_COLUMNS}, content`)
+    .eq("slug", slug)
+    .eq("published", true)
+    .single();
+
+  if (error) return null;
+  return data;
+});
+
+export type SearchablePost = Pick<Post, "title" | "slug" | "description" | "tags" | "created_at">;
+
+/** Lightweight list of published posts for the site-wide search. Never throws: search just shows nothing. */
+export async function getSearchablePosts(): Promise<SearchablePost[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("posts")
+    .select("title, slug, description, tags, created_at")
+    .eq("published", true)
     .order("created_at", { ascending: false });
 
-  if (error) throw new Error(error.message);
-
+  if (error) {
+    console.error("Failed to load posts for search:", error.message);
+    return [];
+  }
   return data ?? [];
 }
-
-/** Admin: single post by id */
-export const getPostById = cache(
-  async (id: string): Promise<Post | null> => {
-    const supabase = await createClient();
-
-    const { data, error } = await supabase
-      .from("posts")
-      .select("*")
-      .eq("id", id)
-      .single();
-
-    if (error) return null;
-
-    return data;
-  }
-);

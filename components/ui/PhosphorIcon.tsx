@@ -1,79 +1,39 @@
 import type { CSSProperties, HTMLAttributes } from "react";
+import { cn } from "@/lib/utils";
 
-type PhosphorIconName =
-  | "app-window"
+/** Icons in use on the site. Add a name here before using a new one. */
+export type PhosphorIconName =
   | "arrow-left"
   | "arrow-right"
   | "arrow-square-out"
-  | "bookmark-simple"
-  | "briefcase"
+  | "book-open"
   | "caret-left"
   | "caret-right"
-  | "caret-up"
-  | "caret-down"
-  | "check"
   | "code"
-  | "clock"
-  | "book-open"
-  | "headphones"
-  | "microphone"
-  | "paper-plane-tilt"
-  | "paint-brush"
-  | "pencil-simple"
-  | "crosshair"
-  | "trophy"
-  | "pause"
-  | "plus"
-  | "question"
-  | "file-plus"
   | "file-text"
   | "folder"
-  | "folder-open"
+  | "folder-simple-star"
+  | "globe-hemisphere-west"
   | "magnifying-glass"
   | "note-pencil"
-  | "folder-simple-star"
-  | "floppy-disk"
-  | "play"
-  | "arrow-counter-clockwise"
-  | "sun"
-  | "sun-dim"
-  | "sun-horizon"
-  | "trash"
-  | "eye"
-  | "eye-slash"
-  | "upload-simple"
-  | "warning-circle"
-  | "x";
+  | "paper-plane-tilt"
+  | "plus";
 
 type PhosphorIconProps = Omit<HTMLAttributes<HTMLElement>, "children"> & {
   name: PhosphorIconName;
   size?: number | string;
 };
 
-export default function PhosphorIcon({
-  name,
-  size,
-  className,
-  style,
-  ...props
-}: PhosphorIconProps) {
+/** Filled Phosphor icon rendered from the icon font. A numeric size is in pixels. */
+export default function PhosphorIcon({ name, size, className, style, ...props }: PhosphorIconProps) {
   const dimension = typeof size === "number" ? `${size}px` : size;
-  const iconStyle: CSSProperties = dimension
-    ? {
-        width: dimension,
-        height: dimension,
-        fontSize: dimension,
-        ...style,
-      }
-    : style ?? {};
+  const iconStyle: CSSProperties = dimension ? { width: dimension, height: dimension, fontSize: dimension, ...style } : style ?? {};
 
   return (
     <i
       aria-hidden="true"
       {...props}
-      className={[`ph-${name}-fill`, "inline-flex shrink-0 items-center justify-center leading-none", className]
-        .filter(Boolean)
-        .join(" ")}
+      className={cn(`ph-${name}-fill`, "inline-flex shrink-0 items-center justify-center leading-none", className)}
       style={iconStyle}
     />
   );

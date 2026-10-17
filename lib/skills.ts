@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { getOptionalAssetUrl } from "@/lib/supabase/storage";
 
 export type Skill = {
   id: string;
@@ -16,40 +17,32 @@ export type SkillCategory = {
   skills: Skill[];
 };
 
-export function getAssetPublicUrl(
-  supabase: Awaited<ReturnType<typeof createClient>>,
-  path: string | null,
-) {
-  if (!path) return null;
-  return supabase.storage.from("Assets").getPublicUrl(path).data.publicUrl;
-}
-
 export async function getSkillCategories(): Promise<SkillCategory[]> {
   const supabase = await createClient();
-  const [{ data: categories, error: categoryError }, { data: skills, error: skillError }] =
-    await Promise.all([
-      supabase
-        .from("skill_categories")
-        .select("id, name, sort_order")
-        .order("sort_order", { ascending: true })
-        .order("name", { ascending: true }),
-      supabase
-        .from("skills")
-        .select("id, category_id, name, icon_path, sort_order")
-        .order("sort_order", { ascending: true })
-        .order("name", { ascending: true }),
-    ]);
 
-  if (categoryError) throw new Error(categoryError.message);
-  if (skillError) throw new Error(skillError.message);
+  const [categoriesResult, skillsResult] = await Promise.all([
+    supabase
+      .from("skill_categories")
+      .select("id, name, sort_order")
+      .order("sort_order", { ascending: true })
+      .order("name", { ascending: true }),
+    supabase
+      .from("skills")
+      .select("id, category_id, name, icon_path, sort_order")
+      .order("sort_order", { ascending: true })
+      .order("name", { ascending: true }),
+  ]);
 
-  return (categories ?? []).map((category) => ({
+  if (categoriesResult.error) throw new Error(categoriesResult.error.message);
+  if (skillsResult.error) throw new Error(skillsResult.error.message);
+
+  const skills = (skillsResult.data ?? []).map((skill) => ({
+    ...skill,
+    icon_url: getOptionalAssetUrl(skill.icon_path),
+  }));
+
+  return (categoriesResult.data ?? []).map((category) => ({
     ...category,
-    skills: (skills ?? [])
-      .filter((skill) => skill.category_id === category.id)
-      .map((skill) => ({
-        ...skill,
-        icon_url: getAssetPublicUrl(supabase, skill.icon_path),
-      })),
+    skills: skills.filter((skill) => skill.category_id === category.id),
   }));
 }
