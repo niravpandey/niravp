@@ -62,3 +62,24 @@ export async function getSearchablePosts(): Promise<SearchablePost[]> {
   }
   return data ?? [];
 }
+
+/** Admin: all posts, drafts included, newest first. */
+export async function getAllPosts(): Promise<PostSummary[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("posts")
+    .select(SUMMARY_COLUMNS)
+    .order("created_at", { ascending: false });
+
+  if (error) throw new Error(error.message);
+  return data ?? [];
+}
+
+/** Admin: a single post by id, drafts included. Cached per request. */
+export const getPostById = cache(async (id: string): Promise<Post | null> => {
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("posts").select("*").eq("id", id).single();
+
+  if (error) return null;
+  return data;
+});

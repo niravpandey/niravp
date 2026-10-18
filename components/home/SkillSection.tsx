@@ -12,7 +12,7 @@ type SkillSectionProps = {
 export default function SkillSection({ categories, activeSkillIds, activeSkillNames }: SkillSectionProps) {
   return (
     <div>
-      <SectionHeading icon="code" className="pt-4">
+      <SectionHeading className="pt-4">
         Skills
       </SectionHeading>
 

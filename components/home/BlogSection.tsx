@@ -9,7 +9,7 @@ export default function BlogSection({ posts }: { posts: PostSummary[] }) {
   return (
     <section className="w-full border-b border-gray-200 py-8">
       <div className="flex items-center justify-between border-b border-gray-200 pb-3">
-        <SectionHeading icon="note-pencil" iconSize={24}>
+        <SectionHeading>
           My Writing
         </SectionHeading>
 

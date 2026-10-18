@@ -108,7 +108,7 @@ export default function StudentMapSection({ map }: { map: StudentMapData | null 
 
   return (
     <section className="w-full border-b border-gray-200 py-8">
-      <SectionHeading icon="globe-hemisphere-west">Students around the world</SectionHeading>
+      <SectionHeading>Students around the world</SectionHeading>
       <p className="mt-2 text-sm text-mauve-500">
         {selected ? selected.title : "All classes"} · {pluralize(totalStudents, "student")} across{" "}
         {pluralize(markers.length, "country", "countries")}

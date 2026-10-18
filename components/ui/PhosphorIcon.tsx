@@ -3,21 +3,34 @@ import { cn } from "@/lib/utils";
 
 /** Icons in use on the site. Add a name here before using a new one. */
 export type PhosphorIconName =
+  | "arrow-counter-clockwise"
   | "arrow-left"
   | "arrow-right"
   | "arrow-square-out"
   | "book-open"
+  | "caret-down"
   | "caret-left"
   | "caret-right"
+  | "caret-up"
+  | "clock"
   | "code"
+  | "file-plus"
   | "file-text"
   | "folder"
+  | "folder-open"
   | "folder-simple-star"
   | "globe-hemisphere-west"
   | "magnifying-glass"
   | "note-pencil"
+  | "paint-brush"
   | "paper-plane-tilt"
-  | "plus";
+  | "pause"
+  | "pencil-simple"
+  | "play"
+  | "plus"
+  | "trash"
+  | "upload-simple"
+  | "x";
 
 type PhosphorIconProps = Omit<HTMLAttributes<HTMLElement>, "children"> & {
   name: PhosphorIconName;

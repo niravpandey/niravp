@@ -8,7 +8,7 @@ export default function ExperienceSection({ experiences }: { experiences: Experi
 
   return (
     <section className="w-full border-b border-gray-200 py-8">
-      <SectionHeading icon="book-open">Experience</SectionHeading>
+      <SectionHeading>Experience</SectionHeading>
 
       <div className="mt-5 grid gap-4">
         {experiences.map((experience) => {

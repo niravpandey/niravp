@@ -18,7 +18,7 @@ export default function ProjectSection({ projects, currentIndex, setCurrentIndex
   const [expandedProjectIds, setExpandedProjectIds] = useState<Set<string>>(() => new Set());
 
   const heading = (
-    <SectionHeading icon="folder-simple-star" className="pt-4">
+    <SectionHeading className="pt-4">
       Projects
     </SectionHeading>
   );

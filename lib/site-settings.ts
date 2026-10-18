@@ -2,7 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getAssetUrl } from "@/lib/supabase/storage";
 
 const DEFAULT_HOME_BLOG_LIMIT = 4;
-const MAX_HOME_BLOG_LIMIT = 50;
+export const MAX_HOME_BLOG_LIMIT = 50;
 const DEFAULT_AUTHOR_BIO =
   "This article was written by Nirav Pandey. He is a third year undergraduate studying Data Science.";
 const DEFAULT_AUTHOR_HEADSHOT_PATH = "headshot.png";

@@ -13,7 +13,7 @@ export async function createClient() {
         try {
           cookiesToSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options));
         } catch {
-          // Server Components can't set cookies. The site has no logged-in sessions, so this is safe to ignore.
+          // Server Components can't set cookies. The proxy refreshes admin sessions, so this is safe to ignore.
         }
       },
     },

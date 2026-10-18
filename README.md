@@ -25,10 +25,13 @@ Put these in `.env.local`:
 | `JWT_SECRET` | Signs newsletter confirm and unsubscribe links |
 | `GMAIL_USER`, `GMAIL_APP_PASSWORD` | Sends newsletter confirmation emails |
 | `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` | Rate-limits newsletter sign-ups |
+| `SUPABASE_SERVICE_ROLE_KEY` | Admin writes (projects, skills, experience, settings) |
+| `ADMIN_EMAILS` | Comma-separated emails allowed into `/admin` (defaults to the site owner) |
 
 ## Layout
 
 - `app/`: routes. Home (`page.tsx`), blog index and posts, `/subscribe`, the newsletter server action, and the newsletter verify and unsubscribe API routes.
+- `app/admin/`, `app/login/`: the signed-in admin for writing posts and editing home page content. `proxy.ts` gates `/admin` and refreshes the Supabase session.
 - `components/home/`: home page sections.
 - `components/blog/`: blog index (topic chart, semantic map, post list) and MDX image components.
 - `components/layout/`, `components/ui/`: navbar, footer and shared UI.

@@ -29,7 +29,7 @@ export default function SetupSection() {
 
   return (
     <section className="w-full border-b border-gray-200 py-8">
-      <SectionHeading icon="code">My setup</SectionHeading>
+      <SectionHeading>My setup</SectionHeading>
       <p className="mt-2 text-sm text-mauve-500">The tech I use every day</p>
 
       <div
