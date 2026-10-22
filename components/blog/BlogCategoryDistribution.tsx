@@ -42,8 +42,9 @@ function categoryColor(index: number, categoryCount: number) {
 
 /** SVG path for one donut segment, centred in a 100x100 viewBox. */
 function ringSegmentPath(startAngle: number, endAngle: number) {
+  // Rounded so the server and browser produce identical strings: their trig results can differ in the last digit.
   const point = (radius: number, angle: number) =>
-    `${50 + radius * Math.cos(angle)} ${50 + radius * Math.sin(angle)}`;
+    `${(50 + radius * Math.cos(angle)).toFixed(3)} ${(50 + radius * Math.sin(angle)).toFixed(3)}`;
   const largeArc = endAngle - startAngle > Math.PI ? 1 : 0;
 
   return [
@@ -116,7 +117,7 @@ export default function BlogCategoryDistribution({
   });
 
   return (
-    <div className="mt-8 border border-gray-200 bg-white/50 p-6">
+    <div className="mt-8 border border-gray-200 bg-white p-6">
       <div className="flex items-center justify-between border-b border-gray-200 pb-3">
         <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-500">Topics & Distribution</h3>
         <span className="text-xs text-gray-400">

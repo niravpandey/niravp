@@ -106,7 +106,7 @@ function PostCard({ post, selectedCategory, onSelectTag }: PostCardProps) {
   return (
     <Link
       href={`/blog/${post.slug}`}
-      className="group flex min-w-0 items-center gap-5 border border-gray-200 bg-white/50 p-4 transition-colors hover:border-gray-400"
+      className="group flex min-w-0 items-center gap-5 border border-gray-200 bg-white p-4 transition-colors hover:border-gray-400"
     >
       <div className="relative aspect-square w-32 shrink-0 overflow-hidden bg-mauve-500">
         {post.cover_image && (

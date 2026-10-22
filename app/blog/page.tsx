@@ -1,4 +1,5 @@
 import BlogIndexClient from "@/components/blog/BlogIndexClient";
+import RandomWalkCaption from "@/components/blog/RandomWalkCaption";
 import Footer from "@/components/layout/Footer";
 import { getPublishedPosts } from "@/lib/blog";
 
@@ -22,6 +23,7 @@ export default async function BlogIndexPage() {
           <BlogIndexClient posts={posts} />
         </div>
       </main>
+      <RandomWalkCaption />
       <Footer />
     </div>
   );

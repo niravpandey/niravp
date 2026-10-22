@@ -9,6 +9,7 @@ import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import BlogCoverImage from "@/components/blog/BlogCoverImage";
 import BlogImage from "@/components/blog/BlogImage";
+import RandomWalkCaption from "@/components/blog/RandomWalkCaption";
 import Footer from "@/components/layout/Footer";
 import PhosphorIcon from "@/components/ui/PhosphorIcon";
 import { getPublishedPost } from "@/lib/blog";
@@ -132,13 +133,13 @@ export default async function BlogPostPage(props: BlogPostPageProps) {
             {post.cover_image && <BlogCoverImage src={post.cover_image} alt={post.title} />}
           </header>
 
-          <div className="mt-10 border border-gray-200 bg-white/50 p-5 sm:p-8">
+          <div className="mt-10 border border-gray-200 bg-white p-5 sm:p-8">
             <div className="prose prose-gray max-w-none prose-headings:scroll-mt-24 prose-headings:font-medium prose-headings:text-gray-900 prose-h1:text-4xl prose-h2:border-b prose-h2:border-gray-200 prose-h2:pb-2 prose-a:no-underline prose-p:leading-7 prose-li:leading-7 prose-code:before:content-none prose-code:after:content-none prose-pre:my-6 prose-pre:rounded-none prose-pre:bg-transparent prose-img:my-8 prose-img:rounded-none">
               <MDXRemote source={post.content ?? ""} options={mdxOptions} components={mdxComponents} />
             </div>
           </div>
 
-          <aside className="mt-8 flex items-center gap-4 border border-gray-200 bg-white/60 p-4 sm:p-5">
+          <aside className="mt-8 flex items-center gap-4 border border-gray-200 bg-white p-4 sm:p-5">
             <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-full border border-gray-200 bg-gray-100">
               <Image
                 src={authorProfile.headshotUrl}
@@ -152,6 +153,7 @@ export default async function BlogPostPage(props: BlogPostPageProps) {
           </aside>
         </article>
       </main>
+      <RandomWalkCaption />
       <Footer />
     </div>
   );
