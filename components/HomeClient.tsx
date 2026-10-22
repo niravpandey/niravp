@@ -6,7 +6,6 @@ import ExperienceSection from "@/components/home/ExperienceSection";
 import GallerySection from "@/components/home/GallerySection";
 import HeroSection from "@/components/home/HeroSection";
 import ProjectSection from "@/components/home/ProjectSection";
-import SetupSection from "@/components/home/SetupSection";
 import SkillSection from "@/components/home/SkillSection";
 import StudentMapSection from "@/components/home/StudentMapSection";
 import Footer from "@/components/layout/Footer";
@@ -56,10 +55,8 @@ export default function HomeClient({ posts, projects, skillCategories, experienc
           <BlogSection posts={posts} />
         </div>
 
-        {/* Two e-ink devices side by side on desktop. */}
-        <div className="grid w-full gap-8 lg:grid-cols-2">
+        <div className="w-full">
           <StudentMapSection map={studentMap} />
-          <SetupSection />
         </div>
       </main>
       <Footer />
