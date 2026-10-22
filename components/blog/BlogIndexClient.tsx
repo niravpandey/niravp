@@ -1,64 +1,107 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import BlogCategoryDistribution from "@/components/blog/BlogCategoryDistribution";
 import BlogSemanticMap from "@/components/blog/BlogSemanticMap";
+import BlogTimeline from "@/components/blog/BlogTimeline";
+import BlogWords from "@/components/blog/BlogWords";
 import type { PostSummary } from "@/lib/blog";
 import { cn, formatDate } from "@/lib/utils";
 
-type Tab = "distribution" | "semantic";
+type Tab = "topics" | "map" | "timeline" | "words";
+
+const POSTS_PER_PAGE = 5;
 
 const TABS: { id: Tab; label: string }[] = [
-  { id: "distribution", label: "Topics Distribution" },
-  { id: "semantic", label: "Semantic Map" },
+  { id: "topics", label: "topics" },
+  { id: "map", label: "map" },
+  { id: "timeline", label: "timeline" },
+  { id: "words", label: "words" },
 ];
 
-export default function BlogIndexClient({ posts }: { posts: PostSummary[] }) {
+type BlogIndexClientProps = {
+  posts: PostSummary[];
+  wordCounts: Record<string, number>;
+};
+
+export default function BlogIndexClient({ posts, wordCounts }: BlogIndexClientProps) {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<Tab>("distribution");
+  const [activeTab, setActiveTab] = useState<Tab>("topics");
+  const [chartsVisible, setChartsVisible] = useState(false);
+  const [page, setPage] = useState(1);
+  const listTopRef = useRef<HTMLDivElement>(null);
 
   const filteredPosts = selectedCategory
     ? posts.filter((post) => post.tags?.includes(selectedCategory))
     : posts;
+  const pageCount = Math.max(1, Math.ceil(filteredPosts.length / POSTS_PER_PAGE));
+  const pagePosts = filteredPosts.slice((page - 1) * POSTS_PER_PAGE, page * POSTS_PER_PAGE);
+
+  // Changing the filter starts again from the first page.
+  function selectCategory(category: string | null) {
+    setSelectedCategory(category);
+    setPage(1);
+  }
 
   // Clicking the selected category again clears the filter.
   function toggleCategory(category: string) {
-    setSelectedCategory((current) => (current === category ? null : category));
+    selectCategory(selectedCategory === category ? null : category);
+  }
+
+  function goToPage(next: number) {
+    setPage(next);
+    listTopRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   return (
     <div className="mt-5">
-      {/* Chart tabs */}
-      <div className="flex gap-2 border-b border-gray-200 pb-2">
-        {TABS.map((tab, index) => (
-          <span key={tab.id} className="flex gap-2">
-            {index > 0 && <span className="text-xs text-gray-300">|</span>}
-            <button
-              type="button"
-              onClick={() => setActiveTab(tab.id)}
-              className={cn(
-                "text-xs font-semibold uppercase tracking-wider transition-colors",
-                activeTab === tab.id ? "text-blue-900 underline underline-offset-4" : "text-gray-400 hover:text-gray-700",
-              )}
-            >
-              {tab.label}
-            </button>
-          </span>
+      {/* Chart tabs, hidden until you pick one or press show */}
+      <div className="flex items-center gap-4 border-b border-gray-200 pb-2 font-mono text-xs">
+        {TABS.map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            // Like show/hide: the open tab closes the charts; any other tab opens (or switches to) its chart.
+            onClick={() => {
+              setChartsVisible(!(chartsVisible && activeTab === tab.id));
+              setActiveTab(tab.id);
+            }}
+            aria-expanded={chartsVisible && activeTab === tab.id}
+            className={cn(
+              "transition-colors",
+              chartsVisible && activeTab === tab.id ? "text-blue-900" : "text-gray-400 hover:text-gray-700",
+            )}
+          >
+            {tab.label}
+          </button>
         ))}
+        <button
+          type="button"
+          onClick={() => setChartsVisible((visible) => !visible)}
+          aria-expanded={chartsVisible}
+          className="ml-auto text-gray-400 transition-colors hover:text-gray-700"
+        >
+          {chartsVisible ? "hide" : "show"}
+        </button>
       </div>
 
-      <div className="pt-4">
-        {activeTab === "distribution" ? (
-          <BlogCategoryDistribution posts={posts} selectedCategory={selectedCategory} onSelectCategory={toggleCategory} />
-        ) : (
-          <BlogSemanticMap posts={posts} selectedCategory={selectedCategory} />
-        )}
-      </div>
+      {chartsVisible && (
+        <div className="pt-4">
+          {activeTab === "topics" && (
+            <BlogCategoryDistribution posts={posts} selectedCategory={selectedCategory} onSelectCategory={toggleCategory} />
+          )}
+          {activeTab === "map" && <BlogSemanticMap posts={posts} selectedCategory={selectedCategory} />}
+          {activeTab === "timeline" && <BlogTimeline posts={posts} selectedCategory={selectedCategory} />}
+          {activeTab === "words" && (
+            <BlogWords posts={posts} wordCounts={wordCounts} selectedCategory={selectedCategory} />
+          )}
+        </div>
+      )}
 
       {/* Filter status */}
-      <div className="mt-8 flex items-center justify-between border-b border-gray-200 pb-3">
+      <div ref={listTopRef} className="mt-8 flex scroll-mt-6 items-center justify-between border-b border-gray-200 pb-3">
         <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">
           {selectedCategory ? (
             <>
@@ -72,7 +115,7 @@ export default function BlogIndexClient({ posts }: { posts: PostSummary[] }) {
         {selectedCategory && (
           <button
             type="button"
-            onClick={() => setSelectedCategory(null)}
+            onClick={() => selectCategory(null)}
             className="text-xs text-gray-400 underline underline-offset-2 transition-colors hover:text-gray-700"
           >
             Clear filter ({filteredPosts.length} of {posts.length})
@@ -84,13 +127,53 @@ export default function BlogIndexClient({ posts }: { posts: PostSummary[] }) {
       {filteredPosts.length === 0 ? (
         <p className="pt-10 text-sm text-gray-400">No published posts found for this category.</p>
       ) : (
-        <div className="grid grid-cols-1 gap-4 pt-6">
-          {filteredPosts.map((post) => (
-            <PostCard key={post.id} post={post} selectedCategory={selectedCategory} onSelectTag={toggleCategory} />
-          ))}
-        </div>
+        <>
+          <div className="grid grid-cols-1 gap-4 pt-6">
+            {pagePosts.map((post) => (
+              <PostCard key={post.id} post={post} selectedCategory={selectedCategory} onSelectTag={toggleCategory} />
+            ))}
+          </div>
+          {pageCount > 1 && <Pagination page={page} pageCount={pageCount} onChange={goToPage} />}
+        </>
       )}
     </div>
+  );
+}
+
+type PaginationProps = {
+  page: number;
+  pageCount: number;
+  onChange: (page: number) => void;
+};
+
+function Pagination({ page, pageCount, onChange }: PaginationProps) {
+  const buttonClass =
+    "px-2 py-1 text-gray-500 transition-colors hover:text-blue-900 disabled:cursor-default disabled:text-gray-300";
+
+  return (
+    <nav aria-label="Blog pages" className="mt-8 flex items-center justify-center gap-4 font-mono text-xs">
+      <button
+        type="button"
+        onClick={() => onChange(page - 1)}
+        disabled={page === 1}
+        aria-label="Previous page"
+        className={buttonClass}
+      >
+        &lt;
+      </button>
+      <span className="text-gray-500" aria-current="page">
+        page {page} of {pageCount}
+      </span>
+      <button
+        type="button"
+        onClick={() => onChange(page + 1)}
+        disabled={page === pageCount}
+        aria-label="Next page"
+        className={buttonClass}
+      >
+        &gt;
+      </button>
+    </nav>
   );
 }
 

@@ -1,11 +1,9 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
-import { Canvas, useFrame } from "@react-three/fiber";
-import { Float, Html, Line, OrbitControls, QuadraticBezierLine } from "@react-three/drei";
+import { useMemo, useState } from "react";
+import Link from "next/link";
 import { PCA } from "ml-pca";
-import * as THREE from "three";
+import { cn } from "@/lib/utils";
 
 export type SemanticPost = {
   id: string | number;
@@ -15,10 +13,9 @@ export type SemanticPost = {
   embedding?: number[] | string | null;
 };
 
-type Vec3 = [number, number, number];
-
 type PositionedPost = SemanticPost & {
-  position: Vec3;
+  x: number;
+  y: number;
   vector: number[];
 };
 
@@ -27,14 +24,15 @@ type BlogSemanticMapProps = {
   selectedCategory: string | null;
 };
 
-const NODE_COLOR = "#818cf8";
-const INACTIVE_COLOR = "#27272a";
-const ARC_COLOR = "#6366f1";
-const AXIS_COLOR = "#3f3f46";
-/** Half-width of the plotted space; the furthest post sits this far from the origin. */
-const MAP_RADIUS = 3;
-/** Posts at least this similar (cosine) are joined by an arc. */
-const ARC_SIMILARITY_THRESHOLD = 0.82;
+// SVG coordinate space. The origin sits in the centre and both axes share one scale, so the grid is square.
+const WIDTH = 1000;
+const HEIGHT = 400;
+const PADDING_X = 40;
+const PADDING_Y = 30;
+const GRID_SIZE = 40;
+/** Posts at least this similar (cosine) are joined by a line. */
+const LINK_SIMILARITY_THRESHOLD = 0.82;
+const LABEL_MAX_CHARS = 48;
 
 /** Embeddings arrive either as a number array or as pgvector text like "[0.1,0.2]". */
 function parseEmbedding(raw: SemanticPost["embedding"]): number[] {
@@ -69,7 +67,8 @@ function cosineSimilarity(a: number[], b: number[]) {
 }
 
 /**
- * Projects post embeddings onto their top three principal components, scaled to fit the map.
+ * Projects post embeddings onto their top two principal components, centred on the origin with the same scale on
+ * both axes, so distances mean the same thing in every direction.
  * Also returns the share of variance those components explain, as a percentage.
  */
 function projectPosts(posts: SemanticPost[]): { posts: PositionedPost[]; variancePercent: number | null } {
@@ -83,186 +82,144 @@ function projectPosts(posts: SemanticPost[]): { posts: PositionedPost[]; varianc
   try {
     const vectors = usable.map((post) => post.vector);
     const pca = new PCA(vectors);
-    const projected = pca.predict(vectors, { nComponents: 3 }).to2DArray();
+    const projected = pca.predict(vectors, { nComponents: 2 }).to2DArray();
 
     const eigenvalues = pca.getEigenvalues();
     const totalVariance = eigenvalues.reduce((sum, value) => sum + value, 0) || 1;
-    const top3Variance = eigenvalues.slice(0, 3).reduce((sum, value) => sum + value, 0);
+    const top2Variance = eigenvalues.slice(0, 2).reduce((sum, value) => sum + value, 0);
 
-    const maxCoordinate = Math.max(...projected.flat().map(Math.abs)) || 1;
-    const scale = MAP_RADIUS / maxCoordinate;
+    // PCA output is already centred on the mean, so 0 is the middle of the map. Pick the one scale that fits both axes.
+    const maxX = Math.max(...projected.map((point) => Math.abs(point[0]))) || 1;
+    const maxY = Math.max(...projected.map((point) => Math.abs(point[1] ?? 0))) || 1;
+    const scale = Math.min((WIDTH / 2 - PADDING_X) / maxX, (HEIGHT / 2 - PADDING_Y) / maxY);
+    // Rounded so the server and browser produce identical coordinates. SVG y grows downwards, so PC₂ is flipped.
+    const toSvg = (value: number, centre: number) => Math.round((centre + value * scale) * 10) / 10;
 
     return {
       posts: usable.map((post, i) => ({
         ...post,
-        position: [projected[i][0] * scale, projected[i][1] * scale, (projected[i][2] ?? 0) * scale],
+        x: toSvg(projected[i][0], WIDTH / 2),
+        y: toSvg(-(projected[i][1] ?? 0), HEIGHT / 2),
       })),
-      variancePercent: (top3Variance / totalVariance) * 100,
+      variancePercent: (top2Variance / totalVariance) * 100,
     };
   } catch {
     return empty;
   }
 }
 
-function Axes() {
-  const axes: { label: string; end: Vec3 }[] = [
-    { label: "PC₁", end: [MAP_RADIUS, 0, 0] },
-    { label: "PC₂", end: [0, MAP_RADIUS, 0] },
-    { label: "PC₃", end: [0, 0, MAP_RADIUS] },
-  ];
-
-  return (
-    <group>
-      {axes.map(({ label, end }) => {
-        const start = end.map((v) => -v) as Vec3;
-        const labelPosition = end.map((v) => (v === 0 ? 0 : v + 0.15)) as Vec3;
-
-        return (
-          <group key={label}>
-            <Line points={[start, end]} color={AXIS_COLOR} transparent opacity={0.35} />
-            <Html position={labelPosition} center>
-              <span className="select-none text-[9px] text-zinc-500">{label}</span>
-            </Html>
-          </group>
-        );
-      })}
-    </group>
-  );
+function shortTitle(title: string) {
+  return title.length > LABEL_MAX_CHARS ? `${title.slice(0, LABEL_MAX_CHARS - 1)}…` : title;
 }
 
-/** Curved lines between pairs of closely related posts. */
-function SimilarityArcs({ posts }: { posts: PositionedPost[] }) {
-  const arcs = useMemo(() => {
-    const result: { key: string; start: Vec3; end: Vec3; mid: Vec3 }[] = [];
-
-    for (let i = 0; i < posts.length; i++) {
-      for (let j = i + 1; j < posts.length; j++) {
-        if (cosineSimilarity(posts[i].vector, posts[j].vector) <= ARC_SIMILARITY_THRESHOLD) continue;
-
-        const start = posts[i].position;
-        const end = posts[j].position;
-        result.push({
-          key: `${posts[i].id}-${posts[j].id}`,
-          start,
-          end,
-          mid: [(start[0] + end[0]) / 2, (start[1] + end[1]) / 2 + 0.2, (start[2] + end[2]) / 2],
-        });
-      }
-    }
-
-    return result;
-  }, [posts]);
-
-  return (
-    <group>
-      {arcs.map(({ key, start, end, mid }) => (
-        <QuadraticBezierLine
-          key={key}
-          start={start}
-          end={end}
-          mid={mid}
-          color={ARC_COLOR}
-          lineWidth={0.7}
-          transparent
-          opacity={0.15}
-        />
-      ))}
-    </group>
-  );
-}
-
-type PostNodeProps = {
-  post: PositionedPost;
-  active: boolean;
-  hovered: boolean;
-  onHoverChange: (hovered: boolean) => void;
-  onSelect: () => void;
-};
-
-function PostNode({ post, active, hovered, onHoverChange, onSelect }: PostNodeProps) {
-  const meshRef = useRef<THREE.Mesh>(null);
-  const targetScale = hovered ? 1.4 : active ? 1 : 0.45;
-
-  // Ease the node toward its target size each frame.
-  useFrame((_, delta) => {
-    const mesh = meshRef.current;
-    if (mesh) mesh.scale.setScalar(THREE.MathUtils.damp(mesh.scale.x, targetScale, 10, delta));
-  });
-
-  return (
-    <Float speed={1} rotationIntensity={0.1} floatIntensity={0.3}>
-      <group position={post.position}>
-        <mesh
-          ref={meshRef}
-          onPointerOver={(event) => {
-            event.stopPropagation();
-            onHoverChange(true);
-          }}
-          onPointerOut={() => onHoverChange(false)}
-          onClick={onSelect}
-        >
-          <sphereGeometry args={[0.12, 24, 24]} />
-          <meshStandardMaterial
-            color={active ? NODE_COLOR : INACTIVE_COLOR}
-            emissive={active ? NODE_COLOR : "#000000"}
-            emissiveIntensity={hovered ? 0.9 : active ? 0.35 : 0.05}
-            roughness={0.25}
-          />
-        </mesh>
-
-        {hovered && (
-          <Html distanceFactor={14} center position={[0, 0.28, 0]}>
-            <div className="pointer-events-none max-w-37.5 rounded border border-zinc-800 bg-zinc-950/95 px-2 py-1 text-[10px] shadow-lg backdrop-blur-sm">
-              <p className="line-clamp-2 font-medium leading-tight text-zinc-100">{post.title}</p>
-              {post.tags && post.tags.length > 0 && (
-                <p className="mt-0.5 truncate text-[9px] text-zinc-400">{post.tags.join(" · ")}</p>
-              )}
-            </div>
-          </Html>
-        )}
-      </group>
-    </Float>
-  );
-}
-
-/** 3D map of posts placed by embedding similarity. Posts outside the selected tag are dimmed. */
+/** Flat 2D map of posts placed by embedding similarity. Posts outside the selected tag are dimmed. */
 export default function BlogSemanticMap({ posts, selectedCategory }: BlogSemanticMapProps) {
-  const router = useRouter();
   const [hoveredId, setHoveredId] = useState<SemanticPost["id"] | null>(null);
   const projection = useMemo(() => projectPosts(posts), [posts]);
 
+  const links = useMemo(() => {
+    const placed = projection.posts;
+    const result: { key: string; from: PositionedPost; to: PositionedPost }[] = [];
+    for (let i = 0; i < placed.length; i++) {
+      for (let j = i + 1; j < placed.length; j++) {
+        if (cosineSimilarity(placed[i].vector, placed[j].vector) > LINK_SIMILARITY_THRESHOLD) {
+          result.push({ key: `${placed[i].id}-${placed[j].id}`, from: placed[i], to: placed[j] });
+        }
+      }
+    }
+    return result;
+  }, [projection.posts]);
+
   if (projection.posts.length === 0) return null;
 
+  const isActive = (post: SemanticPost) => !selectedCategory || (post.tags ?? []).includes(selectedCategory);
+  const hovered = projection.posts.find((post) => post.id === hoveredId);
+
   return (
-    <div className="mt-6 overflow-hidden rounded-xl border border-zinc-800/80 bg-zinc-950 shadow-lg">
-      <div className="flex items-center justify-between border-b border-zinc-800/60 px-4 py-2.5">
-        <div className="text-xs font-medium text-zinc-300">Semantic Map</div>
-        {projection.variancePercent !== null && (
-          <div className="text-[11px] text-zinc-500">{projection.variancePercent.toFixed(0)}% variance captured</div>
-        )}
-      </div>
+    <div className="border border-gray-200 bg-white p-4 font-mono text-xs text-gray-500">
+      <svg viewBox={`0 0 ${WIDTH} ${HEIGHT}`} className="h-auto w-full" role="img" aria-label="Map of posts by similarity">
+        {/* Square grid lines out from the origin, then the two axes through it */}
+        {Array.from({ length: Math.floor(WIDTH / 2 / GRID_SIZE) }, (_, i) => (i + 1) * GRID_SIZE).flatMap((offset) => [
+          <line key={`x+${offset}`} x1={WIDTH / 2 + offset} y1={0} x2={WIDTH / 2 + offset} y2={HEIGHT} className="stroke-gray-100" />,
+          <line key={`x-${offset}`} x1={WIDTH / 2 - offset} y1={0} x2={WIDTH / 2 - offset} y2={HEIGHT} className="stroke-gray-100" />,
+        ])}
+        {Array.from({ length: Math.floor(HEIGHT / 2 / GRID_SIZE) }, (_, i) => (i + 1) * GRID_SIZE).flatMap((offset) => [
+          <line key={`y+${offset}`} x1={0} y1={HEIGHT / 2 + offset} x2={WIDTH} y2={HEIGHT / 2 + offset} className="stroke-gray-100" />,
+          <line key={`y-${offset}`} x1={0} y1={HEIGHT / 2 - offset} x2={WIDTH} y2={HEIGHT / 2 - offset} className="stroke-gray-100" />,
+        ])}
+        <line x1={0} y1={HEIGHT / 2} x2={WIDTH} y2={HEIGHT / 2} className="stroke-gray-300" />
+        <line x1={WIDTH / 2} y1={0} x2={WIDTH / 2} y2={HEIGHT} className="stroke-gray-300" />
+        <text x={WIDTH - 6} y={HEIGHT / 2 - 8} textAnchor="end" className="fill-gray-400 text-[12px]">
+          PC₁
+        </text>
+        <text x={WIDTH / 2 + 8} y={16} className="fill-gray-400 text-[12px]">
+          PC₂
+        </text>
 
-      <div className="relative h-72 w-full">
-        <Canvas camera={{ position: [4, 3, 6], fov: 40 }}>
-          <color attach="background" args={["#09090b"]} />
-          <ambientLight intensity={0.6} />
-          <pointLight position={[8, 8, 8]} intensity={1.2} />
+        {links.map(({ key, from, to }) => (
+          <line
+            key={key}
+            x1={from.x}
+            y1={from.y}
+            x2={to.x}
+            y2={to.y}
+            strokeWidth={1}
+            className={cn(
+              "transition-colors",
+              hoveredId === from.id || hoveredId === to.id ? "stroke-blue-900/50" : "stroke-gray-200",
+            )}
+          />
+        ))}
 
-          <Axes />
-          <SimilarityArcs posts={projection.posts} />
-          {projection.posts.map((post) => (
-            <PostNode
+        {projection.posts.map((post) => {
+          const active = isActive(post);
+          const isHovered = hoveredId === post.id;
+          return (
+            <Link
               key={post.id}
-              post={post}
-              active={!selectedCategory || (post.tags ?? []).includes(selectedCategory)}
-              hovered={hoveredId === post.id}
-              onHoverChange={(isHovered) => setHoveredId(isHovered ? post.id : null)}
-              onSelect={() => router.push(`/blog/${post.slug}`)}
-            />
-          ))}
+              href={`/blog/${post.slug}`}
+              onMouseEnter={() => setHoveredId(post.id)}
+              onMouseLeave={() => setHoveredId(null)}
+              onFocus={() => setHoveredId(post.id)}
+              onBlur={() => setHoveredId(null)}
+              className={cn("transition-opacity", !active && "opacity-25")}
+            >
+              <circle cx={post.x} cy={post.y} r={isHovered ? 7 : 5} className="fill-blue-900 transition-all" />
+            </Link>
+          );
+        })}
 
-          <OrbitControls enablePan={false} minDistance={4} maxDistance={12} autoRotate autoRotateSpeed={0.3} />
-        </Canvas>
+        {/* Only the hovered post gets a title, drawn last so it sits above the other dots. It goes left of the dot
+            in the right half of the map so it never runs off the edge. */}
+        {hovered && (
+          <text
+            x={hovered.x > WIDTH / 2 ? hovered.x - 14 : hovered.x + 14}
+            y={hovered.y + 4}
+            textAnchor={hovered.x > WIDTH / 2 ? "end" : "start"}
+            paintOrder="stroke"
+            strokeWidth={4}
+            strokeLinejoin="round"
+            className="pointer-events-none fill-blue-900 stroke-white text-[13px]"
+          >
+            {shortTitle(hovered.title)}
+          </text>
+        )}
+      </svg>
+
+      <div className="mt-2 flex justify-between gap-4 text-gray-400">
+        <span className="truncate">
+          {hovered ? (
+            <>
+              <span className="text-blue-900">{hovered.title}</span>
+              {hovered.tags && hovered.tags.length > 0 && ` · ${hovered.tags.join(" · ")}`}
+            </>
+          ) : (
+            `closer = more similar${links.length > 0 ? " · lines join closely related posts" : ""}`
+          )}
+        </span>
+        {projection.variancePercent !== null && (
+          <span className="shrink-0">{projection.variancePercent.toFixed(0)}% variance captured</span>
+        )}
       </div>
     </div>
   );

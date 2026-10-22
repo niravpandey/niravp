@@ -9,7 +9,6 @@ import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import BlogCoverImage from "@/components/blog/BlogCoverImage";
 import BlogImage from "@/components/blog/BlogImage";
-import RandomWalkCaption from "@/components/blog/RandomWalkCaption";
 import Footer from "@/components/layout/Footer";
 import PhosphorIcon from "@/components/ui/PhosphorIcon";
 import { getPublishedPost } from "@/lib/blog";
@@ -153,7 +152,6 @@ export default async function BlogPostPage(props: BlogPostPageProps) {
           </aside>
         </article>
       </main>
-      <RandomWalkCaption />
       <Footer />
     </div>
   );

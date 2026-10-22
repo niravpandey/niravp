@@ -83,3 +83,26 @@ export const getPostById = cache(async (id: string): Promise<Post | null> => {
   if (error) return null;
   return data;
 });
+
+/** Rough word count of an MDX post: ignores code blocks, maths, HTML/JSX tags, links' URLs and image syntax. */
+function countWords(source: string) {
+  const prose = source
+    .replace(/```[\s\S]*?```/g, " ")
+    .replace(/\$\$[\s\S]*?\$\$/g, " ")
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, " ")
+    .replace(/\[([^\]]*)\]\([^)]*\)/g, "$1")
+    .replace(/<[^>]+>/g, " ");
+  return prose.match(/[\p{L}\p{N}][\p{L}\p{N}'’-]*/gu)?.length ?? 0;
+}
+
+/** Word counts for published posts, keyed by post id. Never throws: the stats just show nothing. */
+export async function getPublishedWordCounts(): Promise<Record<string, number>> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("posts").select("id, content").eq("published", true);
+
+  if (error) {
+    console.error("Failed to load posts for word counts:", error.message);
+    return {};
+  }
+  return Object.fromEntries((data ?? []).map((post) => [post.id, countWords(post.content ?? "")]));
+}

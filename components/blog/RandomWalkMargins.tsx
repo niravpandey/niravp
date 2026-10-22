@@ -13,7 +13,21 @@ const STEP = 3;
 const MEET_SPREAD = 0.12;
 // How strongly a walk steers towards its end point; lower values wander more and may fall short.
 const STEERING = 0.9;
+// Opacity of the full paths once revealed, and of a trail's head and tail (it fades along its length).
 const LINE_ALPHA = 0.08;
+const TRAIL_HEAD_ALPHA = 0.35;
+const TRAIL_TAIL_ALPHA = 0.04;
+// While scrolling, each walk shows only its latest moves, drawn in a few chunks to fade the trail.
+const TRAIL_STEPS = 500;
+// Over the last part of the journey the trails dim to the web's opacity, so they don't bunch up bright in the middle.
+const DIM_FROM = 0.6;
+const TRAIL_CHUNKS = 5;
+// At the bottom of the page the trails backtrack over their whole paths. How long that takes, and how much
+// faster it retracts when you scroll back up.
+const BACKTRACK_MS = 1800;
+const RETRACT_SPEEDUP = 2.5;
+// How far down the page (as a fraction) the walks reach the middle and meet. Below that the full web stays out.
+const MEET_AT = 0.7;
 
 /** Small seeded PRNG (mulberry32): the same seed gives the same walks on every device. */
 function seededRandom(seed: number) {
@@ -50,11 +64,17 @@ function buildWalk(random: () => number, side: "left" | "right", width: number, 
   return points;
 }
 
+/** Ease in and out, for the backtrack. */
+function ease(t: number) {
+  return t < 0.5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2;
+}
+
 /**
- * Faint violet-mauve random walks that creep in from both page edges as you scroll down and meet
- * around the middle at the bottom of the page, then unwind back to the edges as you scroll up.
- * How much of each walk is drawn depends only on scroll position. Drawn on a fixed canvas behind
- * the content, only on windows wide enough to leave margins beside the text.
+ * Violet-mauve random walks behind the blog. As you scroll down, each walk shows only its latest 500 moves,
+ * a fading trail creeping in from the page edge; scrolling up walks it back. When the walks meet in the
+ * middle, 70% of the way down the page, each trail backtracks over its whole path so the full web spreads
+ * across the screen and stays for the rest of the page; it retracts again when you scroll back above that. Drawn on a fixed canvas behind the
+ * content, only on windows wide enough to leave margins beside the text.
  */
 export default function RandomWalkMargins() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -68,38 +88,62 @@ export default function RandomWalkMargins() {
     let width = 0;
     let height = 0;
     let walks: Float32Array[] = [];
-    let drawnSteps = 0;
     let frame = 0;
+    // How far the trails have backtracked over their paths: 0 is just the trail, 1 is the whole path.
+    let backtrack = 0;
+    let lastTime = 0;
 
-    const strokeRange = (from: number, to: number) => {
-      ctx.strokeStyle = LINE_COLOR;
-      ctx.globalAlpha = LINE_ALPHA;
-      ctx.lineWidth = 1;
-      // One stroke per walk, so overlapping walks build up a slightly denser texture.
+    // One stroke per walk, so overlapping walks build up a slightly denser texture.
+    const strokeRange = (from: number, to: number, alpha: number) => {
+      if (to <= from) return;
+      ctx.globalAlpha = alpha;
       for (const points of walks) {
         ctx.beginPath();
         ctx.moveTo(points[from * 2], points[from * 2 + 1]);
         for (let i = from + 1; i <= to; i++) ctx.lineTo(points[i * 2], points[i * 2 + 1]);
         ctx.stroke();
       }
-      ctx.globalAlpha = 1;
     };
 
-    const draw = () => {
+    const draw = (time: number) => {
       frame = 0;
       const scrollable = document.documentElement.scrollHeight - height;
       const progress = scrollable > 0 ? Math.min(Math.max(window.scrollY / scrollable, 0), 1) : 0;
-      const steps = Math.round(progress * STEPS_PER_WALKER);
-      if (steps === drawnSteps) return;
+      const head = Math.round(Math.min(progress / MEET_AT, 1) * STEPS_PER_WALKER);
+      const trailStart = Math.max(0, head - TRAIL_STEPS);
 
-      // Scrolling down only adds the new segments; scrolling up redraws the shorter walks from scratch.
-      if (steps > drawnSteps) {
-        strokeRange(drawnSteps, steps);
-      } else {
-        ctx.clearRect(0, 0, width, height);
-        if (steps > 0) strokeRange(0, steps);
+      // Move the backtrack towards fully out once the walks have met, or back in above that.
+      const target = head >= STEPS_PER_WALKER ? 1 : 0;
+      const elapsed = lastTime ? Math.min(time - lastTime, 50) : 16;
+      lastTime = time;
+      if (backtrack < target) backtrack = Math.min(target, backtrack + elapsed / BACKTRACK_MS);
+      else if (backtrack > target) backtrack = Math.max(target, backtrack - (elapsed / BACKTRACK_MS) * RETRACT_SPEEDUP);
+
+      ctx.clearRect(0, 0, width, height);
+      ctx.strokeStyle = LINE_COLOR;
+      ctx.lineWidth = 1;
+
+      // The path behind the trail, revealed from the trail backwards as it backtracks.
+      const revealedStart = Math.round(trailStart * (1 - ease(backtrack)));
+      strokeRange(revealedStart, trailStart, LINE_ALPHA);
+
+      // The trail itself, fading from its head back to its tail. As the trails close in on the middle, and then as
+      // the web spreads, they settle to the web's own opacity; otherwise every trail converges bright on the centre
+      // and leaves a dark band down it.
+      const approach = Math.min(Math.max((head / STEPS_PER_WALKER - DIM_FROM) / (1 - DIM_FROM), 0), 1);
+      const settle = Math.max(ease(approach), ease(backtrack));
+      const chunk = Math.max(1, Math.ceil((head - trailStart) / TRAIL_CHUNKS));
+      for (let from = trailStart; from < head; from += chunk) {
+        const to = Math.min(head, from + chunk);
+        const along = (to - trailStart) / Math.max(1, head - trailStart);
+        const trailAlpha = TRAIL_TAIL_ALPHA + (TRAIL_HEAD_ALPHA - TRAIL_TAIL_ALPHA) * along;
+        strokeRange(from, to, trailAlpha + (LINE_ALPHA - trailAlpha) * settle);
       }
-      drawnSteps = steps;
+      ctx.globalAlpha = 1;
+
+      // Keep animating until the backtrack has settled.
+      if (backtrack !== target) frame = requestAnimationFrame(draw);
+      else lastTime = 0;
     };
 
     const requestDraw = () => {
@@ -121,8 +165,6 @@ export default function RandomWalkMargins() {
           walks.push(buildWalk(random, "left", width, height), buildWalk(random, "right", width, height));
         }
       }
-      // Resizing the canvas clears it, so the next draw starts from nothing.
-      drawnSteps = 0;
       requestDraw();
     };
 
