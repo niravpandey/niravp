@@ -23,7 +23,7 @@ export default function BlogWords({ posts, wordCounts, selectedCategory }: BlogW
   const longest = rows[0].words;
 
   return (
-    <div className="border border-gray-200 bg-white p-4 font-mono text-xs text-gray-500">
+    <div className="border border-line bg-white p-4 font-mono text-xs text-gray-500">
       <p className="text-gray-400">
         <span className="text-blue-900">{total.toLocaleString("en-US")}</span> words ·{" "}
         <span className="text-blue-900">~{Math.max(1, Math.round(total / WORDS_PER_MINUTE))}</span> min of reading ·{" "}

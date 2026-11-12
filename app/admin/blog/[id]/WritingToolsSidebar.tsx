@@ -12,10 +12,10 @@ export default function WritingToolsSidebar({ children, density }: WritingToolsS
   const isIconDensity = density === "icon";
 
   return (
-    <aside className="hidden max-h-[calc(100vh-6rem)] min-w-0 flex-col border border-gray-200 bg-white/80 xl:sticky xl:top-6 xl:flex">
-      <div className={["border-b border-gray-200", isIconDensity ? "flex justify-center px-2 py-2" : "px-3 py-2"].join(" ")}>
+    <aside className="hidden max-h-[calc(100vh-6rem)] min-w-0 flex-col border border-line bg-white/80 xl:sticky xl:top-6 xl:flex">
+      <div className={["border-b border-line", isIconDensity ? "flex justify-center px-2 py-2" : "px-3 py-2"].join(" ")}>
         {isIconDensity ? (
-          <div className="flex h-9 w-9 items-center justify-center border border-gray-200 bg-white text-gray-700" title="Writing tools">
+          <div className="flex h-9 w-9 items-center justify-center border border-line bg-white text-gray-700" title="Writing tools">
             <PhosphorIcon name="note-pencil" size={17} />
           </div>
         ) : (

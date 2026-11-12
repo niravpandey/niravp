@@ -36,7 +36,7 @@ export default function PomodoroTool({
   const isComfortableDensity = density === "comfortable";
 
   return (
-    <section className={["mt-3 border border-gray-200 bg-white/60", isIconDensity ? "overflow-hidden" : ""].join(" ")}>
+    <section className={["mt-3 border border-line bg-white/60", isIconDensity ? "overflow-hidden" : ""].join(" ")}>
       <button
         type="button"
         onClick={onToggleOpen}
@@ -53,14 +53,14 @@ export default function PomodoroTool({
       </button>
 
       {open && (
-        <div className={["border-t border-gray-200", isIconDensity ? "p-2" : "p-3"].join(" ")}>
+        <div className={["border-t border-line", isIconDensity ? "p-2" : "p-3"].join(" ")}>
           <div className={["flex items-center justify-center", isIconDensity ? "gap-2" : "gap-3"].join(" ")}>
             <button
               type="button"
               aria-label="Decrease session time"
               onClick={() => onAdjustMinutes(-1)}
               disabled={minutes <= 1}
-              className={["inline-flex shrink-0 items-center justify-center border border-gray-300 bg-white/50 text-gray-600 transition-colors hover:border-gray-400 hover:bg-white/80 disabled:opacity-30", isIconDensity ? "h-7 w-7" : "h-8 w-8"].join(" ")}
+              className={["inline-flex shrink-0 items-center justify-center border border-line bg-white/50 text-gray-600 transition-colors hover:border-line hover:bg-white/80 disabled:opacity-30", isIconDensity ? "h-7 w-7" : "h-8 w-8"].join(" ")}
             >
               <PhosphorIcon name="caret-down" size={15} />
             </button>
@@ -73,7 +73,7 @@ export default function PomodoroTool({
               aria-label="Increase session time"
               onClick={() => onAdjustMinutes(1)}
               disabled={minutes >= 120}
-              className={["inline-flex shrink-0 items-center justify-center border border-gray-300 bg-white/50 text-gray-600 transition-colors hover:border-gray-400 hover:bg-white/80 disabled:opacity-30", isIconDensity ? "h-7 w-7" : "h-8 w-8"].join(" ")}
+              className={["inline-flex shrink-0 items-center justify-center border border-line bg-white/50 text-gray-600 transition-colors hover:border-line hover:bg-white/80 disabled:opacity-30", isIconDensity ? "h-7 w-7" : "h-8 w-8"].join(" ")}
             >
               <PhosphorIcon name="caret-up" size={15} />
             </button>
@@ -107,7 +107,7 @@ export default function PomodoroTool({
               type="button"
               onClick={onStartPause}
               title={running ? "Pause" : "Start"}
-              className={["inline-flex items-center justify-center border border-gray-300 bg-white/50 text-xs text-gray-700 transition-colors hover:border-gray-400 hover:bg-white/80", isIconDensity ? "h-9 w-9 px-0 py-0" : "flex-1 gap-2 px-2 py-1.5"].join(" ")}
+              className={["inline-flex items-center justify-center border border-line bg-white/50 text-xs text-gray-700 transition-colors hover:border-line hover:bg-white/80", isIconDensity ? "h-9 w-9 px-0 py-0" : "flex-1 gap-2 px-2 py-1.5"].join(" ")}
             >
               {isIconDensity ? (
                 <PhosphorIcon name={running ? "pause" : "play"} size={15} />
@@ -119,7 +119,7 @@ export default function PomodoroTool({
               type="button"
               onClick={onReset}
               title="Reset"
-              className={["inline-flex items-center justify-center border border-gray-300 bg-white/50 text-xs text-gray-700 transition-colors hover:border-gray-400 hover:bg-white/80", isIconDensity ? "h-9 w-9 px-0 py-0" : "flex-1 gap-2 px-2 py-1.5"].join(" ")}
+              className={["inline-flex items-center justify-center border border-line bg-white/50 text-xs text-gray-700 transition-colors hover:border-line hover:bg-white/80", isIconDensity ? "h-9 w-9 px-0 py-0" : "flex-1 gap-2 px-2 py-1.5"].join(" ")}
             >
               {isIconDensity ? <PhosphorIcon name="arrow-counter-clockwise" size={15} /> : "Reset"}
             </button>

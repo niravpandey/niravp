@@ -1,30 +1,242 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
 
+/*
+ * Color palette — edit these to restyle the whole site.
+ *   --paper    page background (plain, flat)
+ *   --surface  cards / panels (what `bg-white` now means)
+ *   --ink      text + borders; the gray scale is mixed from ink → surface
+ *   --accent   links / buttons; the blue scale is mixed from accent
+ *   --accent-2 secondary highlights; the mauve scale is mixed from it
+ *   --line     all borders / dividers / chart strokes (`border-line`, `divide-line`, …)
+ *   --heading  page + section titles (`text-heading`)
+ *   --walk / --walk-opacity   blog random-walk lines + caption; opacity scales the lines' built-in fades
+ *   --line-width   thickness of every border (`border`, `border-b`, …)
+ *   --heading-glow   text-shadow on titles (`none` to switch off)
+ *   --heading-weight / --heading-tracking   title weight + letter spacing (`font-heading`, `tracking-heading`)
+ *   --letter   background of the home-page letter box
+ *   --skyline  Kathmandu skyline that fades in at the bottom of the letter box
+ *   --photo-filter   CSS filter on gallery photos (`none` for full color)
+ *   --grad-from / --grad-to   gradient stops (navbar etc.), default accent-2 → accent
+ * Switch palettes with <html data-palette="..."> in app/layout.tsx.
+ */
+:root {
+  --grad-from: var(--accent-2);
+  --grad-to: var(--accent);
+  --heading: var(--line);
+  --walk: var(--line);
+  --walk-opacity: 1;
+  --line-width: 2px;
+  --heading-weight: 600;
+  --heading-tracking: -0.01em;
+  --heading-glow: none;
+  --photo-filter: none;
+  --letter: #fdf6dc;
+  --skyline: #b8912e;
+}
+
+/* Default: early-2000s web, toned down. Pale blue-gray page, muted link blue, brick red, sage lines, steel-blue bar. */
+:root,
+[data-palette="y2k"] {
+  color-scheme: light;
+  --paper: #e9eff5;
+  --surface: #ffffff;
+  --ink: #222222;
+  --accent: #2f4f8f;
+  --accent-2: #a8433a;
+  --line: #9cbf86;
+  --heading: #8e2f28;
+  --heading-glow: none;
+  --grad-from: #3f6da3;
+  --grad-to: #6fa3c4;
+  --walk-opacity: 1;
+  --line-width: 2px;
+  --heading-weight: 700;
+  --heading-tracking: 0;
+}
+
+/* Deep-space dark with electric cyan lines and hot magenta accents. */
+[data-palette="cyber"] {
+  color-scheme: dark;
+  --paper: #07060f;
+  --surface: #110f1e;
+  --ink: #ece9ff;
+  --accent: #ff2bd6;
+  --accent-2: #7b5cff;
+  --line: #00f0ff;
+  --heading: #f5f3ff;
+  --heading-glow: 0 0 18px color-mix(in oklab, var(--accent) 55%, transparent), 0 0 42px color-mix(in oklab, var(--line) 30%, transparent);
+  --grad-from: var(--line);
+  --grad-to: var(--accent);
+  --walk-opacity: 2.5;
+  --line-width: 1px;
+  --letter: #1a1730;
+  --skyline: #8a7a3a;
+}
+
+[data-palette="periwinkle"] {
+  color-scheme: light;
+  --heading-glow: none;
+  --line-width: 2px;
+  --heading: var(--line);
+  --grad-from: var(--accent-2);
+  --grad-to: var(--accent);
+  --walk-opacity: 1;
+  --paper: #9ba1ff;
+  --surface: #fbfaff;
+  --ink: #1a1640;
+  --accent: #c2361f;
+  --accent-2: #3b2fa0;
+  --line: #39ff14;
+}
+
+[data-palette="mustard"] {
+  color-scheme: light;
+  --heading-glow: none;
+  --line-width: 2px;
+  --heading: var(--line);
+  --grad-from: var(--accent-2);
+  --grad-to: var(--accent);
+  --walk-opacity: 1;
+  --paper: #ffc400;
+  --surface: #fffbea;
+  --ink: #231a06;
+  --accent: #2b44d6;
+  --accent-2: #c2410c;
+  --line: #ff10f0;
+}
+
+[data-palette="mint"] {
+  color-scheme: light;
+  --heading-glow: none;
+  --line-width: 2px;
+  --heading: var(--line);
+  --grad-from: var(--accent-2);
+  --grad-to: var(--accent);
+  --walk-opacity: 1;
+  --paper: #4fe39a;
+  --surface: #f6fff9;
+  --ink: #0f2a1e;
+  --accent: #c42a6a;
+  --accent-2: #0f766e;
+  --line: #ff3131;
+}
+
+[data-palette="bubblegum"] {
+  color-scheme: light;
+  --heading-glow: none;
+  --line-width: 2px;
+  --heading: var(--line);
+  --grad-from: var(--accent-2);
+  --grad-to: var(--accent);
+  --walk-opacity: 1;
+  --paper: #ff8cc6;
+  --surface: #fff7fb;
+  --ink: #2a0f1e;
+  --accent: #2350c8;
+  --accent-2: #9d174d;
+  --line: #00f0ff;
+}
+
 @theme inline {
-  --font-sans: var(--font-dm-sans);
-  --font-serif: var(--font-heading-serif);
+  /* Early-2000s system fonts: Verdana body, Palatino titles. */
+  --font-sans: Verdana, Geneva, Tahoma, sans-serif;
+  --font-serif: "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
   --font-mono: var(--font-geist-mono);
   --font-crt: var(--font-vt323);
+
+  --color-paper: var(--paper);
+  --color-surface: var(--surface);
+  --color-ink: var(--ink);
+  --color-accent: var(--accent);
+  --color-accent-2: var(--accent-2);
+  --color-line: var(--line);
+  --color-heading: var(--heading);
+  --color-letter: var(--letter);
+  --color-skyline: var(--skyline);
+  --font-weight-heading: var(--heading-weight);
+  --tracking-heading: var(--heading-tracking);
+
+  /* Remap Tailwind's white / gray / blue onto the palette. */
+  --color-white: var(--surface);
+  --color-gray-50: color-mix(in oklab, var(--ink) 4%, var(--surface));
+  --color-gray-100: color-mix(in oklab, var(--ink) 8%, var(--surface));
+  --color-gray-200: color-mix(in oklab, var(--ink) 15%, var(--surface));
+  --color-gray-300: color-mix(in oklab, var(--ink) 32%, var(--surface));
+  --color-gray-400: color-mix(in oklab, var(--ink) 52%, var(--surface));
+  --color-gray-500: color-mix(in oklab, var(--ink) 64%, var(--surface));
+  --color-gray-600: color-mix(in oklab, var(--ink) 74%, var(--surface));
+  --color-gray-700: color-mix(in oklab, var(--ink) 84%, var(--surface));
+  --color-gray-800: color-mix(in oklab, var(--ink) 92%, var(--surface));
+  --color-gray-900: color-mix(in oklab, var(--ink) 97%, var(--surface));
+  --color-gray-950: var(--ink);
+  --color-blue-50: color-mix(in oklab, var(--accent) 10%, var(--surface));
+  --color-blue-100: color-mix(in oklab, var(--accent) 18%, var(--surface));
+  --color-blue-200: color-mix(in oklab, var(--accent) 30%, var(--surface));
+  --color-blue-300: color-mix(in oklab, var(--accent) 45%, var(--surface));
+  --color-blue-400: color-mix(in oklab, var(--accent) 60%, var(--surface));
+  --color-blue-500: color-mix(in oklab, var(--accent) 75%, var(--surface));
+  --color-blue-600: color-mix(in oklab, var(--accent) 88%, var(--surface));
+  --color-blue-700: var(--accent);
+  --color-blue-800: var(--accent);
+  --color-blue-900: var(--accent);
+  --color-blue-950: color-mix(in oklab, var(--accent) 80%, var(--ink));
+  --color-mauve-50: color-mix(in oklab, var(--accent-2) 10%, var(--surface));
+  --color-mauve-100: color-mix(in oklab, var(--accent-2) 18%, var(--surface));
+  --color-mauve-200: color-mix(in oklab, var(--accent-2) 30%, var(--surface));
+  --color-mauve-300: color-mix(in oklab, var(--accent-2) 45%, var(--surface));
+  --color-mauve-400: color-mix(in oklab, var(--accent-2) 62%, var(--surface));
+  --color-mauve-500: var(--accent-2);
+  --color-mauve-600: color-mix(in oklab, var(--accent-2) 88%, var(--ink));
+  --color-mauve-700: color-mix(in oklab, var(--accent-2) 76%, var(--ink));
+  --color-mauve-800: color-mix(in oklab, var(--accent-2) 64%, var(--ink));
+  --color-mauve-900: color-mix(in oklab, var(--accent-2) 52%, var(--ink));
+  --color-mauve-950: color-mix(in oklab, var(--accent-2) 40%, var(--ink));
 }
 
+/* Palette gradient: `bg-palette-gradient` (direction via --grad-angle). */
+@utility bg-palette-gradient {
+  background-image: linear-gradient(var(--grad-angle, to right), var(--grad-from), var(--grad-to));
+}
+
+/* Soft accent-tinted glow that deepens on hover: `glow-accent`. */
+.glow-accent {
+  box-shadow: 0 10px 30px color-mix(in oklab, var(--accent) 18%, transparent);
+  transition: box-shadow 150ms;
+}
+.glow-accent:hover {
+  box-shadow: 0 14px 38px color-mix(in oklab, var(--accent) 28%, transparent);
+}
+
+/* Bare `border` / `divide-*` classes default to the line color. */
+@layer base {
+  *,
+  ::before,
+  ::after {
+    border-color: var(--line);
+  }
+}
+
+/*
+ * Thicker lines everywhere. Unlayered, so it beats Tailwind's 1px defaults; explicit widths like `border-2`
+ * on the same element are overridden too, so set --line-width instead.
+ */
+.border { border-width: var(--line-width); }
+.border-t { border-top-width: var(--line-width); }
+.border-b { border-bottom-width: var(--line-width); }
+.border-l { border-left-width: var(--line-width); }
+.border-r { border-right-width: var(--line-width); }
+.border-x { border-inline-width: var(--line-width); }
+.border-y { border-block-width: var(--line-width); }
+
+/* Glowing titles. Unlayered so it applies alongside the `text-heading` color utility. */
+.text-heading {
+  text-shadow: var(--heading-glow);
+}
+
+/* Plain flat page background. */
 .home-dreamy-bg {
-  position: relative;
-  isolation: isolate;
-  background-color: #ffffff;
-  background-attachment: fixed;
-}
-
-.home-dreamy-bg::before {
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  background:
-    radial-gradient(circle at 5% 3%, rgb(224 231 255 / 0.58), transparent 34rem),
-    radial-gradient(circle at 95% 12%, rgb(251 226 232 / 0.48), transparent 32rem),
-    radial-gradient(circle at 55% 72%, rgb(221 239 255 / 0.36), transparent 42rem),
-    linear-gradient(180deg, #ffffff 0%, #fffdfd 48%, #fbfdff 100%);
-  content: "";
+  background-color: var(--paper);
 }
 
 /* Home page gallery strip: slides left forever, pauses on hover. */
@@ -45,5 +257,63 @@
 @media (prefers-reduced-motion: reduce) {
   .gallery-marquee {
     animation: none;
+  }
+}
+
+/* Loading page bar (app/loading.tsx): slides back and forth like an old progress bar. */
+@keyframes loading-bar {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(300%);
+  }
+}
+
+.loading-bar {
+  animation: loading-bar 1.2s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loading-bar {
+    animation: none;
+    width: 100%;
+  }
+}
+
+/* Failsafe for the splash screen (components/layout/Splash.tsx): if its script never runs, hide it anyway. */
+@keyframes splash-failsafe {
+  to {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+
+.splash {
+  animation: splash-failsafe 0.5s ease-out 6s forwards;
+}
+
+/* Resume (app/resume/page.tsx): print / "Save as PDF" gives a single clean A4 page with only the sheet. */
+@page {
+  size: A4;
+  margin: 0;
+}
+
+@media print {
+  html,
+  body {
+    background: #ffffff !important;
+  }
+
+  .resume-sheet {
+    width: 210mm;
+    max-width: none;
+    min-height: 297mm;
+    margin: 0;
+    padding: 14mm 16mm;
+    border: 0;
+    box-shadow: none;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
 }

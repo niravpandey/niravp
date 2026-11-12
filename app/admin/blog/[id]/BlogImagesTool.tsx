@@ -36,7 +36,7 @@ export default function BlogImagesTool({
   const isComfortableDensity = density === "comfortable";
 
   return (
-    <section className={["border border-gray-200 bg-white/60", isIconDensity ? "overflow-hidden" : ""].join(" ")}>
+    <section className={["border border-line bg-white/60", isIconDensity ? "overflow-hidden" : ""].join(" ")}>
       <button
         type="button"
         onClick={onToggleOpen}
@@ -55,7 +55,7 @@ export default function BlogImagesTool({
       </button>
 
       {open && (
-        <div className={["border-t border-gray-200", isIconDensity ? "p-2" : "p-3"].join(" ")}>
+        <div className={["border-t border-line", isIconDensity ? "p-2" : "p-3"].join(" ")}>
           <input
             ref={inputRef}
             type="file"
@@ -70,7 +70,7 @@ export default function BlogImagesTool({
             disabled={loading}
             title={isIconDensity ? (loading ? "Working..." : "Upload images") : undefined}
             className={[
-              "mb-2 inline-flex items-center justify-center border border-gray-300 bg-white/50 text-xs text-gray-700 transition-colors hover:border-gray-400 hover:bg-white/80 disabled:opacity-40",
+              "mb-2 inline-flex items-center justify-center border border-line bg-white/50 text-xs text-gray-700 transition-colors hover:border-line hover:bg-white/80 disabled:opacity-40",
               isIconDensity ? "mx-auto h-9 w-9 px-0 py-0" : "w-full gap-2 px-2 py-1.5",
             ].join(" ")}
           >
@@ -83,12 +83,12 @@ export default function BlogImagesTool({
 
           <div className={["flex max-h-80 flex-col overflow-y-auto", isIconDensity ? "gap-1.5 pr-0" : "gap-2 pr-1"].join(" ")}>
             {images.length === 0 ? (
-              <div className="border border-gray-200 bg-white/70 p-3 text-xs text-gray-500">
+              <div className="border border-line bg-white/70 p-3 text-xs text-gray-500">
                 {loading ? "Loading images..." : "No blog images yet."}
               </div>
             ) : (
               images.map((image) => (
-                <div key={image.path} className={["group min-w-0 border border-gray-200 bg-white", isIconDensity ? "p-1" : "flex gap-2 p-1.5"].join(" ")}>
+                <div key={image.path} className={["group min-w-0 border border-line bg-white", isIconDensity ? "p-1" : "flex gap-2 p-1.5"].join(" ")}>
                   <div className={["relative aspect-square shrink-0 overflow-hidden bg-gray-100", isIconDensity ? "mx-auto w-full max-w-20" : "w-12"].join(" ")}>
                     <img
                       src={image.publicUrl}
@@ -100,7 +100,7 @@ export default function BlogImagesTool({
                         type="button"
                         onClick={() => onInsertImage(image)}
                         title="Insert into editor"
-                        className="inline-flex h-7 min-w-0 flex-1 items-center justify-center border border-gray-900 bg-white/95 text-xs font-medium text-gray-900 shadow-sm transition-colors hover:bg-white"
+                        className="inline-flex h-7 min-w-0 flex-1 items-center justify-center border border-line bg-white/95 text-xs font-medium text-gray-900 shadow-sm transition-colors hover:bg-white"
                       >
                         <PhosphorIcon name="plus" size={14} />
                       </button>

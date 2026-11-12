@@ -36,7 +36,7 @@ export default function DrawingPadTool({
   const isComfortableDensity = density === "comfortable";
 
   return (
-    <section className={["mt-3 border border-gray-200 bg-white/60", isIconDensity ? "overflow-hidden" : ""].join(" ")}>
+    <section className={["mt-3 border border-line bg-white/60", isIconDensity ? "overflow-hidden" : ""].join(" ")}>
       <button
         type="button"
         onClick={onToggleOpen}
@@ -52,9 +52,9 @@ export default function DrawingPadTool({
       </button>
 
       {open && (
-        <div className={expanded ? "fixed inset-0 z-50 flex items-center justify-center bg-gray-950/45 p-5 backdrop-blur-sm" : ["border-t border-gray-200", isIconDensity ? "p-2" : "p-3"].join(" ")}>
-          <div className={expanded ? "relative flex h-[min(78vh,720px)] w-[min(88vw,960px)] flex-col border border-gray-200 bg-white p-3 shadow-2xl" : ""}>
-            <div className={expanded ? "mb-3 flex items-center justify-between border-b border-gray-200 pb-2" : ["mb-2 flex", isIconDensity ? "justify-center" : "justify-end"].join(" ")}>
+        <div className={expanded ? "fixed inset-0 z-50 flex items-center justify-center bg-gray-950/45 p-5 backdrop-blur-sm" : ["border-t border-line", isIconDensity ? "p-2" : "p-3"].join(" ")}>
+          <div className={expanded ? "relative flex h-[min(78vh,720px)] w-[min(88vw,960px)] flex-col border border-line bg-white p-3 shadow-2xl" : ""}>
+            <div className={expanded ? "mb-3 flex items-center justify-between border-b border-line pb-2" : ["mb-2 flex", isIconDensity ? "justify-center" : "justify-end"].join(" ")}>
               {expanded && (
                 <div>
                   <p className="text-sm font-medium text-gray-800">Drawing pad</p>
@@ -65,7 +65,7 @@ export default function DrawingPadTool({
                 type="button"
                 aria-label={expanded ? "Minimize drawing pad" : "Maximize drawing pad"}
                 onClick={() => onExpandedChange(!expanded)}
-                className="inline-flex h-8 w-8 items-center justify-center border border-gray-300 bg-white/50 text-gray-600 transition-colors hover:border-gray-400 hover:bg-white/80"
+                className="inline-flex h-8 w-8 items-center justify-center border border-line bg-white/50 text-gray-600 transition-colors hover:border-line hover:bg-white/80"
               >
                 <PhosphorIcon name={expanded ? "caret-right" : "arrow-square-out"} size={15} />
               </button>
@@ -75,7 +75,7 @@ export default function DrawingPadTool({
                 ref={canvasRef}
                 width={520}
                 height={320}
-                className={expanded ? "block touch-none border border-gray-200 bg-white [aspect-ratio:13/8]" : "block w-full touch-none border border-gray-200 bg-white [aspect-ratio:13/8]"}
+                className={expanded ? "block touch-none border border-line bg-white [aspect-ratio:13/8]" : "block w-full touch-none border border-line bg-white [aspect-ratio:13/8]"}
                 style={expanded ? { width: "min(100%, calc((78vh - 7rem) * 1.625))", height: "auto" } : undefined}
                 onPointerDown={onPointerDown}
                 onPointerMove={onPointerMove}
@@ -88,7 +88,7 @@ export default function DrawingPadTool({
                 type="button"
                 onClick={onClear}
                 title="Clear"
-                className={["inline-flex items-center justify-center border border-gray-300 bg-white/50 text-xs text-gray-700 transition-colors hover:border-gray-400 hover:bg-white/80", isIconDensity ? "h-9 w-9 px-0 py-0" : "flex-1 px-2 py-1.5"].join(" ")}
+                className={["inline-flex items-center justify-center border border-line bg-white/50 text-xs text-gray-700 transition-colors hover:border-line hover:bg-white/80", isIconDensity ? "h-9 w-9 px-0 py-0" : "flex-1 px-2 py-1.5"].join(" ")}
               >
                 {isIconDensity ? <PhosphorIcon name="trash" size={15} /> : "Clear"}
               </button>
@@ -97,7 +97,7 @@ export default function DrawingPadTool({
                 onClick={onUpload}
                 disabled={uploading}
                 title={uploading ? "Uploading..." : "Upload"}
-                className={["inline-flex items-center justify-center border border-gray-300 bg-white/50 text-xs text-gray-700 transition-colors hover:border-gray-400 hover:bg-white/80 disabled:opacity-40", isIconDensity ? "h-9 w-9 px-0 py-0" : "flex-1 px-2 py-1.5"].join(" ")}
+                className={["inline-flex items-center justify-center border border-line bg-white/50 text-xs text-gray-700 transition-colors hover:border-line hover:bg-white/80 disabled:opacity-40", isIconDensity ? "h-9 w-9 px-0 py-0" : "flex-1 px-2 py-1.5"].join(" ")}
               >
                 {isIconDensity ? <PhosphorIcon name="upload-simple" size={15} /> : uploading ? "Uploading..." : "Upload"}
               </button>

@@ -1,4 +1,4 @@
-// Shared by the random walk background (a client component) and its caption (a server component).
+// Shared by the random walk background (a client component) and its caption.
 export const WALKERS_PER_SIDE = 32;
-// Dusty violet between the blog's blue-900 titles and its mauve accents.
-export const LINE_COLOR = "oklch(50% 0.07 300)";
+// Line color comes from the palette: `--walk` (and `--walk-opacity`) in app/globals.css.
+export const LINE_COLOR_VAR = "var(--walk)";

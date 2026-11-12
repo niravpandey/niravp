@@ -84,12 +84,12 @@ export default function GallerySection() {
             const isCopy = index >= images.length;
             return (
               <div key={`${image.path}-${index}`} className="h-full shrink-0 pr-2" aria-hidden={isCopy || undefined}>
-                <div className="group relative aspect-square h-full overflow-hidden">
+                <div className="group relative aspect-square h-full overflow-hidden border border-line">
                   <Image
                     src={image.src}
                     alt={isCopy ? "" : image.location ? `Photo from ${image.location}` : `Gallery image ${index + 1}`}
                     fill
-                    className="object-cover"
+                    className="object-cover [filter:var(--photo-filter)]"
                     sizes="112px"
                   />
                   {image.location && (

@@ -11,7 +11,7 @@ export default function BlogCoverImage({ src, alt }: BlogCoverImageProps) {
     <img
       src={src}
       alt={alt}
-      className="mx-auto mt-8 block h-auto max-h-[28rem] max-w-full border border-gray-200 object-contain object-center"
+      className="mx-auto mt-8 block h-auto max-h-[28rem] max-w-full border border-line object-contain object-center"
     />
   );
 }

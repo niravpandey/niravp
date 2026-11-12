@@ -30,7 +30,7 @@ export default async function AdminPage() {
             <span>Home</span>
           </Link>
 
-          <div className="mt-6 mb-8 flex items-end justify-between gap-4 border-b border-gray-200 pb-5">
+          <div className="mt-6 mb-8 flex items-end justify-between gap-4 border-b border-line pb-5">
             <div>
               <h1 className="text-3xl font-semibold text-mauve-500">Admin</h1>
               <p className="mt-1 text-sm text-gray-500">{user.email}</p>
@@ -39,7 +39,7 @@ export default async function AdminPage() {
             <form action={signOut} className="m-0 flex">
               <button
                 type="submit"
-                className="border border-gray-300 bg-white/50 px-3 py-1.5 text-sm text-gray-600 transition-colors hover:border-gray-400 hover:bg-white/80"
+                className="border border-line bg-white/50 px-3 py-1.5 text-sm text-gray-600 transition-colors hover:border-line hover:bg-white/80"
               >
                 Sign out
               </button>
@@ -49,7 +49,7 @@ export default async function AdminPage() {
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Link
               href="/admin/blog"
-              className="group flex flex-col gap-1 border border-gray-200 bg-white/60 p-5 transition-colors hover:border-gray-400 hover:bg-white/80"
+              className="group flex flex-col gap-1 border border-line bg-white/60 p-5 transition-colors hover:border-line hover:bg-white/80"
             >
               <span className="font-medium text-gray-900 transition-colors group-hover:text-blue-900">Writing</span>
               <span className="text-sm text-gray-500">Manage blog posts and essays</span>
@@ -57,28 +57,28 @@ export default async function AdminPage() {
 
             <Link
               href="/admin/projects"
-              className="group flex flex-col gap-1 border border-gray-200 bg-white/60 p-5 transition-colors hover:border-gray-400 hover:bg-white/80"
+              className="group flex flex-col gap-1 border border-line bg-white/60 p-5 transition-colors hover:border-line hover:bg-white/80"
             >
               <span className="font-medium text-gray-900 transition-colors group-hover:text-blue-900">Projects</span>
               <span className="text-sm text-gray-500">Manage portfolio projects and their order</span>
             </Link>
             <Link
               href="/admin/skills"
-              className="group flex flex-col gap-1 border border-gray-200 bg-white/60 p-5 transition-colors hover:border-gray-400 hover:bg-white/80"
+              className="group flex flex-col gap-1 border border-line bg-white/60 p-5 transition-colors hover:border-line hover:bg-white/80"
             >
               <span className="font-medium text-gray-900 transition-colors group-hover:text-blue-900">Skills</span>
               <span className="text-sm text-gray-500">Manage categories, skills, and icons</span>
             </Link>
             <Link
               href="/admin/experience"
-              className="group flex flex-col gap-1 border border-gray-200 bg-white/60 p-5 transition-colors hover:border-gray-400 hover:bg-white/80"
+              className="group flex flex-col gap-1 border border-line bg-white/60 p-5 transition-colors hover:border-line hover:bg-white/80"
             >
               <span className="font-medium text-gray-900 transition-colors group-hover:text-blue-900">Experience</span>
               <span className="text-sm text-gray-500">Manage roles, organisations, and logos</span>
             </Link>
             <Link
               href="/admin/gallery"
-              className="group flex flex-col gap-1 border border-gray-200 bg-white/60 p-5 transition-colors hover:border-gray-400 hover:bg-white/80"
+              className="group flex flex-col gap-1 border border-line bg-white/60 p-5 transition-colors hover:border-line hover:bg-white/80"
             >
               <span className="font-medium text-gray-900 transition-colors group-hover:text-blue-900">Gallery</span>
               <span className="text-sm text-gray-500">Upload images</span>
@@ -86,7 +86,7 @@ export default async function AdminPage() {
 
             <Link
               href="/admin/resume"
-              className="group flex flex-col gap-1 border border-gray-200 bg-white/60 p-5 transition-colors hover:border-gray-400 hover:bg-white/80"
+              className="group flex flex-col gap-1 border border-line bg-white/60 p-5 transition-colors hover:border-line hover:bg-white/80"
             >
               <span className="font-medium text-gray-900 transition-colors group-hover:text-blue-900">Resume</span>
               <span className="text-sm text-gray-500">Upload the public PDF</span>
@@ -94,7 +94,7 @@ export default async function AdminPage() {
 
             <Link
               href="/admin/settings"
-              className="group flex flex-col gap-1 border border-gray-200 bg-white/60 p-5 transition-colors hover:border-gray-400 hover:bg-white/80"
+              className="group flex flex-col gap-1 border border-line bg-white/60 p-5 transition-colors hover:border-line hover:bg-white/80"
             >
               <span className="font-medium text-gray-900 transition-colors group-hover:text-blue-900">Settings</span>
               <span className="text-sm text-gray-500">Control home page content limits</span>

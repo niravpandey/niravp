@@ -6,7 +6,7 @@ export default function SubscribePage() {
     <div className="flex min-h-screen flex-1 flex-col items-center justify-center font-sans">
       <main className="flex w-full flex-1 flex-col items-center px-4 py-16 sm:items-start sm:px-8 sm:py-32 lg:px-16">
         <section className="w-full max-w-3xl">
-          <div className="border border-gray-200 bg-white/50 p-6 sm:p-8">
+          <div className="border border-line bg-white/50 p-6 sm:p-8">
             <h1 className="text-xs font-semibold uppercase tracking-wider text-mauve-500">
               Subscribe
             </h1>

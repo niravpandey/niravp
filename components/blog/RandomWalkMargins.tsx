@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { LINE_COLOR, WALKERS_PER_SIDE } from "@/components/blog/randomWalkConfig";
+import { WALKERS_PER_SIDE } from "@/components/blog/randomWalkConfig";
 
 // Below this window width the walks would sit behind the text, so they're turned off. Matches Tailwind's md breakpoint.
 const MIN_WIDTH = 768;
@@ -70,7 +70,7 @@ function ease(t: number) {
 }
 
 /**
- * Violet-mauve random walks behind the blog. As you scroll down, each walk shows only its latest 500 moves,
+ * Random walks (in the palette's `--walk` color) behind the blog. As you scroll down, each walk shows only its latest 500 moves,
  * a fading trail creeping in from the page edge; scrolling up walks it back. When the walks meet in the
  * middle, 70% of the way down the page, each trail backtracks over its whole path so the full web spreads
  * across the screen and stays for the rest of the page; it retracts again when you scroll back above that. Drawn on a fixed canvas behind the
@@ -92,11 +92,20 @@ export default function RandomWalkMargins() {
     // How far the trails have backtracked over their paths: 0 is just the trail, 1 is the whole path.
     let backtrack = 0;
     let lastTime = 0;
+    // Line color and opacity come from the palette tokens `--walk` / `--walk-opacity` on <html>.
+    let lineColor = "currentColor";
+    let opacity = 1;
+    const readPalette = () => {
+      const styles = getComputedStyle(document.documentElement);
+      lineColor = styles.getPropertyValue("--walk").trim() || "currentColor";
+      const parsed = parseFloat(styles.getPropertyValue("--walk-opacity"));
+      opacity = Number.isFinite(parsed) ? parsed : 1;
+    };
 
     // One stroke per walk, so overlapping walks build up a slightly denser texture.
     const strokeRange = (from: number, to: number, alpha: number) => {
       if (to <= from) return;
-      ctx.globalAlpha = alpha;
+      ctx.globalAlpha = Math.min(alpha * opacity, 1);
       for (const points of walks) {
         ctx.beginPath();
         ctx.moveTo(points[from * 2], points[from * 2 + 1]);
@@ -120,7 +129,7 @@ export default function RandomWalkMargins() {
       else if (backtrack > target) backtrack = Math.max(target, backtrack - (elapsed / BACKTRACK_MS) * RETRACT_SPEEDUP);
 
       ctx.clearRect(0, 0, width, height);
-      ctx.strokeStyle = LINE_COLOR;
+      ctx.strokeStyle = lineColor;
       ctx.lineWidth = 1;
 
       // The path behind the trail, revealed from the trail backwards as it backtracks.
@@ -168,12 +177,21 @@ export default function RandomWalkMargins() {
       requestDraw();
     };
 
+    // Redraw in the new colors when the palette on <html> changes.
+    const paletteObserver = new MutationObserver(() => {
+      readPalette();
+      requestDraw();
+    });
+    paletteObserver.observe(document.documentElement, { attributes: true, attributeFilter: ["data-palette", "style", "class"] });
+
+    readPalette();
     resize();
     window.addEventListener("resize", resize);
     window.addEventListener("scroll", requestDraw, { passive: true });
     return () => {
       window.removeEventListener("resize", resize);
       window.removeEventListener("scroll", requestDraw);
+      paletteObserver.disconnect();
       if (frame) cancelAnimationFrame(frame);
     };
   }, []);

@@ -136,19 +136,19 @@ export default function BlogSemanticMap({ posts, selectedCategory }: BlogSemanti
   const hovered = projection.posts.find((post) => post.id === hoveredId);
 
   return (
-    <div className="border border-gray-200 bg-white p-4 font-mono text-xs text-gray-500">
+    <div className="border border-line bg-white p-4 font-mono text-xs text-gray-500">
       <svg viewBox={`0 0 ${WIDTH} ${HEIGHT}`} className="h-auto w-full" role="img" aria-label="Map of posts by similarity">
         {/* Square grid lines out from the origin, then the two axes through it */}
         {Array.from({ length: Math.floor(WIDTH / 2 / GRID_SIZE) }, (_, i) => (i + 1) * GRID_SIZE).flatMap((offset) => [
-          <line key={`x+${offset}`} x1={WIDTH / 2 + offset} y1={0} x2={WIDTH / 2 + offset} y2={HEIGHT} className="stroke-gray-100" />,
-          <line key={`x-${offset}`} x1={WIDTH / 2 - offset} y1={0} x2={WIDTH / 2 - offset} y2={HEIGHT} className="stroke-gray-100" />,
+          <line key={`x+${offset}`} x1={WIDTH / 2 + offset} y1={0} x2={WIDTH / 2 + offset} y2={HEIGHT} className="stroke-line/50" />,
+          <line key={`x-${offset}`} x1={WIDTH / 2 - offset} y1={0} x2={WIDTH / 2 - offset} y2={HEIGHT} className="stroke-line/50" />,
         ])}
         {Array.from({ length: Math.floor(HEIGHT / 2 / GRID_SIZE) }, (_, i) => (i + 1) * GRID_SIZE).flatMap((offset) => [
-          <line key={`y+${offset}`} x1={0} y1={HEIGHT / 2 + offset} x2={WIDTH} y2={HEIGHT / 2 + offset} className="stroke-gray-100" />,
-          <line key={`y-${offset}`} x1={0} y1={HEIGHT / 2 - offset} x2={WIDTH} y2={HEIGHT / 2 - offset} className="stroke-gray-100" />,
+          <line key={`y+${offset}`} x1={0} y1={HEIGHT / 2 + offset} x2={WIDTH} y2={HEIGHT / 2 + offset} className="stroke-line/50" />,
+          <line key={`y-${offset}`} x1={0} y1={HEIGHT / 2 - offset} x2={WIDTH} y2={HEIGHT / 2 - offset} className="stroke-line/50" />,
         ])}
-        <line x1={0} y1={HEIGHT / 2} x2={WIDTH} y2={HEIGHT / 2} className="stroke-gray-300" />
-        <line x1={WIDTH / 2} y1={0} x2={WIDTH / 2} y2={HEIGHT} className="stroke-gray-300" />
+        <line x1={0} y1={HEIGHT / 2} x2={WIDTH} y2={HEIGHT / 2} className="stroke-line" />
+        <line x1={WIDTH / 2} y1={0} x2={WIDTH / 2} y2={HEIGHT} className="stroke-line" />
         <text x={WIDTH - 6} y={HEIGHT / 2 - 8} textAnchor="end" className="fill-gray-400 text-[12px]">
           PC₁
         </text>
@@ -166,7 +166,7 @@ export default function BlogSemanticMap({ posts, selectedCategory }: BlogSemanti
             strokeWidth={1}
             className={cn(
               "transition-colors",
-              hoveredId === from.id || hoveredId === to.id ? "stroke-blue-900/50" : "stroke-gray-200",
+              hoveredId === from.id || hoveredId === to.id ? "stroke-blue-900/50" : "stroke-line",
             )}
           />
         ))}

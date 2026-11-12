@@ -28,16 +28,14 @@ const RING_RADIUS = (INNER_RADIUS + OUTER_RADIUS) / 2;
 const RING_WIDTH = OUTER_RADIUS - INNER_RADIUS;
 const FULL_ANGLE = 2 * Math.PI;
 
-// Keep every category in the same visual family. The small lightness stagger
-// gives adjacent segments enough separation without falling back to unrelated
-// colours when a site grows beyond the original palette length.
+// Categories run along the palette gradient (`--grad-from` → `--grad-to` in app/globals.css), so the wheel
+// matches the navbar and follows palette switches. Every other segment is lightened a touch toward the
+// surface so neighbours stay distinct when two adjacent stops are close.
 function categoryColor(index: number, categoryCount: number) {
   const progress = categoryCount <= 1 ? 0 : index / (categoryCount - 1);
-  const hue = 220 + progress * 72; // blue -> mauve
-  const saturation = 78 - progress * 16;
-  const lightness = 48 + progress * 7 + (index % 2 === 1 ? 4 : 0);
+  const stop = `color-mix(in oklab, var(--grad-to) ${(progress * 100).toFixed(1)}%, var(--grad-from))`;
 
-  return `hsl(${hue.toFixed(1)} ${saturation.toFixed(1)}% ${lightness.toFixed(1)}%)`;
+  return index % 2 === 1 ? `color-mix(in oklab, ${stop} 82%, var(--surface))` : stop;
 }
 
 /** SVG path for one donut segment, centred in a 100x100 viewBox. */
@@ -117,8 +115,8 @@ export default function BlogCategoryDistribution({
   });
 
   return (
-    <div className="mt-8 border border-gray-200 bg-white p-6">
-      <div className="flex items-center justify-between border-b border-gray-200 pb-3">
+    <div className="mt-8 border border-line bg-white p-6">
+      <div className="flex items-center justify-between border-b border-line pb-3">
         <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-500">Topics & Distribution</h3>
         <span className="text-xs text-gray-400">
           {totalTags} total tags across {posts.length} posts
@@ -136,7 +134,7 @@ export default function BlogCategoryDistribution({
               fill="none"
               stroke="currentColor"
               strokeWidth={RING_WIDTH}
-              className="text-slate-100"
+              className="text-gray-100"
               pointerEvents="none"
             />
 
@@ -147,7 +145,7 @@ export default function BlogCategoryDistribution({
                 cy="50"
                 r={RING_RADIUS}
                 fill="none"
-                stroke={stats[0].color}
+                style={{ stroke: stats[0].color }}
                 strokeWidth={RING_WIDTH}
                 className="cursor-pointer"
                 {...segmentProps(stats[0])}
@@ -157,8 +155,7 @@ export default function BlogCategoryDistribution({
                 <path
                   key={stat.name}
                   d={ringSegmentPath(stat.startAngle, stat.endAngle)}
-                  fill={stat.color}
-                  stroke={stat.color}
+                  style={{ fill: stat.color, stroke: stat.color }}
                   strokeWidth="0.35"
                   className={cn(
                     "cursor-pointer transition-opacity duration-200 ease-out",
@@ -203,8 +200,8 @@ export default function BlogCategoryDistribution({
                 className={cn(
                   "flex items-center gap-2 border px-3 py-1.5 text-xs transition-all",
                   isSelected && "border-blue-900 bg-blue-900 text-white",
-                  !isSelected && isHovered && "border-gray-900 bg-gray-900 text-white",
-                  !isSelected && !isHovered && "border-gray-300 bg-white text-gray-700 hover:border-gray-400",
+                  !isSelected && isHovered && "border-line bg-gray-900 text-white",
+                  !isSelected && !isHovered && "border-line bg-white text-gray-700 hover:border-line",
                 )}
               >
                 <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: stat.color }} />

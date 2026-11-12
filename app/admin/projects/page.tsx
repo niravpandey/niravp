@@ -249,8 +249,8 @@ export default function AdminProjectsPage() {
     setLoading(false);
   }
 
-  const fieldClass = "w-full border border-gray-200 bg-white/70 px-3 py-2 text-sm text-gray-900 outline-none transition-colors placeholder:text-gray-400 focus:border-gray-400";
-  const buttonClass = "inline-flex items-center justify-center gap-1.5 border border-gray-300 bg-white/60 px-3 py-2 text-sm text-gray-600 transition-colors hover:border-gray-400 hover:bg-white disabled:opacity-40";
+  const fieldClass = "w-full border border-line bg-white/70 px-3 py-2 text-sm text-gray-900 outline-none transition-colors placeholder:text-gray-400 focus:border-line";
+  const buttonClass = "inline-flex items-center justify-center gap-1.5 border border-line bg-white/60 px-3 py-2 text-sm text-gray-600 transition-colors hover:border-line hover:bg-white disabled:opacity-40";
 
   return (
     <div className="flex min-h-screen flex-col font-sans">
@@ -261,12 +261,12 @@ export default function AdminProjectsPage() {
             Admin
           </Link>
 
-          <div className="mt-6 mb-8 border-b border-gray-200 pb-5">
+          <div className="mt-6 mb-8 border-b border-line pb-5">
             <h1 className="text-3xl font-semibold text-mauve-500">Projects</h1>
             <p className="mt-1 text-sm text-gray-500">Project details, images, ordering, and shared skills</p>
           </div>
 
-          <form onSubmit={saveProject} className="mb-8 flex flex-col gap-4 border-b border-gray-200 pb-8">
+          <form onSubmit={saveProject} className="mb-8 flex flex-col gap-4 border-b border-line pb-8">
             <h2 className="text-sm font-medium text-gray-800">{editingProject ? "Edit project" : "Add project"}</h2>
             <div className="grid gap-3 sm:grid-cols-2">
               <label className="text-xs text-gray-500">Title
@@ -298,12 +298,12 @@ export default function AdminProjectsPage() {
             </div>
             {editingProject?.image_url && !removeImage && !imageFile && (
               <div className="flex items-center gap-3">
-                <Image src={editingProject.image_url} alt="" width={64} height={64} className="h-16 w-16 border border-gray-200 object-cover" />
+                <Image src={editingProject.image_url} alt="" width={64} height={64} className="h-16 w-16 border border-line object-cover" />
                 <button type="button" onClick={() => setRemoveImage(true)} className="text-xs text-gray-400 hover:text-red-500">Remove current image</button>
               </div>
             )}
 
-            <fieldset className="border border-gray-200 p-3">
+            <fieldset className="border border-line p-3">
               <legend className="px-1 text-xs text-gray-500">Skills</legend>
               <div className="relative mb-3">
                 <PhosphorIcon name="magnifying-glass" size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -317,7 +317,7 @@ export default function AdminProjectsPage() {
                       {category.skills.map((skill) => {
                         const checked = selectedSkillIds.includes(skill.id);
                         return (
-                          <label key={skill.id} className={`flex cursor-pointer items-center gap-1.5 border px-2 py-1 text-xs ${checked ? "border-mauve-500 bg-mauve-200 text-mauve-500" : "border-gray-200 text-gray-600"}`}>
+                          <label key={skill.id} className={`flex cursor-pointer items-center gap-1.5 border px-2 py-1 text-xs ${checked ? "border-mauve-500 bg-mauve-200 text-mauve-500" : "border-line text-gray-600"}`}>
                             <input type="checkbox" checked={checked} onChange={() => toggleSkill(skill.id)} className="sr-only" />
                             {skill.icon_url && <Image src={skill.icon_url} alt="" width={14} height={14} unoptimized className="h-3.5 w-3.5 object-contain" />}
                             {skill.name}
@@ -342,14 +342,14 @@ export default function AdminProjectsPage() {
             </div>
           </form>
 
-          <div className="divide-y divide-gray-200 border-y border-gray-200">
+          <div className="divide-y divide-line border-y border-line">
             {projects.length === 0 && <p className="py-5 text-sm text-gray-500">No projects yet.</p>}
             {projects.map((project) => (
               <article key={project.id} className="flex gap-4 py-5">
                 {project.image_url ? (
-                  <Image src={project.image_url} alt="" width={80} height={80} className="h-20 w-20 shrink-0 border border-gray-200 object-cover" />
+                  <Image src={project.image_url} alt="" width={80} height={80} className="h-20 w-20 shrink-0 border border-line object-cover" />
                 ) : (
-                  <div className="flex h-20 w-20 shrink-0 items-center justify-center border border-dashed border-gray-300 text-gray-300">
+                  <div className="flex h-20 w-20 shrink-0 items-center justify-center border border-dashed border-line text-gray-300">
                     <PhosphorIcon name="folder-simple-star" size={22} />
                   </div>
                 )}
@@ -362,7 +362,7 @@ export default function AdminProjectsPage() {
                   <p className="mt-1 text-sm text-gray-600">{project.description}</p>
                   <div className="mt-2 flex flex-wrap gap-1.5">
                     {(project.skills.length > 0 ? project.skills.map((skill) => skill.name) : project.tags).map((name) => (
-                      <span key={name} className="border border-gray-200 px-1.5 py-0.5 text-xs text-gray-500">{name}</span>
+                      <span key={name} className="border border-line px-1.5 py-0.5 text-xs text-gray-500">{name}</span>
                     ))}
                   </div>
                 </div>

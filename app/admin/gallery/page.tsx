@@ -301,7 +301,7 @@ export default function AdminGalleryPage() {
             <span>Admin</span>
           </Link>
 
-          <div className="mt-6 mb-8 border-b border-gray-200 pb-5">
+          <div className="mt-6 mb-8 border-b border-line pb-5">
             <h1 className="text-3xl font-semibold text-mauve-500">Gallery</h1>
             <p className="mt-1 text-sm text-gray-500">
               Upload and manage images in the Supabase bucket called {BUCKET_NAME}.
@@ -310,7 +310,7 @@ export default function AdminGalleryPage() {
 
           <form
             onSubmit={handleUpload}
-            className="mb-10 flex flex-col gap-3 border border-gray-200 bg-white/60 p-4 sm:p-5"
+            className="mb-10 flex flex-col gap-3 border border-line bg-white/60 p-4 sm:p-5"
           >
             <p className="text-sm font-medium text-gray-700">Upload images</p>
 
@@ -323,7 +323,7 @@ export default function AdminGalleryPage() {
                 setError("");
                 setSuccess("");
               }}
-              className="border border-gray-200 bg-white/40 px-3 py-2 text-sm text-gray-900 transition-colors file:mr-3 file:border-0 file:bg-transparent file:text-sm file:text-gray-600 focus:border-gray-400 focus:outline-none"
+              className="border border-line bg-white/40 px-3 py-2 text-sm text-gray-900 transition-colors file:mr-3 file:border-0 file:bg-transparent file:text-sm file:text-gray-600 focus:border-line focus:outline-none"
             />
 
             {error && <p className="text-xs text-red-500">{error}</p>}
@@ -333,7 +333,7 @@ export default function AdminGalleryPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="border border-gray-300 bg-white/50 px-3 py-1.5 text-sm text-gray-600 transition-colors hover:border-gray-400 hover:bg-white/80 disabled:opacity-40"
+                className="border border-line bg-white/50 px-3 py-1.5 text-sm text-gray-600 transition-colors hover:border-line hover:bg-white/80 disabled:opacity-40"
               >
                 {loading ? "Uploading..." : "Upload"}
               </button>
@@ -342,18 +342,18 @@ export default function AdminGalleryPage() {
 
           <div className="flex flex-col gap-3">
             {images.length === 0 ? (
-              <div className="border border-gray-200 bg-white/60 p-4 text-sm text-gray-500">
+              <div className="border border-line bg-white/60 p-4 text-sm text-gray-500">
                 No gallery images yet.
               </div>
             ) : (
               images.map((image) => (
                 <div
                   key={image.path}
-                  className="border border-gray-200 bg-white/60 p-4 transition-colors hover:border-gray-300 hover:bg-white/80"
+                  className="border border-line bg-white/60 p-4 transition-colors hover:border-line hover:bg-white/80"
                 >
                   <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                     <div className="flex min-w-0 flex-1 gap-4">
-                      <div className="h-24 w-24 shrink-0 overflow-hidden border border-gray-200 bg-gray-100">
+                      <div className="h-24 w-24 shrink-0 overflow-hidden border border-line bg-gray-100">
                         {/* plain img keeps this page simple */}
                         <img
                           src={image.publicUrl}
@@ -387,13 +387,13 @@ export default function AdminGalleryPage() {
                               }));
                             }}
                             placeholder="Location"
-                            className="min-w-0 flex-1 border border-gray-200 bg-white/70 px-2 py-1.5 text-xs text-gray-700 outline-none transition-colors placeholder:text-gray-300 focus:border-gray-400"
+                            className="min-w-0 flex-1 border border-line bg-white/70 px-2 py-1.5 text-xs text-gray-700 outline-none transition-colors placeholder:text-gray-300 focus:border-line"
                           />
                           <button
                             type="button"
                             disabled={loading}
                             onClick={() => handleSaveLocation(image)}
-                            className="border border-gray-300 bg-white/50 px-2 py-1.5 text-xs text-gray-500 transition-colors hover:border-gray-400 hover:bg-white/80 disabled:opacity-40"
+                            className="border border-line bg-white/50 px-2 py-1.5 text-xs text-gray-500 transition-colors hover:border-line hover:bg-white/80 disabled:opacity-40"
                           >
                             Save location
                           </button>

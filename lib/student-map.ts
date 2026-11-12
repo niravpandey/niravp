@@ -14,6 +14,8 @@ export const MAP_WIDTH = 960;
 export const MAP_HEIGHT = 470;
 
 const ANTARCTICA_ID = "010";
+/** Countries drawn smaller than this (in square SVG units, e.g. Palestine or Cyprus) vanish under their borders, so they get a dot. */
+const MIN_OUTLINE_AREA = 6;
 
 /** Where the library's short name reads oddly. */
 const NAME_OVERRIDES: Record<string, string> = { NL: "Netherlands" };
@@ -28,7 +30,7 @@ export type MapPlace = {
   name: string;
   /** Numeric ISO id, matching a base map outline when `inBaseMap`. */
   id: string;
-  /** Small countries (e.g. Singapore) have no outline on the base map and are drawn as a dot. */
+  /** Small countries (e.g. Singapore, Palestine) have no usable outline on the base map and are drawn as a dot. */
   inBaseMap: boolean;
   x: number;
   y: number;
@@ -69,12 +71,12 @@ function mainCentroid(geometry: Geometry): [number, number] {
 /** Projects the world map and student locations to SVG coordinates on the server. */
 export function getStudentMapData(): StudentMapData | null {
   const base = toFeatures(world110m).filter((f) => f.id !== ANTARCTICA_ID);
-  const baseIds = new Set(base.map((f) => f.id));
   // The detailed map is only used to locate small countries (e.g. Hong Kong) missing from the base map.
   const detailed = new Map(toFeatures(world50m).map((f) => [f.id, f]));
 
   const projection = geoEqualEarth().fitSize([MAP_WIDTH, MAP_HEIGHT], { type: "FeatureCollection", features: base });
   const path = geoPath(projection).digits(1);
+  const baseIds = new Set(base.filter((f) => path.area(f) >= MIN_OUTLINE_AREA).map((f) => f.id));
 
   const places: Record<string, MapPlace> = {};
 

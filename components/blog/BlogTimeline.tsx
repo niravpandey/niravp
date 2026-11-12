@@ -100,7 +100,7 @@ export default function BlogTimeline({ posts, selectedCategory }: BlogTimelinePr
   const spanDays = lastDay - firstDay + 1;
 
   return (
-    <div className="border border-gray-200 bg-white p-4 font-mono text-xs text-gray-500">
+    <div className="border border-line bg-white p-4 font-mono text-xs text-gray-500">
       <div ref={scrollerRef} className="overflow-x-auto pb-2 [scrollbar-width:thin]">
         <div className="mx-auto w-max">
           <div className="grid auto-cols-[10px] grid-flow-col gap-0.5 pb-1 text-[10px] text-gray-400">

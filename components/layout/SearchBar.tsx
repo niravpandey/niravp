@@ -6,7 +6,7 @@ export default function SearchBar() {
   const [query, setQuery] = useState("");
 
   return (
-<div className="flex items-center gap-2 border border-gray-300 px-3 py-1.5 w-3xl mx-auto focus-within:border-blue-500 transition-colors duration-150 mt-4">
+<div className="flex items-center gap-2 border border-line px-3 py-1.5 w-3xl mx-auto focus-within:border-blue-500 transition-colors duration-150 mt-4">
       <PhosphorIcon name="magnifying-glass" size={16} className="text-gray-400" />
       <input
         type="text"

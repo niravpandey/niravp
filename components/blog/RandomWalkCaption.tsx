@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
-import { LINE_COLOR } from "@/components/blog/randomWalkConfig";
+import { LINE_COLOR_VAR } from "@/components/blog/randomWalkConfig";
 
 // Simple solid flower in a 24x24 viewBox: rounded petals around a filled centre.
 const PETAL_COUNT = 10;
@@ -39,7 +39,7 @@ export default function RandomWalkCaption() {
         "hidden flex-col items-center gap-2 pb-8 font-mono text-xs transition-opacity ease-in-out md:flex motion-reduce:hidden",
         visible ? "opacity-100 duration-2000" : "opacity-0 duration-700",
       )}
-      style={{ color: LINE_COLOR }}
+      style={{ color: LINE_COLOR_VAR }}
     >
       <button
         type="button"

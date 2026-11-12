@@ -51,7 +51,7 @@ export default function ProjectSection({ projects, currentIndex, setCurrentIndex
       <div className="mt-4 flex flex-1 flex-col">
         <div className="flex flex-1 gap-4">
           {project.image_url && (
-            <div className="relative h-24 w-24 shrink-0 overflow-hidden border border-gray-200 bg-gray-100 sm:h-28 sm:w-28">
+            <div className="relative h-24 w-24 shrink-0 overflow-hidden border border-line bg-gray-100 sm:h-28 sm:w-28">
               <Image
                 src={project.image_url}
                 alt={project.image_alt || `${project.title} preview`}
@@ -86,7 +86,7 @@ export default function ProjectSection({ projects, currentIndex, setCurrentIndex
         <div className="mt-4">
           <div className="flex flex-wrap gap-2">
             {visibleSkills.map((skillName) => (
-              <span key={skillName} className="rounded-full border border-gray-300 px-2 py-0.5 text-xs text-gray-600">
+              <span key={skillName} className="rounded-full border border-line px-2 py-0.5 text-xs text-gray-600">
                 {skillName}
               </span>
             ))}
@@ -96,7 +96,7 @@ export default function ProjectSection({ projects, currentIndex, setCurrentIndex
                 onClick={expandSkills}
                 aria-label={`Show ${hiddenSkillCount} more skills for ${project.title}`}
                 title="Show all skills"
-                className="inline-flex items-center gap-0.5 rounded-full border border-gray-300 px-2 py-0.5 text-xs text-gray-600 transition-colors hover:border-mauve-500 hover:bg-mauve-200 hover:text-mauve-500"
+                className="inline-flex items-center gap-0.5 rounded-full border border-line px-2 py-0.5 text-xs text-gray-600 transition-colors hover:border-mauve-500 hover:bg-mauve-200 hover:text-mauve-500"
               >
                 <PhosphorIcon name="plus" size={10} />
                 {hiddenSkillCount}

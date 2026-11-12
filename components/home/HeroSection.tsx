@@ -1,124 +1,83 @@
-"use client";
-
-import { useEffect, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import PhosphorIcon from "@/components/ui/PhosphorIcon";
 import { getAssetUrl } from "@/lib/supabase/storage";
-
-const RESUME_URL = getAssetUrl("resume.pdf");
 
 const SOCIAL_LINKS = [
   { label: "LinkedIn", href: "https://linkedin.com/in/niravpandey05", icon: getAssetUrl("icons/LinkedIn.png") },
   { label: "GitHub", href: "https://github.com/niravpandey", icon: getAssetUrl("icons/GitHub.png") },
 ];
 
-const linkClass = "flex items-center gap-2 hover:text-mauve-500";
+// Small boxed buttons in a row, so the links read as a block instead of a long list. They turn green
+// (the palette's line colour) on hover.
+const linkClass =
+  "relative flex items-center gap-2 overflow-hidden border border-line bg-surface px-3 py-1.5 text-sm transition-colors hover:bg-line hover:text-white";
 
 export default function HeroSection() {
-  const [resumeOpen, setResumeOpen] = useState(false);
-
   return (
-    <>
-      <div className="flex flex-col flex-wrap items-start gap-6 border-b border-gray-200 pb-5 sm:flex-row">
-        <div className="relative aspect-square w-40 shrink-0 sm:w-48 md:w-56">
-          <Image
-            src={getAssetUrl("headshot.png")}
-            fill
-            alt="Nirav Pandey"
-            sizes="(max-width: 640px) 10rem, (max-width: 768px) 12rem, 14rem"
-            className="border border-gray-300 object-cover p-1"
-          />
-        </div>
+    <div className="flex w-full flex-col flex-wrap items-start gap-6 border-b border-line pb-5 sm:flex-row">
+      <div className="relative aspect-square w-40 shrink-0 sm:w-48 md:w-56">
+        <Image
+          src={getAssetUrl("headshot.png")}
+          fill
+          alt="Nirav Pandey"
+          sizes="(max-width: 640px) 10rem, (max-width: 768px) 12rem, 14rem"
+          className="border border-line object-cover p-1"
+        />
+      </div>
 
-        <div className="shrink-0">
-          <h1 className="font-serif text-4xl font-medium text-blue-900">Nirav Pandey</h1>
-          <p className="text-gray-600">Student, University of Melbourne</p>
-          <p className="text-gray-600">Bachelor of Science (Data Science)</p>
-          <p className="text-gray-600">with a Specialisation in AI</p>
+      <div className="shrink-0">
+        <h1 className="font-serif text-5xl font-heading tracking-heading text-heading">Nirav Pandey</h1>
+        <p className="mt-1 text-gray-600">Student, University of Melbourne</p>
+        <p className="text-sm text-gray-500">BSc (Data Science) · Specialisation in AI</p>
 
-          <div className="mt-4 flex flex-col gap-1 text-gray-700">
-            <a href="mailto:niravp@student.unimelb.edu.au" className={linkClass}>
-              <PhosphorIcon name="paper-plane-tilt" size={16} />
-              Email
+        <div className="mt-4 flex flex-wrap gap-2 text-gray-700">
+          <a href="mailto:niravp@student.unimelb.edu.au" className={linkClass}>
+            <PhosphorIcon name="paper-plane-tilt" size={16} />
+            Email
+          </a>
+          <Link href="/resume" className={linkClass}>
+            <PhosphorIcon name="file-text" size={16} />
+            Resume
+          </Link>
+          {/* The logos speak for themselves, so these are icon-only (the label stays for screen readers and hover). */}
+          {SOCIAL_LINKS.map(({ label, href, icon }) => (
+            <a key={label} href={href} target="_blank" rel="noopener noreferrer" aria-label={label} title={label} className={`group ${linkClass}`}>
+              <Image src={icon} width={16} height={16} alt="" className="h-4 w-4" />
+              {/* On hover, a green cover slides over the logo with an arrow. */}
+              <span className="absolute inset-0 flex translate-y-full items-center justify-center bg-line text-white transition-transform duration-200 ease-out group-hover:translate-y-0 group-focus-visible:translate-y-0 motion-reduce:transition-none">
+                <PhosphorIcon name="arrow-up-right" size={16} />
+              </span>
             </a>
-            {SOCIAL_LINKS.map(({ label, href, icon }) => (
-              <a key={label} href={href} className={linkClass}>
-                <Image src={icon} width={16} height={16} alt={label} className="h-4 w-4" />
-                {label}
-              </a>
-            ))}
-            <button type="button" onClick={() => setResumeOpen(true)} className={`${linkClass} text-left`}>
-              <PhosphorIcon name="file-text" size={16} />
-              Resume
-            </button>
-          </div>
-        </div>
-
-        <div className="w-full space-y-2 text-gray-600 md:flex-1">
-          <p>
-            I grew up in Kathmandu, Nepal, and I am now pursuing my undergraduate studies in Melbourne. During my
-            degree, I&apos;ve had the chance to learn about data science, AI and machine learning.
-          </p>
-          <p>
-            Beyond academics, I enjoy reading a wide range of literature and working on fun projects that challenge
-            me to learn and grow.
-          </p>
-          <p>This is where I write about things that interest me and document my projects</p>
-          <div className="text-mauve-500">
-            <p>Nirav Pandey</p>
-            <p>09/04/26</p>
-          </div>
+          ))}
         </div>
       </div>
 
-      {resumeOpen && <ResumeModal onClose={() => setResumeOpen(false)} />}
-    </>
-  );
-}
-
-function ResumeModal({ onClose }: { onClose: () => void }) {
-  // Lock page scroll and close on Escape while the modal is open.
-  useEffect(() => {
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") onClose();
-    }
-
-    const originalOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    window.addEventListener("keydown", handleKeyDown);
-
-    return () => {
-      document.body.style.overflow = originalOverflow;
-      window.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [onClose]);
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-950/45 p-1 backdrop-blur-sm sm:p-2">
-      <button type="button" aria-label="Close resume" onClick={onClose} className="absolute inset-0 cursor-default" />
-
-      <div className="relative z-10 flex h-[98vh] w-[min(calc(98vh*0.78),calc(100vw-0.5rem))] flex-col border border-gray-300 bg-white shadow-xl sm:w-[min(calc(98vh*0.78),calc(100vw-1rem))]">
-        <div className="flex items-center justify-between border-b border-gray-200 px-3 py-1">
-          <div className="flex items-center gap-2 text-sm font-medium text-gray-800">
-            <PhosphorIcon name="file-text" size={16} />
-            <span>Resume</span>
-          </div>
-          <button
-            type="button"
-            aria-label="Close resume"
-            onClick={onClose}
-            className="inline-flex h-8 w-8 items-center justify-center border border-gray-300 text-xl leading-none text-gray-600 transition-colors hover:border-gray-500 hover:text-gray-900"
-          >
-            ×
-          </button>
-        </div>
-
-        <iframe
-          src={`${RESUME_URL}#page=1&zoom=60&toolbar=0&navpanes=0&scrollbar=0`}
-          title="Resume"
-          className="min-h-0 flex-1 overflow-hidden border-0"
+      {/* A short letter to the reader, in its own small box. */}
+      <div className="group/letter relative w-full self-start overflow-hidden border border-line bg-letter px-4 py-3 text-sm leading-6 text-gray-700 md:w-auto md:min-w-0 md:flex-1">
+        {/* Kathmandu skyline (public/kathmandu_skyline.svg, used as a mask so its colour comes from --skyline).
+            It fades in, small, in the bottom-right corner while "Kathmandu, Nepal" is hovered. */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 bottom-0 aspect-[506/119] w-full bg-skyline opacity-0 transition-opacity duration-500 ease-out group-has-[.kathmandu:hover]/letter:opacity-[0.07] motion-reduce:transition-none"
+          style={{
+            maskImage: "url(/kathmandu_skyline.svg)",
+            maskSize: "100% 100%",
+            maskRepeat: "no-repeat",
+          }}
         />
+        <p className="relative">
+          I grew up in <span className="kathmandu cursor-default">Kathmandu, Nepal</span>, and I am now pursuing my undergraduate studies in Melbourne. During my
+          degree, I&apos;ve had the chance to learn about data science, AI and machine learning.
+        </p>
+        <p className="relative mt-2">
+          Beyond academics, I enjoy reading a wide range of literature and working on fun projects that challenge
+          me to learn and grow.
+        </p>
+        <p className="relative mt-2">This is where I write about things that interest me and document my projects.</p>
+        <p className="relative mt-2 text-mauve-500">Nirav Pandey · 09/04/26</p>
       </div>
     </div>
   );
 }
+

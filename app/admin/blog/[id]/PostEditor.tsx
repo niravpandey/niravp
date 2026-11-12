@@ -677,7 +677,7 @@ export default function PostEditor({ post }: Props) {
 
   return (
     <div className="mx-auto w-full max-w-7xl">
-      <div className="mb-8 border-b border-gray-200 pb-5">
+      <div className="mb-8 border-b border-line pb-5">
         <p className="text-sm text-gray-500">{isNew ? "New post" : "Edit post"}</p>
         <h1 className="mt-1 text-3xl font-semibold text-mauve-500">{isNew ? "Write something new" : "Refine the draft"}</h1>
       </div>
@@ -708,7 +708,7 @@ export default function PostEditor({ post }: Props) {
             type="button"
             onClick={() => markdownInputRef.current?.click()}
             disabled={isPending}
-            className="inline-flex items-center gap-2 border border-gray-300 bg-white/60 px-3 py-1.5 text-sm text-gray-700 transition-colors hover:border-gray-400 disabled:opacity-40"
+            className="inline-flex items-center gap-2 border border-line bg-white/60 px-3 py-1.5 text-sm text-gray-700 transition-colors hover:border-line disabled:opacity-40"
           >
             <PhosphorIcon name="upload-simple" size={16} />
             <span>Import markdown</span>
@@ -716,7 +716,7 @@ export default function PostEditor({ post }: Props) {
           <button
             onClick={() => handleSave()}
             disabled={isPending}
-            className="border border-gray-300 bg-white/60 px-3 py-1.5 text-sm text-gray-700 transition-colors hover:border-gray-400 disabled:opacity-40"
+            className="border border-line bg-white/60 px-3 py-1.5 text-sm text-gray-700 transition-colors hover:border-line disabled:opacity-40"
           >
             {isPending ? "Saving..." : "Save draft"}
           </button>
@@ -724,7 +724,7 @@ export default function PostEditor({ post }: Props) {
             <button
               onClick={() => handleSave(true)}
               disabled={isPending}
-              className="border border-gray-300 bg-white/60 px-3 py-1.5 text-sm text-mauve-500 transition-colors hover:border-gray-400 disabled:opacity-40"
+              className="border border-line bg-white/60 px-3 py-1.5 text-sm text-mauve-500 transition-colors hover:border-line disabled:opacity-40"
             >
               Publish
             </button>
@@ -732,7 +732,7 @@ export default function PostEditor({ post }: Props) {
             <button
               onClick={() => handleSave(false)}
               disabled={isPending}
-              className="border border-gray-300 bg-white/60 px-3 py-1.5 text-sm text-gray-700 transition-colors hover:border-gray-400 disabled:opacity-40"
+              className="border border-line bg-white/60 px-3 py-1.5 text-sm text-gray-700 transition-colors hover:border-line disabled:opacity-40"
             >
               Unpublish
             </button>
@@ -752,14 +752,14 @@ export default function PostEditor({ post }: Props) {
         style={{ "--tools-width": `${toolSidebarWidthRem}rem` } as React.CSSProperties}
       >
         <div className="min-w-0">
-          <div className="mb-6 grid grid-cols-1 gap-4 border border-gray-200 bg-white/60 p-4 sm:p-5">
+          <div className="mb-6 grid grid-cols-1 gap-4 border border-line bg-white/60 p-4 sm:p-5">
             <div>
               <label className="mb-1 block text-xs text-gray-500">Title</label>
               <input
                 value={title}
                 onChange={(event) => setTitle(event.target.value)}
                 placeholder="Post title"
-                className="w-full border border-gray-200 px-3 py-2 text-lg font-medium text-gray-900 focus:border-gray-400 focus:outline-none"
+                className="w-full border border-line px-3 py-2 text-lg font-medium text-gray-900 focus:border-line focus:outline-none"
               />
             </div>
 
@@ -772,7 +772,7 @@ export default function PostEditor({ post }: Props) {
                   value={slug}
                   onChange={(event) => setSlug(event.target.value.toLowerCase().replace(/\s+/g, "-"))}
                   placeholder="my-post-slug"
-                  className="w-full border border-gray-200 px-3 py-2 font-mono text-sm text-gray-700 focus:border-gray-400 focus:outline-none"
+                  className="w-full border border-line px-3 py-2 font-mono text-sm text-gray-700 focus:border-line focus:outline-none"
                 />
               </div>
 
@@ -784,7 +784,7 @@ export default function PostEditor({ post }: Props) {
                   value={tags}
                   onChange={(event) => setTags(event.target.value)}
                   placeholder="math, cs, life"
-                  className="w-full border border-gray-200 px-3 py-2 text-sm text-gray-700 focus:border-gray-400 focus:outline-none"
+                  className="w-full border border-line px-3 py-2 text-sm text-gray-700 focus:border-line focus:outline-none"
                 />
               </div>
             </div>
@@ -795,7 +795,7 @@ export default function PostEditor({ post }: Props) {
                 type="datetime-local"
                 value={createdAt}
                 onChange={(event) => setCreatedAt(event.target.value)}
-                className="w-full border border-gray-200 px-3 py-2 text-sm text-gray-700 focus:border-gray-400 focus:outline-none"
+                className="w-full border border-line px-3 py-2 text-sm text-gray-700 focus:border-line focus:outline-none"
               />
             </div>
 
@@ -807,7 +807,7 @@ export default function PostEditor({ post }: Props) {
                 value={description}
                 onChange={(event) => setDescription(event.target.value)}
                 placeholder="A short summary of this post..."
-                className="w-full border border-gray-200 px-3 py-2 text-sm text-gray-700 focus:border-gray-400 focus:outline-none"
+                className="w-full border border-line px-3 py-2 text-sm text-gray-700 focus:border-line focus:outline-none"
               />
             </div>
           </div>
@@ -820,10 +820,10 @@ export default function PostEditor({ post }: Props) {
                 <img
                   src={coverImage}
                   alt="Thumbnail preview"
-                  className="h-28 w-44 rounded border border-gray-200 object-cover"
+                  className="h-28 w-44 rounded border border-line object-cover"
                 />
               ) : (
-                <div className="flex h-28 w-44 items-center justify-center rounded border border-dashed border-gray-300 text-xs text-gray-400">
+                <div className="flex h-28 w-44 items-center justify-center rounded border border-dashed border-line text-xs text-gray-400">
                   No thumbnail
                 </div>
               )}
@@ -836,7 +836,7 @@ export default function PostEditor({ post }: Props) {
                 <button
                   type="button"
                   onClick={() => setEditorPreviewPaneMode("split")}
-                  className="border border-gray-300 bg-white/60 px-3 py-1.5 text-xs text-gray-700 transition-colors hover:border-gray-400"
+                  className="border border-line bg-white/60 px-3 py-1.5 text-xs text-gray-700 transition-colors hover:border-line"
                 >
                   {editorPreviewPaneMode === "editor" ? "Show preview" : "Show editor"}
                 </button>
@@ -861,7 +861,7 @@ export default function PostEditor({ post }: Props) {
               }
             >
               {editorPreviewPaneMode !== "preview" && (
-                <div className="flex h-184 flex-col overflow-hidden border border-gray-200 bg-white/60">
+                <div className="flex h-184 flex-col overflow-hidden border border-line bg-white/60">
                   <textarea
                     ref={contentTextareaRef}
                     value={content}
@@ -869,7 +869,7 @@ export default function PostEditor({ post }: Props) {
                     placeholder="Write your MDX here..."
                     className="min-h-0 flex-1 resize-none border-0 px-4 py-3 font-mono text-sm text-gray-800 focus:outline-none"
                   />
-                  <div className="flex items-center justify-between border-t border-gray-200 px-4 py-2 text-xs text-gray-500">
+                  <div className="flex items-center justify-between border-t border-line px-4 py-2 text-xs text-gray-500">
                     <span>{importedFileName ? `Markdown editor · loaded ${importedFileName}` : "Markdown editor"}</span>
                     <span>{isPending ? "Saving..." : "⌘S to save draft"}</span>
                   </div>

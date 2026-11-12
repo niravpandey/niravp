@@ -57,51 +57,54 @@ export default function BlogIndexClient({ posts, wordCounts }: BlogIndexClientPr
 
   return (
     <div className="mt-5">
-      {/* Chart tabs, hidden until you pick one or press show */}
-      <div className="flex items-center gap-4 border-b border-gray-200 pb-2 font-mono text-xs">
-        {TABS.map((tab) => (
+      {/* Solid surface behind the tabs and charts so the random walks don't show through them. */}
+      <div className="bg-surface px-3 pt-2 pb-3">
+        {/* Chart tabs, hidden until you pick one or press show */}
+        <div className="flex items-center gap-4 border-b border-line pb-2 font-mono text-xs">
+          {TABS.map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              // Like show/hide: the open tab closes the charts; any other tab opens (or switches to) its chart.
+              onClick={() => {
+                setChartsVisible(!(chartsVisible && activeTab === tab.id));
+                setActiveTab(tab.id);
+              }}
+              aria-expanded={chartsVisible && activeTab === tab.id}
+              className={cn(
+                "transition-colors",
+                chartsVisible && activeTab === tab.id ? "text-blue-900" : "text-gray-400 hover:text-gray-700",
+              )}
+            >
+              {tab.label}
+            </button>
+          ))}
           <button
-            key={tab.id}
             type="button"
-            // Like show/hide: the open tab closes the charts; any other tab opens (or switches to) its chart.
-            onClick={() => {
-              setChartsVisible(!(chartsVisible && activeTab === tab.id));
-              setActiveTab(tab.id);
-            }}
-            aria-expanded={chartsVisible && activeTab === tab.id}
-            className={cn(
-              "transition-colors",
-              chartsVisible && activeTab === tab.id ? "text-blue-900" : "text-gray-400 hover:text-gray-700",
-            )}
+            onClick={() => setChartsVisible((visible) => !visible)}
+            aria-expanded={chartsVisible}
+            className="ml-auto text-gray-400 transition-colors hover:text-gray-700"
           >
-            {tab.label}
+            {chartsVisible ? "hide" : "show"}
           </button>
-        ))}
-        <button
-          type="button"
-          onClick={() => setChartsVisible((visible) => !visible)}
-          aria-expanded={chartsVisible}
-          className="ml-auto text-gray-400 transition-colors hover:text-gray-700"
-        >
-          {chartsVisible ? "hide" : "show"}
-        </button>
+        </div>
+
+        {chartsVisible && (
+          <div className="pt-4">
+            {activeTab === "topics" && (
+              <BlogCategoryDistribution posts={posts} selectedCategory={selectedCategory} onSelectCategory={toggleCategory} />
+            )}
+            {activeTab === "map" && <BlogSemanticMap posts={posts} selectedCategory={selectedCategory} />}
+            {activeTab === "timeline" && <BlogTimeline posts={posts} selectedCategory={selectedCategory} />}
+            {activeTab === "words" && (
+              <BlogWords posts={posts} wordCounts={wordCounts} selectedCategory={selectedCategory} />
+            )}
+          </div>
+        )}
       </div>
 
-      {chartsVisible && (
-        <div className="pt-4">
-          {activeTab === "topics" && (
-            <BlogCategoryDistribution posts={posts} selectedCategory={selectedCategory} onSelectCategory={toggleCategory} />
-          )}
-          {activeTab === "map" && <BlogSemanticMap posts={posts} selectedCategory={selectedCategory} />}
-          {activeTab === "timeline" && <BlogTimeline posts={posts} selectedCategory={selectedCategory} />}
-          {activeTab === "words" && (
-            <BlogWords posts={posts} wordCounts={wordCounts} selectedCategory={selectedCategory} />
-          )}
-        </div>
-      )}
-
       {/* Filter status */}
-      <div ref={listTopRef} className="mt-8 flex scroll-mt-6 items-center justify-between border-b border-gray-200 pb-3">
+      <div ref={listTopRef} className="mt-8 flex scroll-mt-6 items-center justify-between border-b border-line pb-3">
         <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">
           {selectedCategory ? (
             <>
@@ -189,23 +192,23 @@ function PostCard({ post, selectedCategory, onSelectTag }: PostCardProps) {
   return (
     <Link
       href={`/blog/${post.slug}`}
-      className="group flex min-w-0 items-center gap-5 border border-gray-200 bg-white p-4 transition-colors hover:border-gray-400"
+      className="group flex min-w-0 flex-col gap-4 border border-line bg-white p-3 transition-colors hover:border-line sm:flex-row sm:items-center sm:gap-5 sm:p-4"
     >
-      <div className="relative aspect-square w-32 shrink-0 overflow-hidden bg-mauve-500">
+      <div className="relative aspect-video w-full shrink-0 overflow-hidden bg-mauve-500 sm:aspect-square sm:w-32">
         {post.cover_image && (
-          <Image src={post.cover_image} alt={post.title} fill sizes="128px" className="object-cover" />
+          <Image src={post.cover_image} alt={post.title} fill sizes="(min-width: 640px) 128px, 100vw" className="object-cover" />
         )}
       </div>
 
       <div className="flex min-w-0 flex-1 flex-col justify-center gap-1.5">
         <div className="text-xs text-gray-400">{formatDate(post.created_at)}</div>
-        <h2 className="truncate text-xl font-medium text-gray-900 transition-colors group-hover:text-mauve-500">
+        <h2 className="line-clamp-2 text-lg font-medium sm:truncate sm:text-xl text-gray-900 transition-colors group-hover:text-mauve-500">
           {post.title}
         </h2>
         {post.description && <p className="line-clamp-2 text-sm text-gray-600">{post.description}</p>}
 
         {tags.length > 0 && (
-          <div className="mt-1 flex flex-nowrap gap-2 overflow-hidden">
+          <div className="mt-1 flex flex-wrap gap-2 sm:flex-nowrap sm:overflow-hidden">
             {tags.map((tag) => (
               <span
                 key={tag}
@@ -219,7 +222,7 @@ function PostCard({ post, selectedCategory, onSelectTag }: PostCardProps) {
                   "shrink-0 border px-2 py-0.5 text-xs transition-colors",
                   selectedCategory === tag
                     ? "border-blue-900 bg-blue-900 text-white"
-                    : "border-gray-300 text-gray-500 hover:border-gray-400 hover:text-gray-900",
+                    : "border-line text-gray-500 hover:border-line hover:text-gray-900",
                 )}
               >
                 {tag}

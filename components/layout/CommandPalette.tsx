@@ -154,9 +154,9 @@ export default function CommandPalette({ posts }: { posts: SearchablePost[] }) {
             role="dialog"
             aria-modal="true"
             aria-label="Search posts"
-            className="w-full max-w-xl overflow-hidden rounded-xl border border-gray-200 bg-white text-gray-900 shadow-2xl"
+            className="w-full max-w-xl overflow-hidden rounded-xl border border-line bg-white text-gray-900 shadow-2xl"
           >
-            <div className="flex items-center gap-3 border-b border-gray-100 px-4">
+            <div className="flex items-center gap-3 border-b border-line/50 px-4">
               {/* Thin outline magnifier (the icon font only has filled glyphs). */}
               <svg
                 aria-hidden
@@ -185,7 +185,7 @@ export default function CommandPalette({ posts }: { posts: SearchablePost[] }) {
                 aria-activedescendant={results[selectedIndex] ? `search-result-${selectedIndex}` : undefined}
                 className="h-12 flex-1 bg-transparent text-base outline-none placeholder:text-gray-400"
               />
-              <kbd className="rounded border border-gray-200 px-1.5 py-0.5 font-sans text-[11px] text-gray-400">esc</kbd>
+              <kbd className="rounded border border-line px-1.5 py-0.5 font-sans text-[11px] text-gray-400">esc</kbd>
             </div>
 
             <ul id="search-results" role="listbox" className="max-h-[50vh] overflow-y-auto p-2">
@@ -217,7 +217,7 @@ export default function CommandPalette({ posts }: { posts: SearchablePost[] }) {
               ))}
             </ul>
 
-            <div className="flex gap-4 border-t border-gray-100 px-4 py-2 text-[11px] text-gray-400">
+            <div className="flex gap-4 border-t border-line/50 px-4 py-2 text-[11px] text-gray-400">
               <span>↑↓ to move</span>
               <span>↵ to open</span>
               <span>esc to close</span>

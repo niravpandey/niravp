@@ -10,6 +10,8 @@ export type Experience = {
   description: string;
   logo_path: string | null;
   logo_url: string | null;
+  // Hex colour behind the logo tile; null falls back to white.
+  logo_bg: string | null;
   sort_order: number;
 };
 
@@ -20,7 +22,7 @@ export async function getExperiences(): Promise<Experience[]> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("experiences")
-    .select("id, title, subtitle, organization, date_range, description, logo_path, sort_order")
+    .select("id, title, subtitle, organization, date_range, description, logo_path, logo_bg, sort_order")
     .order("sort_order", { ascending: true })
     .order("created_at", { ascending: false });
 
@@ -33,6 +35,7 @@ export async function getExperiences(): Promise<Experience[]> {
   return (data ?? []).map((experience) => ({
     ...experience,
     logo_path: experience.logo_path ?? null,
+    logo_bg: experience.logo_bg ?? null,
     logo_url: getOptionalAssetUrl(experience.logo_path),
   }));
 }

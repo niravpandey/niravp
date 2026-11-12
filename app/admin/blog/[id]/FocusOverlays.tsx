@@ -28,12 +28,12 @@ export default function FocusOverlays({
     <>
       {breakOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-950/45 px-4 backdrop-blur-sm">
-          <div className="relative w-full max-w-sm border border-gray-200 bg-white px-6 py-8 text-center shadow-2xl">
+          <div className="relative w-full max-w-sm border border-line bg-white px-6 py-8 text-center shadow-2xl">
             <button
               type="button"
               aria-label="Cancel break"
               onClick={onCancelBreak}
-              className="absolute right-3 top-3 inline-flex h-8 w-8 items-center justify-center border border-gray-200 text-gray-500 transition-colors hover:border-gray-400 hover:text-gray-900"
+              className="absolute right-3 top-3 inline-flex h-8 w-8 items-center justify-center border border-line text-gray-500 transition-colors hover:border-line hover:text-gray-900"
             >
               <PhosphorIcon name="x" size={15} />
             </button>
@@ -46,7 +46,7 @@ export default function FocusOverlays({
             <button
               type="button"
               onClick={onSkipBreak}
-              className="mt-6 border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700 transition-colors hover:border-gray-500"
+              className="mt-6 border border-line bg-white px-4 py-2 text-sm text-gray-700 transition-colors hover:border-line"
             >
               Skip break
             </button>
@@ -56,12 +56,12 @@ export default function FocusOverlays({
 
       {congratsOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-950/45 px-4 backdrop-blur-sm">
-          <div className="relative w-full max-w-md border border-gray-200 bg-white px-6 py-8 text-center shadow-2xl">
+          <div className="relative w-full max-w-md border border-line bg-white px-6 py-8 text-center shadow-2xl">
             <button
               type="button"
               aria-label="Close congratulations"
               onClick={onCloseCongrats}
-              className="absolute right-3 top-3 inline-flex h-8 w-8 items-center justify-center border border-gray-200 text-gray-500 transition-colors hover:border-gray-400 hover:text-gray-900"
+              className="absolute right-3 top-3 inline-flex h-8 w-8 items-center justify-center border border-line text-gray-500 transition-colors hover:border-line hover:text-gray-900"
             >
               <PhosphorIcon name="x" size={15} />
             </button>
@@ -73,7 +73,7 @@ export default function FocusOverlays({
             <button
               type="button"
               onClick={onResetPomodoro}
-              className="mt-6 border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700 transition-colors hover:border-gray-500"
+              className="mt-6 border border-line bg-white px-4 py-2 text-sm text-gray-700 transition-colors hover:border-line"
             >
               Start again
             </button>

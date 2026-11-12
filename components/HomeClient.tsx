@@ -26,11 +26,6 @@ type HomeClientProps = {
 export default function HomeClient({ posts, projects, skillCategories, experiences, studentMap }: HomeClientProps) {
   const [projectIndex, setProjectIndex] = useState(0);
 
-  // Skills used by the project currently shown are highlighted in the skills list.
-  const currentProject = projects[projectIndex];
-  const activeSkillIds = new Set(currentProject?.skill_ids ?? []);
-  const activeSkillNames = new Set(currentProject?.tags ?? []);
-
   return (
     <div className="home-dreamy-bg flex min-h-screen flex-1 flex-col items-center justify-center font-sans">
       {/* Gallery strip at the top, set off from the navbar. */}
@@ -38,19 +33,15 @@ export default function HomeClient({ posts, projects, skillCategories, experienc
         <GallerySection />
       </div>
 
-      <main className="flex w-full flex-1 flex-col items-center px-4 pt-10 pb-6 sm:items-start sm:px-8 sm:pt-12 sm:pb-8 lg:px-16">
+      <main className="flex w-full flex-1 flex-col items-center px-4 pt-8 pb-6 sm:items-start sm:px-8 sm:pt-12 sm:pb-8 lg:px-16">
         <HeroSection />
 
-        <div className="grid w-full grid-cols-1 gap-6 border-b border-gray-200 pb-5 lg:grid-cols-2">
-          <SkillSection
-            categories={skillCategories}
-            activeSkillIds={activeSkillIds}
-            activeSkillNames={activeSkillNames}
-          />
+        <div className="grid w-full grid-cols-1 gap-6 border-b border-line pb-5 lg:grid-cols-2 [&>*]:min-w-0">
+          <SkillSection categories={skillCategories} />
           <ProjectSection projects={projects} currentIndex={projectIndex} setCurrentIndex={setProjectIndex} />
         </div>
 
-        <div className="grid w-full gap-8 lg:grid-cols-2">
+        <div className="grid w-full grid-cols-1 gap-8 lg:grid-cols-2 [&>*]:min-w-0">
           <ExperienceSection experiences={experiences} />
           <BlogSection posts={posts} />
         </div>

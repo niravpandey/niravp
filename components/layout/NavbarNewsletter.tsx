@@ -45,9 +45,9 @@ export default function NavbarNewsletter() {
       {open && (
         <div
           id="navbar-newsletter"
-          className="absolute top-full right-0 z-30 mt-3 w-80 max-w-[calc(100vw-2rem)] rounded-lg border border-gray-200 bg-white p-4 text-gray-900 shadow-lg"
+          className="absolute top-full right-0 z-30 mt-3 w-80 max-w-[calc(100vw-2rem)] rounded-lg border border-line bg-white p-4 text-gray-900 shadow-lg"
         >
-          <p className="font-serif text-lg font-medium text-blue-900">Subscribe to my newsletter</p>
+          <p className="font-serif text-lg font-heading tracking-heading text-heading">Subscribe to my newsletter</p>
           <p className="mt-1 text-xs text-gray-500">Occasional updates when I publish something new.</p>
 
           <form action={formAction} className="mt-3 flex flex-col gap-2">
@@ -63,7 +63,7 @@ export default function NavbarNewsletter() {
               autoComplete="email"
               placeholder="you@example.com"
               disabled={isDisabled}
-              className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-900 focus:ring-2 focus:ring-blue-900/15 focus:outline-none disabled:opacity-60"
+              className="rounded-md border border-line bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-900 focus:ring-2 focus:ring-blue-900/15 focus:outline-none disabled:opacity-60"
             />
             <button
               type="submit"

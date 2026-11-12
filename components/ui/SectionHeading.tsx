@@ -8,5 +8,5 @@ type SectionHeadingProps = {
 
 /** The blue serif section title used across the home page. */
 export default function SectionHeading({ className, children }: SectionHeadingProps) {
-  return <h2 className={cn("font-serif text-3xl font-medium text-blue-900", className)}>{children}</h2>;
+  return <h2 className={cn("font-serif text-3xl font-heading tracking-heading text-heading", className)}>{children}</h2>;
 }

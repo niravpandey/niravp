@@ -203,8 +203,8 @@ export default function AdminSkillsPage() {
     clearMessages();
   }
 
-  const fieldClass = "border border-gray-200 bg-white/70 px-3 py-2 text-sm text-gray-900 outline-none transition-colors focus:border-gray-400";
-  const buttonClass = "inline-flex items-center justify-center gap-1.5 border border-gray-300 bg-white/60 px-3 py-2 text-sm text-gray-600 transition-colors hover:border-gray-400 hover:bg-white disabled:opacity-40";
+  const fieldClass = "border border-line bg-white/70 px-3 py-2 text-sm text-gray-900 outline-none transition-colors focus:border-line";
+  const buttonClass = "inline-flex items-center justify-center gap-1.5 border border-line bg-white/60 px-3 py-2 text-sm text-gray-600 transition-colors hover:border-line hover:bg-white disabled:opacity-40";
 
   return (
     <div className="flex min-h-screen flex-col font-sans">
@@ -215,12 +215,12 @@ export default function AdminSkillsPage() {
             Admin
           </Link>
 
-          <div className="mt-6 mb-8 border-b border-gray-200 pb-5">
+          <div className="mt-6 mb-8 border-b border-line pb-5">
             <h1 className="text-3xl font-semibold text-mauve-500">Skills</h1>
             <p className="mt-1 text-sm text-gray-500">{skillCount} skills across {categories.length} categories</p>
           </div>
 
-          <section className="grid gap-6 border-b border-gray-200 pb-8 md:grid-cols-2">
+          <section className="grid gap-6 border-b border-line pb-8 md:grid-cols-2">
             <form onSubmit={saveCategory} className="flex flex-col gap-3">
               <h2 className="text-sm font-medium text-gray-800">{editingCategoryId ? "Edit category" : "Add category"}</h2>
               <label className="text-xs text-gray-500">Category name
@@ -269,7 +269,7 @@ export default function AdminSkillsPage() {
             {success && <p className="text-green-600">{success}</p>}
           </div>
 
-          <div className="divide-y divide-gray-200 border-y border-gray-200">
+          <div className="divide-y divide-line border-y border-line">
             {categories.map((category) => (
               <section key={category.id} className="py-5">
                 <div className="mb-3 flex items-center justify-between gap-3">
@@ -285,8 +285,8 @@ export default function AdminSkillsPage() {
                 <div className="flex flex-wrap gap-2">
                   {category.skills.length === 0 && <p className="text-sm text-gray-400">No skills in this category.</p>}
                   {category.skills.map((skill) => (
-                    <div key={skill.id} className="flex h-9 items-center gap-2 border border-gray-200 bg-white/60 px-2.5">
-                      {skill.icon_url ? <Image src={skill.icon_url} alt="" width={16} height={16} unoptimized className="h-4 w-4 object-contain" /> : <span className="h-4 w-4 border border-dashed border-gray-300" />}
+                    <div key={skill.id} className="flex h-9 items-center gap-2 border border-line bg-white/60 px-2.5">
+                      {skill.icon_url ? <Image src={skill.icon_url} alt="" width={16} height={16} unoptimized className="h-4 w-4 object-contain" /> : <span className="h-4 w-4 border border-dashed border-line" />}
                       <span className="text-sm text-gray-700">{skill.name}</span>
                       <button type="button" onClick={() => startSkillEdit(skill)} aria-label={`Edit ${skill.name}`} className="ml-1 text-gray-400 hover:text-gray-700"><PhosphorIcon name="pencil-simple" size={13} /></button>
                       <button type="button" onClick={() => deleteSkill(skill)} aria-label={`Delete ${skill.name}`} className="text-gray-400 hover:text-red-500"><PhosphorIcon name="trash" size={13} /></button>

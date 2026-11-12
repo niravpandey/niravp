@@ -33,7 +33,7 @@ export default function LoginPage() {
 
   return (
     <div className="flex min-h-screen flex-col font-sans">
-      <main className="flex flex-1 flex-col items-center bg-olive-100 px-4 py-16 sm:px-8 sm:py-24 lg:px-16">
+      <main className="flex flex-1 flex-col items-center bg-paper px-4 py-16 sm:px-8 sm:py-24 lg:px-16">
         <div className="w-full max-w-4xl">
           <Link href="/" className="inline-flex items-center gap-2 text-sm text-gray-500 transition-colors hover:text-gray-800">
             <PhosphorIcon name="arrow-left" size={16} />
@@ -41,7 +41,7 @@ export default function LoginPage() {
           </Link>
 
           <div className="mt-8 flex justify-center">
-            <div className="w-full max-w-sm border border-gray-200 bg-white/60 p-6 sm:p-8">
+            <div className="w-full max-w-sm border border-line bg-white/60 p-6 sm:p-8">
               <h1 className="mb-1 text-3xl font-semibold text-mauve-500">Welcome back</h1>
               <p className="mb-8 text-sm text-gray-500">Sign in here</p>
 
@@ -53,7 +53,7 @@ export default function LoginPage() {
                   onChange={(e) => setEmail(e.target.value)}
                   required
                   autoFocus
-                  className="border border-gray-200 bg-transparent px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 transition-colors focus:border-gray-400 focus:outline-none"
+                  className="border border-line bg-transparent px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 transition-colors focus:border-line focus:outline-none"
                 />
                 <input
                   type="password"
@@ -61,7 +61,7 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  className="border border-gray-200 bg-transparent px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 transition-colors focus:border-gray-400 focus:outline-none"
+                  className="border border-line bg-transparent px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 transition-colors focus:border-line focus:outline-none"
                 />
 
                 {error && <p className="text-xs text-red-500">{error}</p>}
@@ -69,7 +69,7 @@ export default function LoginPage() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="mt-1 border border-gray-300 px-3 py-2 text-sm text-gray-600 transition-colors hover:border-gray-400 disabled:opacity-40"
+                  className="mt-1 border border-line px-3 py-2 text-sm text-gray-600 transition-colors hover:border-line disabled:opacity-40"
                 >
                   {loading ? "Signing in..." : "Sign in"}
                 </button>

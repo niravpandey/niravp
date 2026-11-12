@@ -34,6 +34,9 @@ export const cohorts: Cohort[] = [
       { code: "GB" },
       { code: "GR" },
       { code: "EG" },
+      { code: "DE" },
+      { code: "IE" },
+      { code: "PS" },
     ],
   },
   {

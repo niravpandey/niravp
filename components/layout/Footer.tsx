@@ -3,7 +3,7 @@ import { getAssetUrl } from "@/lib/supabase/storage";
 
 export default function Footer() {
   return (
-    <footer className="w-full shrink-0 border-t border-gray-300 bg-mauve-800 text-white">
+    <footer className="w-full shrink-0 border-t border-line bg-mauve-800 text-white">
       <div className="mx-auto flex items-center justify-between px-4 py-3 text-sm sm:px-8 lg:px-16">
         <span className="text-white/80">© 2026 Nirav Pandey</span>
 

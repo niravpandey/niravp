@@ -44,7 +44,7 @@ export default function ResizeDivider({ ariaLabel, className, onResize }: Resize
     >
       <div className="relative flex h-full w-3 items-center justify-center bg-white/80">
         <div className="h-full w-0.5 bg-gray-300 transition-colors group-hover:bg-gray-500" />
-        <div className="absolute h-10 w-1.5 bg-gray-100 ring-1 ring-gray-300 transition-colors group-hover:bg-white group-hover:ring-gray-500" />
+        <div className="absolute h-10 w-1.5 bg-gray-100 ring-1 ring-line transition-colors group-hover:bg-white group-hover:ring-line" />
       </div>
     </div>
   );

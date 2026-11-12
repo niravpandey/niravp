@@ -7,7 +7,7 @@ export default function ExperienceSection({ experiences }: { experiences: Experi
   if (experiences.length === 0) return null;
 
   return (
-    <section className="w-full border-b border-gray-200 py-8">
+    <section className="w-full border-b border-line py-8">
       <SectionHeading>Experience</SectionHeading>
 
       <div className="mt-5 grid gap-4">
@@ -16,8 +16,11 @@ export default function ExperienceSection({ experiences }: { experiences: Experi
 
           return (
             <article key={experience.id} className="flex items-start gap-3">
-              {/* Same-size white tile for every logo, so square and transparent logos look consistent. */}
-              <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-md border border-gray-200 bg-white p-1">
+              {/* Same-size tile for every logo; its colour is set per experience in admin so each logo sits on a matching background. */}
+              <div
+                className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-md border border-line bg-white p-1"
+                style={experience.logo_bg ? { backgroundColor: experience.logo_bg } : undefined}
+              >
                 {experience.logo_url ? (
                   <Image src={experience.logo_url} alt="" width={24} height={24} className="h-full w-full object-contain" />
                 ) : (

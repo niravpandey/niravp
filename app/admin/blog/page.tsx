@@ -23,14 +23,14 @@ export default async function AdminBlogPage() {
             <span>Admin</span>
           </Link>
 
-          <div className="mt-6 mb-8 flex items-end justify-between gap-4 border-b border-gray-200 pb-5">
+          <div className="mt-6 mb-8 flex items-end justify-between gap-4 border-b border-line pb-5">
             <div>
               <h1 className="text-3xl font-semibold text-mauve-500">Writing</h1>
               <p className="mt-1 text-sm text-gray-500">Drafts, published pieces, and editing access in one place.</p>
             </div>
             <Link
               href="/admin/blog/new"
-              className="inline-flex items-center gap-2 border border-gray-300 bg-white/50 px-4 py-2 text-sm text-gray-700 transition-colors hover:border-gray-400 hover:bg-white/80"
+              className="inline-flex items-center gap-2 border border-line bg-white/50 px-4 py-2 text-sm text-gray-700 transition-colors hover:border-line hover:bg-white/80"
             >
               <PhosphorIcon name="file-plus" size={16} />
               <span>New post</span>
@@ -40,7 +40,7 @@ export default async function AdminBlogPage() {
           {posts.length === 0 ? (
             <p className="text-sm text-gray-400">No posts yet.</p>
           ) : (
-            <div className="divide-y divide-gray-200 border-y border-gray-200">
+            <div className="divide-y divide-line border-y border-line">
               {posts.map((post) => (
                 <div key={post.id} className="flex items-center justify-between gap-4 py-4">
                   <div className="min-w-0">

@@ -34,12 +34,12 @@ export default async function AdminSettingsPage() {
             <span>Admin</span>
           </Link>
 
-          <div className="mt-6 mb-8 border-b border-gray-200 pb-5">
+          <div className="mt-6 mb-8 border-b border-line pb-5">
             <h1 className="text-3xl font-semibold text-mauve-500">Settings</h1>
             <p className="mt-1 text-sm text-gray-500">Control the home page and article author profile.</p>
           </div>
 
-          <form action={saveSettings} className="grid max-w-xl gap-4 border-b border-gray-200 pb-8">
+          <form action={saveSettings} className="grid max-w-xl gap-4 border-b border-line pb-8">
             <div>
               <h2 className="text-sm font-medium text-gray-800">Home page writing</h2>
               <p className="mt-1 text-sm text-gray-500">Choose how many latest published posts appear under My Writing.</p>
@@ -54,22 +54,22 @@ export default async function AdminSettingsPage() {
                 step={1}
                 required
                 defaultValue={homeBlogLimit}
-                className="mt-1 w-full border border-gray-200 bg-white/70 px-3 py-2 text-sm text-gray-900 focus:border-gray-400 focus:outline-none"
+                className="mt-1 w-full border border-line bg-white/70 px-3 py-2 text-sm text-gray-900 focus:border-line focus:outline-none"
               />
             </label>
             <p className="text-xs text-gray-400">Use 0 to hide the writing list. Maximum {MAX_HOME_BLOG_LIMIT} posts.</p>
-            <button type="submit" className="w-fit border border-gray-300 bg-white/60 px-3 py-2 text-sm text-gray-700 transition-colors hover:border-gray-400 hover:bg-white/80">
+            <button type="submit" className="w-fit border border-line bg-white/60 px-3 py-2 text-sm text-gray-700 transition-colors hover:border-line hover:bg-white/80">
               Save settings
             </button>
           </form>
 
-          <form action={saveAuthorSettings} encType="multipart/form-data" className="mt-10 grid max-w-xl gap-4 border-b border-gray-200 pb-8">
+          <form action={saveAuthorSettings} encType="multipart/form-data" className="mt-10 grid max-w-xl gap-4 border-b border-line pb-8">
             <div>
               <h2 className="text-sm font-medium text-gray-800">Article author</h2>
               <p className="mt-1 text-sm text-gray-500">This card appears below every published article.</p>
             </div>
             <div className="flex items-center gap-4">
-              <Image src={authorProfile.headshotUrl} alt="Current author headshot" width={72} height={72} className="h-18 w-18 rounded-full border border-gray-200 object-cover" />
+              <Image src={authorProfile.headshotUrl} alt="Current author headshot" width={72} height={72} className="h-18 w-18 rounded-full border border-line object-cover" />
               <label className="text-xs text-gray-500">
                 Replace headshot
                 <input name="authorHeadshot" type="file" accept="image/*" className="mt-1 block w-full text-sm text-gray-600" />
@@ -82,10 +82,10 @@ export default async function AdminSettingsPage() {
                 required
                 rows={4}
                 defaultValue={authorProfile.bio}
-                className="mt-1 w-full resize-y border border-gray-200 bg-white/70 px-3 py-2 text-sm leading-6 text-gray-900 focus:border-gray-400 focus:outline-none"
+                className="mt-1 w-full resize-y border border-line bg-white/70 px-3 py-2 text-sm leading-6 text-gray-900 focus:border-line focus:outline-none"
               />
             </label>
-            <button type="submit" className="w-fit border border-gray-300 bg-white/60 px-3 py-2 text-sm text-gray-700 transition-colors hover:border-gray-400 hover:bg-white/80">
+            <button type="submit" className="w-fit border border-line bg-white/60 px-3 py-2 text-sm text-gray-700 transition-colors hover:border-line hover:bg-white/80">
               Save author profile
             </button>
           </form>

@@ -320,6 +320,11 @@ export async function deleteProjectAction(projectId: string) {
   if (count !== 1) throw new Error("The project was not deleted.");
 }
 
+// Accepts "#rrggbb" from the colour picker; anything else (including blank) means the default white tile.
+function hexColor(value: FormDataEntryValue | null) {
+  return typeof value === "string" && /^#[0-9a-f]{6}$/i.test(value) ? value.toLowerCase() : null;
+}
+
 export async function saveExperienceAction(formData: FormData) {
   const admin = await getVerifiedAdminClient();
   const experienceId = optionalString(formData.get("id"));
@@ -351,6 +356,7 @@ export async function saveExperienceAction(formData: FormData) {
       description: optionalString(formData.get("description")),
       sort_order: numericValue(formData.get("sortOrder")),
       logo_path: nextLogoPath,
+      logo_bg: hexColor(formData.get("logoBg")),
     };
 
     if (experienceId) {

@@ -10,7 +10,7 @@ export default function NewsletterSection() {
 
   return (
     <section className="mx-auto w-full max-w-xl">
-      <div className="border border-blue-900 bg-blue-900 p-3 text-white shadow-[0_10px_30px_rgba(30,58,138,0.18)] transition-shadow hover:shadow-[0_14px_38px_rgba(30,58,138,0.28)]">
+      <div className="border border-blue-900 bg-blue-900 p-3 text-white glow-accent">
         <form action={formAction} className="flex w-full min-w-0 flex-wrap items-center gap-2.5">
           <span className="shrink-0 basis-full text-xs font-semibold uppercase tracking-wider text-white sm:basis-auto">
             Subscribe to My Newsletter
