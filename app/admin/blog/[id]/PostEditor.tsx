@@ -9,18 +9,18 @@ import { compilePostPreview, deletePost, savePost, type PostFormData } from "./a
 import BlogPreview from "./BlogPreview";
 import BlogImagesTool from "./BlogImagesTool";
 import DrawingPadTool from "./DrawingPadTool";
+import EditorStage from "./EditorStage";
 import FocusOverlays from "./FocusOverlays";
 import PomodoroTool from "./PomodoroTool";
 import ResizeDivider from "./ResizeDivider";
 import WritingToolsSidebar from "./WritingToolsSidebar";
+import { lineGapAtPoint, scrollTextareaToOffset, type SourceRange } from "./sourceSync";
 import {
   BLOG_BUCKET_NAME,
+  BLOG_IMAGE_DRAG_TYPE,
   BREAK_SECONDS,
   DEFAULT_POMODORO_MINUTES,
   DEFAULT_POMODORO_SESSIONS,
-  TOOL_SIDEBAR_DEFAULT_REM,
-  TOOL_SIDEBAR_MAX_REM,
-  TOOL_SIDEBAR_MIN_REM,
   clamp,
   compressImage,
   formatFileSize,
@@ -32,7 +32,6 @@ import {
   type BlogImage as BlogImageItem,
   type EditorPreviewPaneMode,
   type PreviewSource,
-  type ToolDensity,
   type WritingToolKey,
 } from "./editorUtils";
 
@@ -51,6 +50,7 @@ export default function PostEditor({ post }: Props) {
   const [tags, setTags] = useState((post?.tags ?? []).join(", "));
   const [published, setPublished] = useState(post?.published ?? false);
   const [blogImages, setBlogImages] = useState<BlogImageItem[]>([]);
+  const [imageDropLineTop, setImageDropLineTop] = useState<number | null>(null);
   const [createdAt, setCreatedAt] = useState(
     post?.created_at ? toDatetimeLocalValue(post.created_at) : toDatetimeLocalValue(new Date().toISOString())
   );
@@ -63,7 +63,10 @@ export default function PostEditor({ post }: Props) {
     timer: false,
     drawing: false,
   });
-  const [toolSidebarWidthRem, setToolSidebarWidthRem] = useState(TOOL_SIDEBAR_DEFAULT_REM);
+  // Setup stages start ticked off when an existing post already has them filled in.
+  const [titleDone, setTitleDone] = useState(Boolean(post?.title && post?.slug));
+  const [detailsDone, setDetailsDone] = useState(Boolean(post?.description && post?.tags?.length));
+  const [coverDone, setCoverDone] = useState(Boolean(post?.cover_image));
   const [pomodoroMinutes, setPomodoroMinutes] = useState(DEFAULT_POMODORO_MINUTES);
   const [pomodoroTargetSessions, setPomodoroTargetSessions] = useState(DEFAULT_POMODORO_SESSIONS);
   const [pomodoroCompletedSessions, setPomodoroCompletedSessions] = useState(0);
@@ -78,6 +81,8 @@ export default function PostEditor({ post }: Props) {
   const [drawingExpanded, setDrawingExpanded] = useState(false);
   const [importedFileName, setImportedFileName] = useState<string | null>(null);
   const [previewSource, setPreviewSource] = useState<PreviewSource | null>(null);
+  const [previewSourceText, setPreviewSourceText] = useState("");
+  const [editorCaret, setEditorCaret] = useState<number | null>(null);
   const [previewError, setPreviewError] = useState<string | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [editorPreviewSplit, setEditorPreviewSplit] = useState(58);
@@ -88,9 +93,6 @@ export default function PostEditor({ post }: Props) {
   const contentTextareaRef = useRef<HTMLTextAreaElement | null>(null);
   const drawingCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const editorPreviewGridRef = useRef<HTMLDivElement | null>(null);
-  const toolsLayoutRef = useRef<HTMLDivElement | null>(null);
-  const toolDensity: ToolDensity =
-    toolSidebarWidthRem <= 14.5 ? "icon" : toolSidebarWidthRem <= 17 ? "compact" : "comfortable";
 
   async function refreshBlogImages() {
     setImagesLoading(true);
@@ -108,16 +110,19 @@ export default function PostEditor({ post }: Props) {
 
   async function handleSave(publish?: boolean) {
     if (!title.trim()) {
+      setTitleDone(false);
       setError("Title is required.");
       return;
     }
 
     if (!slug.trim()) {
+      setTitleDone(false);
       setError("Slug is required.");
       return;
     }
 
     if (publish && !coverImage) {
+      setCoverDone(false);
       setError("Thumbnail is required before publishing.");
       return;
     }
@@ -287,7 +292,8 @@ export default function PostEditor({ post }: Props) {
     }
   }
 
-  function insertImageMarkdown(image: BlogImageItem) {
+  /** Inserts an image snippet at `at`, or at the cursor when no position is given. */
+  function insertImageMarkdown(image: BlogImageItem, at?: number) {
     const textarea = contentTextareaRef.current;
     const imageSnippet = getImageMdxSnippet(image);
 
@@ -296,8 +302,8 @@ export default function PostEditor({ post }: Props) {
       return;
     }
 
-    const selectionStart = textarea.selectionStart;
-    const selectionEnd = textarea.selectionEnd;
+    const selectionStart = at ?? textarea.selectionStart;
+    const selectionEnd = at ?? textarea.selectionEnd;
     const before = content.slice(0, selectionStart);
     const after = content.slice(selectionEnd);
     const prefix = before.length === 0 || before.endsWith("\n\n") ? "" : before.endsWith("\n") ? "\n" : "\n\n";
@@ -310,6 +316,28 @@ export default function PostEditor({ post }: Props) {
       textarea.focus();
       textarea.setSelectionRange(nextCursorPosition, nextCursorPosition);
     });
+  }
+
+  function isImageDrag(event: React.DragEvent) {
+    return event.dataTransfer.types.includes(BLOG_IMAGE_DRAG_TYPE);
+  }
+
+  function handleEditorDragOver(event: React.DragEvent<HTMLTextAreaElement>) {
+    if (!isImageDrag(event)) return;
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "copy";
+    const textarea = event.currentTarget;
+    const { top } = lineGapAtPoint(textarea, event.clientY);
+    setImageDropLineTop(textarea.offsetTop + top);
+  }
+
+  function handleEditorDrop(event: React.DragEvent<HTMLTextAreaElement>) {
+    if (!isImageDrag(event)) return;
+    event.preventDefault();
+    setImageDropLineTop(null);
+    const image = blogImages.find((item) => item.path === event.dataTransfer.getData(BLOG_IMAGE_DRAG_TYPE));
+    if (!image) return;
+    insertImageMarkdown(image, lineGapAtPoint(event.currentTarget, event.clientY).offset);
   }
 
   function updateEditorPreviewSplit(clientX: number) {
@@ -338,16 +366,21 @@ export default function PostEditor({ post }: Props) {
     setEditorPreviewSplit(clampedSplit);
   }
 
-  function updateToolSidebarWidth(clientX: number) {
-    const layout = toolsLayoutRef.current;
+  /** Selects the given source range in the editor and scrolls it into view (from a preview selection). */
+  function jumpToSource(range: SourceRange) {
+    const textarea = contentTextareaRef.current;
 
-    if (!layout) {
+    if (!textarea) {
       return;
     }
 
-    const rect = layout.getBoundingClientRect();
-    const nextWidthRem = (rect.right - clientX) / 16;
-    setToolSidebarWidthRem(clamp(nextWidthRem, TOOL_SIDEBAR_MIN_REM, TOOL_SIDEBAR_MAX_REM));
+    const start = clamp(range.start, 0, content.length);
+    const end = clamp(range.end, start, content.length);
+
+    textarea.focus({ preventScroll: true });
+    textarea.setSelectionRange(start, end);
+    scrollTextareaToOffset(textarea, start);
+    setEditorCaret(start);
   }
 
   function toggleTool(tool: WritingToolKey) {
@@ -592,6 +625,7 @@ export default function PostEditor({ post }: Props) {
         .then((compiled) => {
           if (!cancelled) {
             setPreviewSource(compiled);
+            setPreviewSourceText(content);
             setPreviewError(null);
           }
         })
@@ -746,24 +780,24 @@ export default function PostEditor({ post }: Props) {
         </p>
       )}
 
-      <div
-        ref={toolsLayoutRef}
-        className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_0.75rem_minmax(13rem,var(--tools-width))] xl:items-start xl:gap-3"
-        style={{ "--tools-width": `${toolSidebarWidthRem}rem` } as React.CSSProperties}
-      >
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_16rem] xl:items-start">
         <div className="min-w-0">
-          <div className="mb-6 grid grid-cols-1 gap-4 border border-line bg-white/60 p-4 sm:p-5">
-            <div>
-              <label className="mb-1 block text-xs text-gray-500">Title</label>
-              <input
-                value={title}
-                onChange={(event) => setTitle(event.target.value)}
-                placeholder="Post title"
-                className="w-full border border-line px-3 py-2 text-lg font-medium text-gray-900 focus:border-line focus:outline-none"
-              />
-            </div>
-
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="mb-6 flex flex-wrap items-baseline gap-x-6 gap-y-3">
+            <EditorStage
+              title="Title"
+              summary={title.trim() || "untitled"}
+              done={titleDone}
+              onDoneChange={setTitleDone}
+            >
+              <div>
+                <label className="mb-1 block text-xs text-gray-500">Title</label>
+                <input
+                  value={title}
+                  onChange={(event) => setTitle(event.target.value)}
+                  placeholder="Post title"
+                  className="w-full border border-line px-3 py-2 text-lg font-medium text-gray-900 focus:border-line focus:outline-none"
+                />
+              </div>
               <div>
                 <label className="mb-1 block text-xs text-gray-500">
                   Slug <span className="text-gray-300">(url path)</span>
@@ -772,62 +806,73 @@ export default function PostEditor({ post }: Props) {
                   value={slug}
                   onChange={(event) => setSlug(event.target.value.toLowerCase().replace(/\s+/g, "-"))}
                   placeholder="my-post-slug"
-                  className="w-full border border-line px-3 py-2 font-mono text-sm text-gray-700 focus:border-line focus:outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="mb-1 block text-xs text-gray-500">
-                  Tags <span className="text-gray-300">(comma separated)</span>
-                </label>
-                <input
-                  value={tags}
-                  onChange={(event) => setTags(event.target.value)}
-                  placeholder="math, cs, life"
                   className="w-full border border-line px-3 py-2 text-sm text-gray-700 focus:border-line focus:outline-none"
                 />
               </div>
-            </div>
+            </EditorStage>
 
-            <div>
-              <label className="mb-1 block text-xs text-gray-500">Publish date</label>
-              <input
-                type="datetime-local"
-                value={createdAt}
-                onChange={(event) => setCreatedAt(event.target.value)}
-                className="w-full border border-line px-3 py-2 text-sm text-gray-700 focus:border-line focus:outline-none"
-              />
-            </div>
-
-            <div>
-              <label className="mb-1 block text-xs text-gray-500">
-                Description <span className="text-gray-300">(shown on blog card)</span>
-              </label>
-              <input
-                value={description}
-                onChange={(event) => setDescription(event.target.value)}
-                placeholder="A short summary of this post..."
-                className="w-full border border-line px-3 py-2 text-sm text-gray-700 focus:border-line focus:outline-none"
-              />
-            </div>
-          </div>
-          
-          <div className="mb-6 flex flex-col items-center">
-            <label className="mb-1 block text-xs text-gray-500">Thumbnail</label>
-
-            <div className="flex items-center gap-4">
-              {coverImage ? (
-                <img
-                  src={coverImage}
-                  alt="Thumbnail preview"
-                  className="h-28 w-44 rounded border border-line object-cover"
-                />
-              ) : (
-                <div className="flex h-28 w-44 items-center justify-center rounded border border-dashed border-line text-xs text-gray-400">
-                  No thumbnail
+            <EditorStage
+              title="Details"
+              summary={[tags.trim(), description.trim()].filter(Boolean).join(" · ") || "none"}
+              done={detailsDone}
+              onDoneChange={setDetailsDone}
+            >
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div>
+                  <label className="mb-1 block text-xs text-gray-500">
+                    Tags <span className="text-gray-300">(comma separated)</span>
+                  </label>
+                  <input
+                    value={tags}
+                    onChange={(event) => setTags(event.target.value)}
+                    placeholder="math, cs, life"
+                    className="w-full border border-line px-3 py-2 text-sm text-gray-700 focus:border-line focus:outline-none"
+                  />
                 </div>
-              )}
-            </div>
+                <div>
+                  <label className="mb-1 block text-xs text-gray-500">Publish date</label>
+                  <input
+                    type="datetime-local"
+                    value={createdAt}
+                    onChange={(event) => setCreatedAt(event.target.value)}
+                    className="w-full border border-line px-3 py-2 text-sm text-gray-700 focus:border-line focus:outline-none"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="mb-1 block text-xs text-gray-500">
+                  Description <span className="text-gray-300">(shown on blog card)</span>
+                </label>
+                <input
+                  value={description}
+                  onChange={(event) => setDescription(event.target.value)}
+                  placeholder="A short summary of this post..."
+                  className="w-full border border-line px-3 py-2 text-sm text-gray-700 focus:border-line focus:outline-none"
+                />
+              </div>
+            </EditorStage>
+
+            <EditorStage
+              title="Cover"
+              summary={coverImage ? "set" : "missing"}
+              done={coverDone}
+              onDoneChange={setCoverDone}
+            >
+              <div className="flex items-center gap-4">
+                {coverImage ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={coverImage} alt="Cover preview" className="h-24 w-36 border border-line object-cover" />
+                ) : (
+                  <div className="flex h-24 w-36 items-center justify-center border border-dashed border-line text-xs text-gray-400">
+                    No cover
+                  </div>
+                )}
+                <p className="text-xs text-gray-500">
+                  Pick one with <span className="text-gray-700">set cover</span> under Images in the sidebar.
+                  A cover is required to publish.
+                </p>
+              </div>
+            </EditorStage>
           </div>
 
           <div>
@@ -861,14 +906,25 @@ export default function PostEditor({ post }: Props) {
               }
             >
               {editorPreviewPaneMode !== "preview" && (
-                <div className="flex h-184 flex-col overflow-hidden border border-line bg-white/60">
+                <div className="relative flex h-184 flex-col overflow-hidden border border-line bg-white/60">
                   <textarea
                     ref={contentTextareaRef}
+                    onDragOver={handleEditorDragOver}
+                    onDragLeave={() => setImageDropLineTop(null)}
+                    onDrop={handleEditorDrop}
                     value={content}
                     onChange={(event) => setContent(event.target.value)}
+                    onSelect={(event) => setEditorCaret(event.currentTarget.selectionStart)}
                     placeholder="Write your MDX here..."
                     className="min-h-0 flex-1 resize-none border-0 px-4 py-3 font-mono text-sm text-gray-800 focus:outline-none"
                   />
+                  {imageDropLineTop !== null && (
+                    <div
+                      aria-hidden
+                      className="pointer-events-none absolute inset-x-3 h-0.5 -translate-y-1/2 bg-mauve-500"
+                      style={{ top: imageDropLineTop }}
+                    />
+                  )}
                   <div className="flex items-center justify-between border-t border-line px-4 py-2 text-xs text-gray-500">
                     <span>{importedFileName ? `Markdown editor · loaded ${importedFileName}` : "Markdown editor"}</span>
                     <span>{isPending ? "Saving..." : "⌘S to save draft"}</span>
@@ -893,23 +949,25 @@ export default function PostEditor({ post }: Props) {
                   loading={previewLoading}
                   tags={tags}
                   title={title}
+                  sourceText={previewSourceText}
+                  activeOffset={editorCaret}
+                  onJumpToSource={jumpToSource}
+                  canEditInline={previewSourceText === content && !previewLoading}
+                  onEditSource={(start, end, text) =>
+                    setContent((current) => `${current.slice(0, start)}${text}${current.slice(end)}`)
+                  }
                 />
               )}
             </div>
           </div>
         </div>
 
-        <ResizeDivider
-          ariaLabel="Resize writing tools"
-          className="h-184 xl:sticky xl:top-6"
-          onResize={updateToolSidebarWidth}
-        />
-
-        <WritingToolsSidebar density={toolDensity}>
+        <WritingToolsSidebar>
           <BlogImagesTool
             open={openTools.images}
-            density={toolDensity}
             images={blogImages}
+            coverImage={coverImage}
+            content={content}
             loading={imagesLoading}
             error={imageError}
             status={imageStatus}
@@ -917,13 +975,15 @@ export default function PostEditor({ post }: Props) {
             onToggleOpen={() => toggleTool("images")}
             onUploadChange={handleImageUpload}
             onInsertImage={insertImageMarkdown}
-            onSelectCoverImage={(image) => setCoverImage(image.publicUrl)}
+            onSelectCoverImage={(image) => {
+              setCoverImage(image.publicUrl);
+              setCoverDone(true);
+            }}
             onDeleteImage={(image) => void handleImageDelete(image)}
           />
 
           <PomodoroTool
             open={openTools.timer}
-            density={toolDensity}
             seconds={pomodoroSeconds}
             minutes={pomodoroMinutes}
             running={pomodoroRunning}
@@ -957,7 +1017,6 @@ export default function PostEditor({ post }: Props) {
 
           <DrawingPadTool
             open={openTools.drawing}
-            density={toolDensity}
             expanded={drawingExpanded}
             uploading={drawingUploading}
             canvasRef={drawingCanvasRef}

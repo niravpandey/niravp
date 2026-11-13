@@ -3,6 +3,7 @@
 import { isAdminEmail } from "@/lib/auth/admin";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import { HEADSHOTS_FOLDER, headshotFileName, headshotPosition, orderHeadshotFiles } from "@/lib/headshots";
 import { MAX_HOME_BLOG_LIMIT } from "@/lib/site-settings";
 import { revalidatePath } from "next/cache";
 
@@ -49,11 +50,16 @@ function uploadExtension(file: File) {
   return file.name.split(".").pop()?.toLowerCase().replace(/[^a-z0-9]/g, "") || "png";
 }
 
-async function uploadAsset(file: File, folder: "skill-icons" | "project-images" | "experience-logos" | "author-headshots", maxBytes: number) {
+async function uploadAsset(
+  file: File,
+  folder: "skill-icons" | "project-images" | "experience-logos" | "author-headshots" | "headshots",
+  maxBytes: number,
+  fileName?: string,
+) {
   if (!file.type.startsWith("image/")) throw new Error("Only image files can be uploaded.");
   if (file.size > maxBytes) throw new Error(`The image must be ${Math.floor(maxBytes / 1024 / 1024)}MB or smaller.`);
 
-  const path = `${folder}/${crypto.randomUUID()}.${uploadExtension(file)}`;
+  const path = `${folder}/${fileName ?? `${crypto.randomUUID()}.${uploadExtension(file)}`}`;
   const admin = createAdminClient();
   const { error } = await admin.storage.from(ASSETS_BUCKET).upload(path, await file.arrayBuffer(), {
     contentType: file.type,
@@ -102,6 +108,82 @@ export async function saveHomeBlogLimitAction(formData: FormData) {
 
   revalidatePath("/");
   revalidatePath("/admin/settings");
+}
+
+/**
+ * Adds one picture to the home page headshot rotation. Called once per file so each request stays small.
+ * With a "replaces" path (an adjusted picture), the new file takes that picture's place and the old one is removed.
+ */
+export async function uploadHeadshotAction(formData: FormData) {
+  await getVerifiedAdminClient();
+  const image = formData.get("headshot");
+  if (!(image instanceof File) || image.size === 0) throw new Error("Choose an image to upload.");
+
+  const replaces = formData.get("replaces");
+  if (typeof replaces === "string" && replaces) {
+    if (!/^headshots\/[^/]+$/.test(replaces)) throw new Error("That file is not a headshot.");
+    // Older un-numbered files stay un-numbered (they sort by upload time after the numbered ones).
+    const position = headshotPosition(replaces.slice(HEADSHOTS_FOLDER.length + 1));
+    const fileName = Number.isFinite(position) ? headshotFileName(position, uploadExtension(image)) : undefined;
+    await uploadAsset(image, "headshots", 1024 * 1024, fileName);
+    await removeAssets([replaces]);
+    revalidatePath("/", "page");
+    revalidatePath("/admin/settings", "page");
+    return;
+  }
+
+  // New pictures go to the end of the order.
+  const files = await listHeadshotFiles();
+  const lastPosition = files.reduce((max, file) => {
+    const position = headshotPosition(file.name);
+    return Number.isFinite(position) ? Math.max(max, position) : max;
+  }, 0);
+  const nextPosition = Math.max(lastPosition, files.length) + 1;
+  await uploadAsset(image, "headshots", 1024 * 1024, headshotFileName(nextPosition, uploadExtension(image)));
+
+  revalidatePath("/", "page");
+  revalidatePath("/admin/settings", "page");
+}
+
+async function listHeadshotFiles() {
+  const admin = createAdminClient();
+  const { data, error } = await admin.storage
+    .from(ASSETS_BUCKET)
+    .list(HEADSHOTS_FOLDER, { limit: 100, sortBy: { column: "created_at", order: "asc" } });
+  if (error) throw new Error(`Could not list headshots: ${error.message}`);
+  return orderHeadshotFiles(data ?? []);
+}
+
+/** Saves a new headshot order by renaming each file with its position. `paths` must list every headshot once. */
+export async function reorderHeadshotsAction(paths: string[]) {
+  await getVerifiedAdminClient();
+
+  const current = (await listHeadshotFiles()).map((file) => `${HEADSHOTS_FOLDER}/${file.name}`);
+  const sameSet = paths.length === current.length && new Set(paths).size === paths.length && paths.every((path) => current.includes(path));
+  if (!sameSet) throw new Error("The headshots changed since this page loaded. Refresh and try again.");
+
+  const admin = createAdminClient();
+  for (const [index, path] of paths.entries()) {
+    const name = path.slice(HEADSHOTS_FOLDER.length + 1);
+    if (headshotPosition(name) === index + 1) continue;
+    const extension = name.split(".").pop() ?? "jpg";
+    const { error } = await admin.storage.from(ASSETS_BUCKET).move(path, `${HEADSHOTS_FOLDER}/${headshotFileName(index + 1, extension)}`);
+    if (error) throw new Error(`Could not reorder headshots: ${error.message}`);
+  }
+
+  revalidatePath("/", "page");
+  revalidatePath("/admin/settings", "page");
+}
+
+/** Removes a picture from the home page headshot rotation. */
+export async function deleteHeadshotAction(path: string) {
+  await getVerifiedAdminClient();
+  if (!/^headshots\/[^/]+$/.test(path)) throw new Error("That file is not a headshot.");
+
+  await removeAssets([path]);
+
+  revalidatePath("/", "page");
+  revalidatePath("/admin/settings", "page");
 }
 
 export async function saveAuthorProfileAction(formData: FormData) {

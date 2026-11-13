@@ -1,11 +1,14 @@
 import Image from "next/image";
 import { getAssetUrl } from "@/lib/supabase/storage";
+import FooterNewsletter from "@/components/layout/FooterNewsletter";
 
 export default function Footer() {
   return (
     <footer className="w-full shrink-0 border-t border-line bg-mauve-800 text-white">
-      <div className="mx-auto flex items-center justify-between px-4 py-3 text-sm sm:px-8 lg:px-16">
+      <div className="mx-auto flex flex-col items-start gap-3 px-4 py-3 text-sm sm:flex-row sm:items-center sm:justify-between sm:px-8 lg:px-16">
         <span className="text-white/80">© 2026 Nirav Pandey</span>
+
+        <FooterNewsletter />
 
         <a
           href="https://github.com/niravpandey"

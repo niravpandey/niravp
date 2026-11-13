@@ -49,7 +49,8 @@
   --heading-glow: none;
   --grad-from: #3f6da3;
   --grad-to: #6fa3c4;
-  --walk-opacity: 1;
+  --walk: #1c2f5e;
+  --walk-opacity: 0.5;
   --line-width: 2px;
   --heading-weight: 700;
   --heading-tracking: 0;
@@ -139,10 +140,10 @@
 }
 
 @theme inline {
-  /* Early-2000s system fonts: Verdana body, Palatino titles. */
+  /* Early-2000s system fonts: Verdana body, Palatino titles, Courier New mono. */
   --font-sans: Verdana, Geneva, Tahoma, sans-serif;
   --font-serif: "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
-  --font-mono: var(--font-geist-mono);
+  --font-mono: "Courier New", Courier, monospace;
   --font-crt: var(--font-vt323);
 
   --color-paper: var(--paper);
@@ -228,6 +229,15 @@
 .border-r { border-right-width: var(--line-width); }
 .border-x { border-inline-width: var(--line-width); }
 .border-y { border-block-width: var(--line-width); }
+
+/* Courier New is thin on screen, so all mono text uses its bold. */
+.font-mono,
+code,
+pre,
+kbd,
+samp {
+  font-weight: 700;
+}
 
 /* Glowing titles. Unlayered so it applies alongside the `text-heading` color utility. */
 .text-heading {

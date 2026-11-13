@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { readNewsletterToken } from "@/lib/newsletter-token";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 type VerifyStatus = "verified" | "invalid" | "error";
 
@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
   }
   if (!email) return redirectWith("invalid");
 
-  const supabase = await createClient();
+  const supabase = createAdminClient();
   // The subscribers table requires a unique, non-null token, so the signed token is stored too.
   const { error } = await supabase
     .from("subscribers")

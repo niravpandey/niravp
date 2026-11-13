@@ -8,6 +8,7 @@ import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import { isAdminEmail } from "@/lib/auth/admin";
 import { createClient } from "@/lib/supabase/server";
+import rehypeSourcePositions from "./rehypeSourcePositions";
 
 export type PostFormData = {
   id?: string;
@@ -87,6 +88,18 @@ export async function savePost(data: PostFormData) {
   revalidatePath(`/blog/${data.slug}`);
 }
 
+/** Pins or unpins a post so it stays at the top of the admin list. */
+export async function setPostPinned(id: string, pinned: boolean) {
+  const supabase = await requireUser();
+
+  const { error } = await supabase.from("posts").update({ pinned }).eq("id", id);
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  revalidatePath("/admin/blog");
+}
+
 export async function deletePost(id: string) {
   const supabase = await requireUser();
 
@@ -122,7 +135,7 @@ export async function compilePostPreview(source: string) {
   return serialize(source, {
     mdxOptions: {
       remarkPlugins: [remarkGfm, remarkMath],
-      rehypePlugins: [rehypeKatex],
+      rehypePlugins: [rehypeSourcePositions, rehypeKatex],
     },
   });
 }

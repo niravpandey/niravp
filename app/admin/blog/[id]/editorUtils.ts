@@ -22,16 +22,12 @@ export type BlogImage = {
 export type PreviewSource = MDXRemoteSerializeResult<Record<string, unknown>, Record<string, unknown>>;
 export type EditorPreviewPaneMode = "split" | "editor" | "preview";
 export type WritingToolKey = "images" | "timer" | "drawing";
-export type ToolDensity = "comfortable" | "compact" | "icon";
 
 export const BLOG_BUCKET_NAME = "Blog";
 export const BLOG_IMAGE_LIMIT = 10;
 export const DEFAULT_POMODORO_MINUTES = 25;
 export const DEFAULT_POMODORO_SESSIONS = 4;
 export const BREAK_SECONDS = 5 * 60;
-export const TOOL_SIDEBAR_MIN_REM = 13;
-export const TOOL_SIDEBAR_MAX_REM = 22;
-export const TOOL_SIDEBAR_DEFAULT_REM = 15;
 
 const MAX_UPLOAD_SIZE_BYTES = 2 * 1024 * 1024;
 const MAX_UPLOAD_SIZE_MB = 1.9;
@@ -108,6 +104,9 @@ export function getImageAltText(name: string) {
 function escapeMdxAttribute(value: string) {
   return value.replace(/&/g, "&amp;").replace(/"/g, "&quot;");
 }
+
+/** Drag data type for sidebar images; the editor reads the image path from it on drop. */
+export const BLOG_IMAGE_DRAG_TYPE = "application/x-blog-image";
 
 export function getImageMdxSnippet(image: BlogImage) {
   return [

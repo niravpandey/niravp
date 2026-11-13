@@ -1,6 +1,5 @@
 import Link from "next/link";
 import CommandPalette from "@/components/layout/CommandPalette";
-import NavbarNewsletter from "@/components/layout/NavbarNewsletter";
 import { getSearchablePosts } from "@/lib/blog";
 
 export default async function Navbar() {
@@ -16,7 +15,9 @@ export default async function Navbar() {
         <Link href="/blog" className="text-sm font-bold transition-opacity hover:opacity-80">
           Blog
         </Link>
-        <NavbarNewsletter />
+        <Link href="/design" className="text-sm font-bold transition-opacity hover:opacity-80">
+          Design
+        </Link>
       </div>
     </nav>
   );

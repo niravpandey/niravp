@@ -63,12 +63,15 @@ export async function getSearchablePosts(): Promise<SearchablePost[]> {
   return data ?? [];
 }
 
-/** Admin: all posts, drafts included, newest first. */
-export async function getAllPosts(): Promise<PostSummary[]> {
+export type AdminPostRow = Pick<Post, "id" | "title" | "slug" | "published" | "created_at"> & { pinned: boolean };
+
+/** Admin: all posts, drafts included, pinned first then newest. */
+export async function getAllPosts(): Promise<AdminPostRow[]> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("posts")
-    .select(SUMMARY_COLUMNS)
+    .select("id, title, slug, published, created_at, pinned")
+    .order("pinned", { ascending: false })
     .order("created_at", { ascending: false });
 
   if (error) throw new Error(error.message);

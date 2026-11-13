@@ -1,30 +1,59 @@
 "use client";
 
-import PhosphorIcon from "@/components/ui/PhosphorIcon";
-import type { ToolDensity } from "./editorUtils";
-
 type WritingToolsSidebarProps = {
   children: React.ReactNode;
-  density: ToolDensity;
 };
 
-export default function WritingToolsSidebar({ children, density }: WritingToolsSidebarProps) {
-  const isIconDensity = density === "icon";
-
+export default function WritingToolsSidebar({ children }: WritingToolsSidebarProps) {
   return (
-    <aside className="hidden max-h-[calc(100vh-6rem)] min-w-0 flex-col border border-line bg-white/80 xl:sticky xl:top-6 xl:flex">
-      <div className={["border-b border-line", isIconDensity ? "flex justify-center px-2 py-2" : "px-3 py-2"].join(" ")}>
-        {isIconDensity ? (
-          <div className="flex h-9 w-9 items-center justify-center border border-line bg-white text-gray-700" title="Writing tools">
-            <PhosphorIcon name="note-pencil" size={17} />
-          </div>
-        ) : (
-          <p className="text-sm font-medium text-gray-800">Writing tools</p>
-        )}
-        {density === "comfortable" && <p className="mt-0.5 text-xs text-gray-400">Images, focus, sketches</p>}
-      </div>
-
-      <div className={["min-h-0 flex-1 overflow-y-auto", isIconDensity ? "space-y-2 p-2" : "p-3"].join(" ")}>{children}</div>
+    <aside className="hidden max-h-[calc(100vh-6rem)] min-w-0 flex-col overflow-y-auto border border-line bg-white/80 xl:sticky xl:top-6 xl:flex">
+      {children}
     </aside>
+  );
+}
+
+type ToolSectionProps = {
+  title: string;
+  /** Short status shown next to the title, e.g. the timer while it runs. */
+  meta?: React.ReactNode;
+  open: boolean;
+  onToggleOpen: () => void;
+  children: React.ReactNode;
+};
+
+/** A plain, collapsible tool section: "▾ Title ....... meta". */
+export function ToolSection({ title, meta, open, onToggleOpen, children }: ToolSectionProps) {
+  return (
+    <section className="border-b border-line last:border-b-0">
+      <button
+        type="button"
+        onClick={onToggleOpen}
+        aria-expanded={open}
+        className="flex w-full items-baseline justify-between gap-2 px-3 py-2 text-left text-sm text-gray-800 hover:bg-white"
+      >
+        <span>
+          <span className="inline-block w-3 text-gray-400">{open ? "▾" : "▸"}</span>
+          {title}
+        </span>
+        {meta !== undefined && <span className="text-xs text-gray-400 tabular-nums">{meta}</span>}
+      </button>
+      {open && <div className="px-3 pb-3">{children}</div>}
+    </section>
+  );
+}
+
+/** Text button used throughout the tools: looks like an old underlined link. */
+export function ToolLink({ className, ...props }: React.ComponentPropsWithoutRef<"button">) {
+  return (
+    <button
+      type="button"
+      className={[
+        "text-xs text-blue-900 underline decoration-gray-300 underline-offset-2 hover:decoration-current disabled:text-gray-400 disabled:no-underline",
+        className,
+      ]
+        .filter(Boolean)
+        .join(" ")}
+      {...props}
+    />
   );
 }

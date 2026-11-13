@@ -1,11 +1,10 @@
 "use client";
 
-import PhosphorIcon from "@/components/ui/PhosphorIcon";
-import { formatPomodoroTime, type ToolDensity } from "./editorUtils";
+import { formatPomodoroTime } from "./editorUtils";
+import { ToolLink, ToolSection } from "./WritingToolsSidebar";
 
 type PomodoroToolProps = {
   open: boolean;
-  density: ToolDensity;
   seconds: number;
   minutes: number;
   running: boolean;
@@ -18,9 +17,28 @@ type PomodoroToolProps = {
   onReset: () => void;
 };
 
+function Stepper({ label, value, onDown, onUp, downDisabled, upDisabled }: {
+  label: string;
+  value: React.ReactNode;
+  onDown: () => void;
+  onUp: () => void;
+  downDisabled: boolean;
+  upDisabled: boolean;
+}) {
+  return (
+    <div className="flex items-center justify-between text-xs text-gray-600">
+      <span>{label}</span>
+      <span className="flex items-center gap-2 tabular-nums">
+        <ToolLink onClick={onDown} disabled={downDisabled} aria-label={`Less ${label}`}>−</ToolLink>
+        <span className="w-12 text-center">{value}</span>
+        <ToolLink onClick={onUp} disabled={upDisabled} aria-label={`More ${label}`}>+</ToolLink>
+      </span>
+    </div>
+  );
+}
+
 export default function PomodoroTool({
   open,
-  density,
   seconds,
   minutes,
   running,
@@ -32,100 +50,41 @@ export default function PomodoroTool({
   onStartPause,
   onReset,
 }: PomodoroToolProps) {
-  const isIconDensity = density === "icon";
-  const isComfortableDensity = density === "comfortable";
-
   return (
-    <section className={["mt-3 border border-line bg-white/60", isIconDensity ? "overflow-hidden" : ""].join(" ")}>
-      <button
-        type="button"
-        onClick={onToggleOpen}
-        className={["relative flex w-full items-center text-left text-sm text-gray-800 transition-colors hover:bg-white/80", isIconDensity ? "h-11 justify-center px-0 py-0" : "justify-between px-3 py-2"].join(" ")}
-        title={isIconDensity ? `Pomodoro · ${formatPomodoroTime(seconds)}` : undefined}
-      >
-        <span className={["inline-flex min-w-0 items-center justify-center", isIconDensity ? "h-8 w-8" : "gap-2"].join(" ")}>
-          <PhosphorIcon name="clock" size={isIconDensity ? 18 : 16} />
-          {!isIconDensity && <span className="truncate">{density === "compact" ? "Focus" : "Pomodoro"}</span>}
-        </span>
-        <span className={["shrink-0 font-mono text-xs text-gray-400", isIconDensity ? "absolute right-1.5 top-1.5 text-[10px]" : ""].join(" ")}>
-          {isIconDensity ? `${completedSessions}/${targetSessions}` : formatPomodoroTime(seconds)}
-        </span>
-      </button>
+    <ToolSection
+      title="Timer"
+      meta={running || seconds !== minutes * 60 ? formatPomodoroTime(seconds) : undefined}
+      open={open}
+      onToggleOpen={onToggleOpen}
+    >
+      <p className="text-center text-3xl text-blue-900 tabular-nums">{formatPomodoroTime(seconds)}</p>
+      <p className="mb-3 text-center text-xs text-gray-500">
+        {completedSessions} of {targetSessions} sessions done
+      </p>
 
-      {open && (
-        <div className={["border-t border-line", isIconDensity ? "p-2" : "p-3"].join(" ")}>
-          <div className={["flex items-center justify-center", isIconDensity ? "gap-2" : "gap-3"].join(" ")}>
-            <button
-              type="button"
-              aria-label="Decrease session time"
-              onClick={() => onAdjustMinutes(-1)}
-              disabled={minutes <= 1}
-              className={["inline-flex shrink-0 items-center justify-center border border-line bg-white/50 text-gray-600 transition-colors hover:border-line hover:bg-white/80 disabled:opacity-30", isIconDensity ? "h-7 w-7" : "h-8 w-8"].join(" ")}
-            >
-              <PhosphorIcon name="caret-down" size={15} />
-            </button>
-            <div className={["text-center", isIconDensity ? "min-w-0 flex-1" : "w-28"].join(" ")}>
-              <p className={["font-mono text-blue-900", isIconDensity ? "text-[1.35rem] leading-7" : "text-3xl"].join(" ")}>{formatPomodoroTime(seconds)}</p>
-              {!isIconDensity && <p className="text-xs text-gray-400">{minutes} min</p>}
-            </div>
-            <button
-              type="button"
-              aria-label="Increase session time"
-              onClick={() => onAdjustMinutes(1)}
-              disabled={minutes >= 120}
-              className={["inline-flex shrink-0 items-center justify-center border border-line bg-white/50 text-gray-600 transition-colors hover:border-line hover:bg-white/80 disabled:opacity-30", isIconDensity ? "h-7 w-7" : "h-8 w-8"].join(" ")}
-            >
-              <PhosphorIcon name="caret-up" size={15} />
-            </button>
-          </div>
-          {!isIconDensity && (
-            <p className="mt-1 text-center text-xs text-gray-500">
-              {completedSessions}/{targetSessions} sessions
-            </p>
-          )}
-          <div className="mt-3">
-            <div className="mb-1 flex items-center justify-between text-xs text-gray-500">
-              <span>{isIconDensity ? "Sessions" : "Sessions"}</span>
-              <span>{targetSessions}</span>
-            </div>
-            <input
-              type="range"
-              min={2}
-              max={10}
-              step={1}
-              value={targetSessions}
-              onChange={(event) => onTargetSessionsChange(event.target.value)}
-              className="h-1.5 w-full cursor-pointer accent-blue-900"
-            />
-            <div className="mt-1 flex justify-between text-[10px] text-gray-400">
-              <span>2</span>
-              <span>10</span>
-            </div>
-          </div>
-          <div className={["mt-3 flex justify-center", isIconDensity ? "gap-2" : "gap-2"].join(" ")}>
-            <button
-              type="button"
-              onClick={onStartPause}
-              title={running ? "Pause" : "Start"}
-              className={["inline-flex items-center justify-center border border-line bg-white/50 text-xs text-gray-700 transition-colors hover:border-line hover:bg-white/80", isIconDensity ? "h-9 w-9 px-0 py-0" : "flex-1 gap-2 px-2 py-1.5"].join(" ")}
-            >
-              {isIconDensity ? (
-                <PhosphorIcon name={running ? "pause" : "play"} size={15} />
-              ) : (
-                <span>{running ? "Pause" : isComfortableDensity ? "Start" : "Go"}</span>
-              )}
-            </button>
-            <button
-              type="button"
-              onClick={onReset}
-              title="Reset"
-              className={["inline-flex items-center justify-center border border-line bg-white/50 text-xs text-gray-700 transition-colors hover:border-line hover:bg-white/80", isIconDensity ? "h-9 w-9 px-0 py-0" : "flex-1 gap-2 px-2 py-1.5"].join(" ")}
-            >
-              {isIconDensity ? <PhosphorIcon name="arrow-counter-clockwise" size={15} /> : "Reset"}
-            </button>
-          </div>
-        </div>
-      )}
-    </section>
+      <div className="space-y-1">
+        <Stepper
+          label="minutes"
+          value={minutes}
+          onDown={() => onAdjustMinutes(-1)}
+          onUp={() => onAdjustMinutes(1)}
+          downDisabled={minutes <= 1}
+          upDisabled={minutes >= 120}
+        />
+        <Stepper
+          label="sessions"
+          value={targetSessions}
+          onDown={() => onTargetSessionsChange(String(targetSessions - 1))}
+          onUp={() => onTargetSessionsChange(String(targetSessions + 1))}
+          downDisabled={targetSessions <= 2}
+          upDisabled={targetSessions >= 10}
+        />
+      </div>
+
+      <div className="mt-3 flex justify-center gap-4">
+        <ToolLink onClick={onStartPause}>{running ? "pause" : "start"}</ToolLink>
+        <ToolLink onClick={onReset}>reset</ToolLink>
+      </div>
+    </ToolSection>
   );
 }

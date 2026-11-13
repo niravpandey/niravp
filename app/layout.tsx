@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist_Mono, VT323 } from "next/font/google";
+import { VT323 } from "next/font/google";
 import "./globals.css";
 import "phosphor-icons/src/css/icons.css";
 import "katex/dist/katex.min.css";
@@ -14,12 +14,6 @@ const crt = VT323({
   display: "swap",
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-  display: "swap",
-});
-
 export const metadata: Metadata = {
   title: "Nirav Pandey",
   description: "Personal site",
@@ -27,7 +21,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" data-palette="y2k" className={`${geistMono.variable} ${crt.variable} scroll-smooth`}>
+    <html lang="en" data-palette="y2k" className={`${crt.variable} scroll-smooth`}>
       <body className="min-h-screen bg-paper font-sans text-gray-900 antialiased">
         <Splash />
         <Navbar />

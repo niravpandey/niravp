@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { readNewsletterToken } from "@/lib/newsletter-token";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 function escapeHtml(value: string) {
   return value
@@ -72,7 +72,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Invalid unsubscribe token." }, { status: 400 });
   }
 
-  const supabase = await createClient();
+  const supabase = createAdminClient();
   const { error } = await supabase.from("subscribers").update({ verified: false }).eq("email", email);
 
   if (error) {

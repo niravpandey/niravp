@@ -6,10 +6,13 @@ import Footer from "@/components/layout/Footer";
 import PhosphorIcon from "@/components/ui/PhosphorIcon";
 import { getAuthorProfile, getHomeBlogLimit, MAX_HOME_BLOG_LIMIT } from "@/lib/site-settings";
 import { saveAuthorProfileAction, saveHomeBlogLimitAction } from "@/app/admin/portfolio-actions";
+import { getHeadshots } from "@/lib/headshots";
+import HeadshotManager from "./HeadshotManager";
 
 export default async function AdminSettingsPage() {
   const homeBlogLimit = await getHomeBlogLimit();
   const authorProfile = await getAuthorProfile();
+  const headshots = await getHeadshots();
 
   async function saveSettings(formData: FormData) {
     "use server";
@@ -62,6 +65,8 @@ export default async function AdminSettingsPage() {
               Save settings
             </button>
           </form>
+
+          <HeadshotManager key={headshots.map((headshot) => headshot.path).join("|")} headshots={headshots} />
 
           <form action={saveAuthorSettings} encType="multipart/form-data" className="mt-10 grid max-w-xl gap-4 border-b border-line pb-8">
             <div>

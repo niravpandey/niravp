@@ -21,9 +21,10 @@ type HomeClientProps = {
   skillCategories: SkillCategory[];
   experiences: Experience[];
   studentMap: StudentMapData | null;
+  headshots: string[];
 };
 
-export default function HomeClient({ posts, projects, skillCategories, experiences, studentMap }: HomeClientProps) {
+export default function HomeClient({ posts, projects, skillCategories, experiences, studentMap, headshots }: HomeClientProps) {
   const [projectIndex, setProjectIndex] = useState(0);
 
   return (
@@ -34,7 +35,7 @@ export default function HomeClient({ posts, projects, skillCategories, experienc
       </div>
 
       <main className="flex w-full flex-1 flex-col items-center px-4 pt-8 pb-6 sm:items-start sm:px-8 sm:pt-12 sm:pb-8 lg:px-16">
-        <HeroSection />
+        <HeroSection headshots={headshots} />
 
         <div className="grid w-full grid-cols-1 gap-6 border-b border-line pb-5 lg:grid-cols-2 [&>*]:min-w-0">
           <SkillSection categories={skillCategories} />

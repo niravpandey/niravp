@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import PhosphorIcon from "@/components/ui/PhosphorIcon";
 import { getAssetUrl } from "@/lib/supabase/storage";
+import HeadshotRotator from "@/components/home/HeadshotRotator";
 
 const SOCIAL_LINKS = [
   { label: "LinkedIn", href: "https://linkedin.com/in/niravpandey05", icon: getAssetUrl("icons/LinkedIn.png") },
@@ -13,18 +14,10 @@ const SOCIAL_LINKS = [
 const linkClass =
   "relative flex items-center gap-2 overflow-hidden border border-line bg-surface px-3 py-1.5 text-sm transition-colors hover:bg-line hover:text-white";
 
-export default function HeroSection() {
+export default function HeroSection({ headshots }: { headshots: string[] }) {
   return (
     <div className="flex w-full flex-col flex-wrap items-start gap-6 border-b border-line pb-5 sm:flex-row">
-      <div className="relative aspect-square w-40 shrink-0 sm:w-48 md:w-56">
-        <Image
-          src={getAssetUrl("headshot.png")}
-          fill
-          alt="Nirav Pandey"
-          sizes="(max-width: 640px) 10rem, (max-width: 768px) 12rem, 14rem"
-          className="border border-line object-cover p-1"
-        />
-      </div>
+      <HeadshotRotator urls={headshots} />
 
       <div className="shrink-0">
         <h1 className="font-serif text-5xl font-heading tracking-heading text-heading">Nirav Pandey</h1>
