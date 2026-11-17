@@ -5,7 +5,7 @@ import { getAssetUrl } from "@/lib/supabase/storage";
 import HeadshotRotator from "@/components/home/HeadshotRotator";
 
 const SOCIAL_LINKS = [
-  { label: "LinkedIn", href: "https://linkedin.com/in/niravpandey05", icon: getAssetUrl("icons/LinkedIn.png") },
+  { label: "LinkedIn", href: "https://linkedin.com/in/niravpandey", icon: getAssetUrl("icons/LinkedIn.png") },
   { label: "GitHub", href: "https://github.com/niravpandey", icon: getAssetUrl("icons/GitHub.png") },
 ];
 

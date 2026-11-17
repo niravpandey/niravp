@@ -11,6 +11,10 @@ export type ImportedFrontmatter = {
   tags?: string;
   published?: boolean;
   createdAt?: string;
+  kind?: "post" | "note";
+  subject?: string;
+  topic?: string;
+  position?: string;
 };
 
 export type BlogImage = {
@@ -255,6 +259,11 @@ export function parseFrontmatter(source: string): { content: string; data: Impor
           ? publishedValue.toLowerCase() === "true"
           : undefined,
       createdAt: normalizedCreatedAt,
+      kind: fields.kind === "note" || fields.kind === "post" ? fields.kind : undefined,
+      subject: typeof fields.subject === "string" ? fields.subject : undefined,
+      topic: typeof fields.topic === "string" ? fields.topic : undefined,
+      position:
+        typeof fields.position === "string" && /^\d+$/.test(fields.position) ? fields.position : undefined,
     },
   };
 }

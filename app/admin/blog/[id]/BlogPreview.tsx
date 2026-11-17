@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import { MDXRemote } from "next-mdx-remote";
 import BlogImage from "@/components/blog/BlogImage";
+import { mathEnvironments } from "@/components/notes/MathEnvironments";
+import type { PostKind } from "@/lib/blog";
 import type { PreviewSource } from "./editorUtils";
 import {
   INLINE_EDITABLE_SELECTOR,
@@ -93,7 +95,11 @@ function formatPreviewDate(value: string) {
   });
 }
 
+/** Notes also get the theorem/proof environments, matching the public /notes page. */
+const notePreviewMdxComponents = { ...previewMdxComponents, ...mathEnvironments };
+
 type BlogPreviewProps = {
+  kind: PostKind;
   compiledSource: PreviewSource | null;
   description: string;
   error: string | null;
@@ -112,6 +118,7 @@ type BlogPreviewProps = {
 };
 
 export default function BlogPreview({
+  kind,
   compiledSource,
   description,
   error,
@@ -247,11 +254,11 @@ export default function BlogPreview({
       {notice && <p className="border-b border-line bg-white px-4 py-1.5 text-xs text-red-700">{notice}</p>}
 
       <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto p-4">
-        <article>
+        <article className={kind === "note" ? "font-cm" : undefined}>
           <header className="border-b border-line pb-6 text-center">
             <p className="text-xs text-gray-400">{formatPreviewDate(createdAt)}</p>
             <h2 className="mx-auto mt-3 max-w-2xl text-3xl font-medium leading-tight text-blue-900">
-              {title.trim() || "Untitled post"}
+              {title.trim() || (kind === "note" ? "Untitled note" : "Untitled post")}
             </h2>
             {description.trim() && <p className="mx-auto mt-3 max-w-2xl text-sm text-gray-600">{description}</p>}
             {normalizedTags.length > 0 && (
@@ -280,11 +287,12 @@ export default function BlogPreview({
                   editMode
                     ? "[&_:is(p,li,h1,h2,h3,h4,h5,h6,td,th)]:cursor-text [&_:is(p,li,h1,h2,h3,h4,h5,h6,td,th):hover]:outline-1 [&_:is(p,li,h1,h2,h3,h4,h5,h6,td,th):hover]:outline-dashed [&_:is(p,li,h1,h2,h3,h4,h5,h6,td,th):hover]:outline-gray-300"
                     : "",
+                  kind === "note" ? "notes-body prose-headings:font-cm" : "",
                   "[&_[data-src-editing]]:bg-white [&_[data-src-editing]]:outline-dashed! [&_[data-src-editing]]:outline-1 [&_[data-src-editing]]:outline-blue-900!",
                   "prose prose-gray [&_[data-src-atomic]]:cursor-pointer [&_[data-src-active]]:bg-mauve-500/10 [&_[data-src-active]]:outline-2 [&_[data-src-active]]:outline-offset-2 [&_[data-src-active]]:outline-mauve-500/30 max-w-none prose-headings:scroll-mt-24 prose-headings:font-medium prose-headings:text-gray-900 prose-h1:text-4xl prose-h2:border-b prose-h2:border-line prose-h2:pb-2 prose-a:no-underline prose-p:leading-7 prose-li:leading-7 prose-code:before:content-none prose-code:after:content-none prose-pre:my-6 prose-pre:rounded-none prose-pre:bg-transparent prose-img:my-8 prose-img:rounded-none",
                 ].join(" ")}
               >
-                <MDXRemote key={mdxKey} {...compiledSource} components={previewMdxComponents} />
+                <MDXRemote key={mdxKey} {...compiledSource} components={kind === "note" ? notePreviewMdxComponents : previewMdxComponents} />
               </div>
             ) : (
               <p className="text-sm text-gray-400">Start writing to preview the post.</p>

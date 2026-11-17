@@ -35,12 +35,12 @@ function splitEntry(children: ReactNode) {
 
 const resumeComponents = {
   h1: ({ className, ...props }: ComponentPropsWithoutRef<"h1">) => (
-    <h1 className={cn("font-serif text-[22pt] font-heading leading-tight text-heading", className)} {...props} />
+    <h1 className={cn("font-serif text-[18pt] font-heading leading-tight text-heading", className)} {...props} />
   ),
   h2: ({ className, ...props }: ComponentPropsWithoutRef<"h2">) => (
     <h2
       className={cn(
-        "mt-[5mm] border-b border-gray-300 pb-[1mm] font-serif text-[12pt] font-heading uppercase tracking-wide text-heading",
+        "mt-[5mm] border-b border-gray-300 pb-[1mm] font-serif text-[10pt] font-heading uppercase tracking-wide text-heading",
         className,
       )}
       {...props}
@@ -57,7 +57,7 @@ const resumeComponents = {
   },
   p: ({ className, ...props }: ComponentPropsWithoutRef<"p">) => <p className={cn("mt-[1mm]", className)} {...props} />,
   ul: ({ className, ...props }: ComponentPropsWithoutRef<"ul">) => (
-    <ul className={cn("mt-[1mm] list-disc space-y-[0.5mm] pl-[5mm] marker:text-gray-400", className)} {...props} />
+    <ul className={cn("mt-[1mm] list-disc space-y-0 pl-[5mm] marker:text-gray-400", className)} {...props} />
   ),
   em: ({ className, ...props }: ComponentPropsWithoutRef<"em">) => (
     <em className={cn("text-gray-700", className)} {...props} />
@@ -82,7 +82,7 @@ export default async function ResumePage() {
       </div>
 
       {/* The A4 sheet: 210 x 297 mm on screen (narrower on phones), exactly one A4 page when printed. */}
-      <article className="resume-sheet w-full max-w-[210mm] border border-line bg-white px-5 py-6 text-[10pt] leading-snug text-gray-900 shadow-[0_8px_30px_color-mix(in_oklab,var(--ink)_12%,transparent)] sm:min-h-[297mm] sm:px-[16mm] sm:py-[14mm]">
+      <article className="resume-sheet w-full max-w-[210mm] border border-line bg-white px-5 py-6 text-[8.5pt] leading-[1.25] text-gray-900 shadow-[0_8px_30px_color-mix(in_oklab,var(--ink)_12%,transparent)] sm:min-h-[297mm] sm:px-[16mm] sm:py-[14mm]">
         <MDXRemote source={source} options={mdxOptions} components={resumeComponents} />
       </article>
     </main>

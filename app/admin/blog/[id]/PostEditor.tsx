@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useEffectEvent, useRef, useState, useTransition } from "react";
 import PhosphorIcon from "@/components/ui/PhosphorIcon";
-import type { Post } from "@/lib/blog";
+import type { Post, PostKind } from "@/lib/blog";
 import { createClient } from "@/lib/supabase/client";
 import { compilePostPreview, deletePost, savePost, type PostFormData } from "./actions";
 import BlogPreview from "./BlogPreview";
@@ -37,10 +37,18 @@ import {
 
 type Props = {
   post: Post | null;
+  initialKind: PostKind;
+  noteTaxonomy: { subjects: string[]; topics: string[] };
 };
 
-export default function PostEditor({ post }: Props) {
+export default function PostEditor({ post, initialKind, noteTaxonomy }: Props) {
   const isNew = !post;
+  const [kind, setKind] = useState<PostKind>(post?.kind ?? initialKind);
+  const [subject, setSubject] = useState(post?.subject ?? "");
+  const [topic, setTopic] = useState(post?.topic ?? "");
+  const [position, setPosition] = useState(post?.position != null ? String(post.position) : "");
+  const isNote = kind === "note";
+  const noun = isNote ? "note" : "post";
   const [supabase] = useState(createClient);
   const [title, setTitle] = useState(post?.title ?? "");
   const [slug, setSlug] = useState(post?.slug ?? "");
@@ -67,6 +75,7 @@ export default function PostEditor({ post }: Props) {
   const [titleDone, setTitleDone] = useState(Boolean(post?.title && post?.slug));
   const [detailsDone, setDetailsDone] = useState(Boolean(post?.description && post?.tags?.length));
   const [coverDone, setCoverDone] = useState(Boolean(post?.cover_image));
+  const [placementDone, setPlacementDone] = useState(Boolean(post?.subject && post?.topic));
   const [pomodoroMinutes, setPomodoroMinutes] = useState(DEFAULT_POMODORO_MINUTES);
   const [pomodoroTargetSessions, setPomodoroTargetSessions] = useState(DEFAULT_POMODORO_SESSIONS);
   const [pomodoroCompletedSessions, setPomodoroCompletedSessions] = useState(0);
@@ -121,9 +130,15 @@ export default function PostEditor({ post }: Props) {
       return;
     }
 
-    if (publish && !coverImage) {
+    if (publish && !coverImage && !isNote) {
       setCoverDone(false);
       setError("Thumbnail is required before publishing.");
+      return;
+    }
+
+    if (publish && isNote && (!subject.trim() || !topic.trim())) {
+      setPlacementDone(false);
+      setError("Pick a subject and topic before publishing a note.");
       return;
     }
 
@@ -139,6 +154,10 @@ export default function PostEditor({ post }: Props) {
       coverImage,
       published: publish !== undefined ? publish : published,
       createdAt: new Date(createdAt).toISOString(),
+      kind,
+      subject,
+      topic,
+      position,
     };
 
     startTransition(async () => {
@@ -158,7 +177,7 @@ export default function PostEditor({ post }: Props) {
       return;
     }
 
-    if (!confirm("Delete this post? This cannot be undone.")) {
+    if (!confirm(`Delete this ${noun}? This cannot be undone.`)) {
       return;
     }
 
@@ -200,6 +219,18 @@ export default function PostEditor({ post }: Props) {
       }
       if (imported.data.createdAt !== undefined) {
         setCreatedAt(toDatetimeLocalValue(imported.data.createdAt));
+      }
+      if (imported.data.kind !== undefined) {
+        setKind(imported.data.kind);
+      }
+      if (imported.data.subject !== undefined) {
+        setSubject(imported.data.subject);
+      }
+      if (imported.data.topic !== undefined) {
+        setTopic(imported.data.topic);
+      }
+      if (imported.data.position !== undefined) {
+        setPosition(imported.data.position);
       }
 
       setImportedFileName(file.name);
@@ -315,6 +346,28 @@ export default function PostEditor({ post }: Props) {
     requestAnimationFrame(() => {
       textarea.focus();
       textarea.setSelectionRange(nextCursorPosition, nextCursorPosition);
+    });
+  }
+
+  /** Wraps the selection in a <Callout> (or inserts an empty one) and leaves the caret inside it. */
+  function insertCallout() {
+    const textarea = contentTextareaRef.current;
+    const start = textarea?.selectionStart ?? content.length;
+    const end = textarea?.selectionEnd ?? content.length;
+    const before = content.slice(0, start);
+    const after = content.slice(end);
+    const selected = content.slice(start, end).trim();
+    const prefix = before.length === 0 || before.endsWith("\n\n") ? "" : before.endsWith("\n") ? "\n" : "\n\n";
+    const suffix = after.length === 0 || after.startsWith("\n\n") ? "" : after.startsWith("\n") ? "\n" : "\n\n";
+    const open = '<Callout title="">\n\n';
+    const snippet = `${open}${selected}\n\n</Callout>`;
+    // Empty selection: caret goes in the title quotes; otherwise after the wrapped text.
+    const caret = before.length + prefix.length + (selected ? open.length + selected.length : '<Callout title="'.length);
+
+    setContent(`${before}${prefix}${snippet}${suffix}${after}`);
+    requestAnimationFrame(() => {
+      textarea?.focus();
+      textarea?.setSelectionRange(caret, caret);
     });
   }
 
@@ -712,14 +765,14 @@ export default function PostEditor({ post }: Props) {
   return (
     <div className="mx-auto w-full max-w-7xl">
       <div className="mb-8 border-b border-line pb-5">
-        <p className="text-sm text-gray-500">{isNew ? "New post" : "Edit post"}</p>
+        <p className="text-sm text-gray-500">{isNew ? `New ${noun}` : `Edit ${noun}`}</p>
         <h1 className="mt-1 text-3xl font-semibold text-mauve-500">{isNew ? "Write something new" : "Refine the draft"}</h1>
       </div>
 
       <div className="mb-8 flex items-center justify-between">
         <Link href="/admin/blog" className="inline-flex items-center gap-2 text-sm text-gray-500 transition-colors hover:text-gray-800">
           <PhosphorIcon name="arrow-left" size={16} />
-          <span>All posts</span>
+          <span>All writing</span>
         </Link>
         <div className="flex items-center gap-2">
           <input
@@ -785,16 +838,34 @@ export default function PostEditor({ post }: Props) {
           <div className="mb-6 flex flex-wrap items-baseline gap-x-6 gap-y-3">
             <EditorStage
               title="Title"
-              summary={title.trim() || "untitled"}
+              summary={`${isNote ? "note" : "blog post"} · ${title.trim() || "untitled"}`}
               done={titleDone}
               onDoneChange={setTitleDone}
             >
+              <div className="flex gap-4 text-sm" role="radiogroup" aria-label="Kind">
+                {(["post", "note"] as const).map((option) => (
+                  <button
+                    key={option}
+                    type="button"
+                    role="radio"
+                    aria-checked={kind === option}
+                    onClick={() => setKind(option)}
+                    className={
+                      kind === option
+                        ? "font-medium text-gray-900 underline underline-offset-4"
+                        : "text-gray-500 transition-colors hover:text-gray-900"
+                    }
+                  >
+                    {option === "post" ? "Blog post" : "Note"}
+                  </button>
+                ))}
+              </div>
               <div>
                 <label className="mb-1 block text-xs text-gray-500">Title</label>
                 <input
                   value={title}
                   onChange={(event) => setTitle(event.target.value)}
-                  placeholder="Post title"
+                  placeholder={isNote ? "Note title" : "Post title"}
                   className="w-full border border-line px-3 py-2 text-lg font-medium text-gray-900 focus:border-line focus:outline-none"
                 />
               </div>
@@ -841,7 +912,7 @@ export default function PostEditor({ post }: Props) {
               </div>
               <div>
                 <label className="mb-1 block text-xs text-gray-500">
-                  Description <span className="text-gray-300">(shown on blog card)</span>
+                  Description <span className="text-gray-300">{isNote ? "(shown as the abstract)" : "(shown on blog card)"}</span>
                 </label>
                 <input
                   value={description}
@@ -852,6 +923,63 @@ export default function PostEditor({ post }: Props) {
               </div>
             </EditorStage>
 
+            {isNote && (
+              <EditorStage
+                title="Placement"
+                summary={[subject.trim(), topic.trim(), position.trim() && `#${position.trim()}`].filter(Boolean).join(" / ") || "unsorted"}
+                done={placementDone}
+                onDoneChange={setPlacementDone}
+              >
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-[1fr_1fr_6rem]">
+                  <div>
+                    <label className="mb-1 block text-xs text-gray-500">Subject</label>
+                    <input
+                      value={subject}
+                      onChange={(event) => setSubject(event.target.value)}
+                      list="note-subjects"
+                      placeholder="Mathematics"
+                      className="w-full border border-line px-3 py-2 text-sm text-gray-700 focus:border-line focus:outline-none"
+                    />
+                    <datalist id="note-subjects">
+                      {noteTaxonomy.subjects.map((name) => (
+                        <option key={name} value={name} />
+                      ))}
+                    </datalist>
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs text-gray-500">Topic</label>
+                    <input
+                      value={topic}
+                      onChange={(event) => setTopic(event.target.value)}
+                      list="note-topics"
+                      placeholder="Linear Algebra"
+                      className="w-full border border-line px-3 py-2 text-sm text-gray-700 focus:border-line focus:outline-none"
+                    />
+                    <datalist id="note-topics">
+                      {noteTaxonomy.topics.map((name) => (
+                        <option key={name} value={name} />
+                      ))}
+                    </datalist>
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs text-gray-500">Order</label>
+                    <input
+                      type="number"
+                      min={1}
+                      value={position}
+                      onChange={(event) => setPosition(event.target.value)}
+                      placeholder="1"
+                      className="w-full border border-line px-3 py-2 text-sm text-gray-700 focus:border-line focus:outline-none"
+                    />
+                  </div>
+                </div>
+                <p className="text-xs text-gray-500">
+                  Order sets where this note sits within its topic. Pick an existing subject or topic, or type a new one.
+                </p>
+              </EditorStage>
+            )}
+
+            {!isNote && (
             <EditorStage
               title="Cover"
               summary={coverImage ? "set" : "missing"}
@@ -873,6 +1001,7 @@ export default function PostEditor({ post }: Props) {
                 </p>
               </div>
             </EditorStage>
+            )}
           </div>
 
           <div>
@@ -926,7 +1055,20 @@ export default function PostEditor({ post }: Props) {
                     />
                   )}
                   <div className="flex items-center justify-between border-t border-line px-4 py-2 text-xs text-gray-500">
-                    <span>{importedFileName ? `Markdown editor · loaded ${importedFileName}` : "Markdown editor"}</span>
+                    <span className="flex items-center gap-3">
+                      <span>{importedFileName ? `Markdown editor · loaded ${importedFileName}` : "Markdown editor"}</span>
+                      {isNote && (
+                        <button
+                          type="button"
+                          onMouseDown={(event) => event.preventDefault()}
+                          onClick={insertCallout}
+                          title="Insert a callout, or wrap the selected text in one"
+                          className="text-gray-700 underline decoration-gray-300 underline-offset-4 transition-colors hover:decoration-gray-700"
+                        >
+                          + callout
+                        </button>
+                      )}
+                    </span>
                     <span>{isPending ? "Saving..." : "⌘S to save draft"}</span>
                   </div>
                 </div>
@@ -942,6 +1084,7 @@ export default function PostEditor({ post }: Props) {
 
               {editorPreviewPaneMode !== "editor" && (
                 <BlogPreview
+                  kind={kind}
                   compiledSource={previewSource}
                   createdAt={createdAt}
                   description={description}

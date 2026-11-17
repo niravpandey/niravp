@@ -7,6 +7,7 @@ import rehypeKatex from "rehype-katex";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import { isAdminEmail } from "@/lib/auth/admin";
+import type { PostKind } from "@/lib/blog";
 import { createClient } from "@/lib/supabase/server";
 import rehypeSourcePositions from "./rehypeSourcePositions";
 
@@ -20,7 +21,22 @@ export type PostFormData = {
   coverImage: string;
   published: boolean;
   createdAt: string;
+  kind: PostKind;
+  subject: string;
+  topic: string;
+  position: string;
 };
+
+/** Every public page a post or note appears on, so saves and deletes refresh them all. */
+function revalidatePublicPages(slug?: string) {
+  revalidatePath("/admin/blog");
+  revalidatePath("/blog");
+  revalidatePath("/notes");
+  if (slug) {
+    revalidatePath(`/blog/${slug}`);
+    revalidatePath(`/notes/${slug}`);
+  }
+}
 
 async function requireUser() {
   const supabase = await createClient();
@@ -47,6 +63,9 @@ export async function savePost(data: PostFormData) {
     .map((tag) => tag.trim())
     .filter(Boolean);
 
+  const isNote = data.kind === "note";
+  const position = Number.parseInt(data.position, 10);
+
   const payload = {
     title: data.title,
     slug: data.slug,
@@ -56,6 +75,11 @@ export async function savePost(data: PostFormData) {
     cover_image: data.coverImage,
     published: data.published,
     created_at: data.createdAt,
+    kind: isNote ? "note" : "post",
+    subject: isNote ? data.subject.trim() || null : null,
+    topic: isNote ? data.topic.trim() || null : null,
+    position: isNote && Number.isFinite(position) ? position : null,
+    updated_at: new Date().toISOString(),
   };
 
   if (data.id && data.id !== "new") {
@@ -78,14 +102,11 @@ export async function savePost(data: PostFormData) {
       throw new Error(error.message);
     }
 
-    revalidatePath("/admin/blog");
-    revalidatePath("/blog");
+    revalidatePublicPages();
     redirect(`/admin/blog/${inserted.id}`);
   }
 
-  revalidatePath("/admin/blog");
-  revalidatePath("/blog");
-  revalidatePath(`/blog/${data.slug}`);
+  revalidatePublicPages(data.slug);
 }
 
 /** Pins or unpins a post so it stays at the top of the admin list. */
@@ -122,9 +143,7 @@ export async function deletePost(id: string) {
     throw new Error(error.message);
   }
 
-  revalidatePath("/admin/blog");
-  revalidatePath("/blog");
-  revalidatePath(`/blog/${post.slug}`);
+  revalidatePublicPages(post.slug);
 
   redirect("/admin/blog");
 }

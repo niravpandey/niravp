@@ -12,18 +12,27 @@ export type Post = {
   created_at: string;
   cover_image: string | null;
   embedding: number[] | string | null;
+  /** "post" for the blog, "note" for /notes. Both live in the posts table. */
+  kind: PostKind;
+  subject: string | null;
+  topic: string | null;
+  position: number | null;
+  updated_at: string | null;
 };
 
-export type PostSummary = Omit<Post, "content">;
+export type PostKind = "post" | "note";
+
+export type PostSummary = Omit<Post, "content" | "kind" | "subject" | "topic" | "position" | "updated_at">;
 
 const SUMMARY_COLUMNS = "id, title, slug, description, tags, published, created_at, cover_image, embedding";
 
-/** All published posts, newest first. */
+/** All published blog posts, newest first. */
 export async function getPublishedPosts(): Promise<PostSummary[]> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("posts")
     .select(SUMMARY_COLUMNS)
+    .eq("kind", "post")
     .eq("published", true)
     .order("created_at", { ascending: false });
 
@@ -32,11 +41,12 @@ export async function getPublishedPosts(): Promise<PostSummary[]> {
 }
 
 /** A single published post, or null if it doesn't exist or isn't published. Cached per request. */
-export const getPublishedPost = cache(async (slug: string): Promise<Post | null> => {
+export const getPublishedPost = cache(async (slug: string): Promise<PostSummary & Pick<Post, "content"> | null> => {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("posts")
     .select(`${SUMMARY_COLUMNS}, content`)
+    .eq("kind", "post")
     .eq("slug", slug)
     .eq("published", true)
     .single();
@@ -53,6 +63,7 @@ export async function getSearchablePosts(): Promise<SearchablePost[]> {
   const { data, error } = await supabase
     .from("posts")
     .select("title, slug, description, tags, created_at")
+    .eq("kind", "post")
     .eq("published", true)
     .order("created_at", { ascending: false });
 
@@ -63,14 +74,17 @@ export async function getSearchablePosts(): Promise<SearchablePost[]> {
   return data ?? [];
 }
 
-export type AdminPostRow = Pick<Post, "id" | "title" | "slug" | "published" | "created_at"> & { pinned: boolean };
+export type AdminPostRow = Pick<
+  Post,
+  "id" | "title" | "slug" | "published" | "created_at" | "kind" | "subject" | "topic"
+> & { pinned: boolean };
 
-/** Admin: all posts, drafts included, pinned first then newest. */
+/** Admin: all posts and notes, drafts included, pinned first then newest. */
 export async function getAllPosts(): Promise<AdminPostRow[]> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("posts")
-    .select("id, title, slug, published, created_at, pinned")
+    .select("id, title, slug, published, created_at, pinned, kind, subject, topic")
     .order("pinned", { ascending: false })
     .order("created_at", { ascending: false });
 
@@ -101,7 +115,7 @@ function countWords(source: string) {
 /** Word counts for published posts, keyed by post id. Never throws: the stats just show nothing. */
 export async function getPublishedWordCounts(): Promise<Record<string, number>> {
   const supabase = await createClient();
-  const { data, error } = await supabase.from("posts").select("id, content").eq("published", true);
+  const { data, error } = await supabase.from("posts").select("id, content").eq("kind", "post").eq("published", true);
 
   if (error) {
     console.error("Failed to load posts for word counts:", error.message);

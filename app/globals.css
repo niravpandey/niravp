@@ -145,6 +145,8 @@
   --font-serif: "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
   --font-mono: "Courier New", Courier, monospace;
   --font-crt: var(--font-vt323);
+  /* Computer Modern for notes. KaTeX_Main is CM and already loaded by katex.min.css, so text matches the maths. */
+  --font-cm: "KaTeX_Main", "CMU Serif", "Latin Modern Roman", "Computer Modern", serif;
 
   --color-paper: var(--paper);
   --color-surface: var(--surface);
@@ -237,6 +239,56 @@ pre,
 kbd,
 samp {
   font-weight: 700;
+}
+
+/*
+ * Notes: LaTeX-style article body. Theorem-like environments share one counter per note (amsthm-style),
+ * run in with the first paragraph, and proofs end with a tombstone.
+ */
+.notes-body {
+  counter-reset: math-env;
+  font-size: 1rem; /* 12pt */
+}
+.notes-body .math-env {
+  counter-increment: math-env;
+  margin-block: 0.875em;
+}
+.notes-body .math-env-number::after {
+  content: counter(math-env);
+}
+.notes-body .math-env-label {
+  font-weight: 700;
+  font-style: normal;
+}
+.notes-body .math-env-name {
+  font-weight: 400;
+}
+.notes-body .math-env[data-style="plain"] {
+  font-style: italic;
+}
+.notes-body .math-env[data-style="remark"] .math-env-label {
+  font-weight: 400;
+  font-style: italic;
+}
+.notes-body .math-env > .math-env-label + p,
+.notes-body .math-proof > .math-proof-label + p {
+  display: inline;
+}
+.notes-body .math-env > p:last-child,
+.notes-body .math-proof > p:last-child {
+  margin-bottom: 0;
+}
+.notes-body .math-proof {
+  margin-block: 0.875em;
+}
+.notes-body .math-proof-label {
+  font-style: italic;
+}
+.notes-body .math-proof > :last-child::after {
+  content: "∎";
+  float: right;
+  margin-left: 1em;
+  font-style: normal;
 }
 
 /* Glowing titles. Unlayered so it applies alongside the `text-heading` color utility. */

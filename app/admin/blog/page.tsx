@@ -46,15 +46,23 @@ export default async function AdminBlogPage({ searchParams }: { searchParams: Pr
           <div className="mt-6 mb-6 flex items-end justify-between gap-4 border-b border-line pb-5">
             <div>
               <h1 className="text-3xl font-semibold text-mauve-500">Writing</h1>
-              <p className="mt-1 text-sm text-gray-500">Drafts, published pieces, and editing access in one place.</p>
+              <p className="mt-1 text-sm text-gray-500">Blog posts and notes, drafts and published, in one place.</p>
             </div>
-            <Link
-              href="/admin/blog/new"
-              className="inline-flex items-center gap-2 border border-line bg-white/50 px-4 py-2 text-sm text-gray-700 transition-colors hover:border-line hover:bg-white/80"
-            >
-              <PhosphorIcon name="file-plus" size={16} />
-              <span>New post</span>
-            </Link>
+            <div className="flex gap-2">
+              <Link
+                href="/admin/blog/new"
+                className="inline-flex items-center gap-2 border border-line bg-white/50 px-4 py-2 text-sm text-gray-700 transition-colors hover:border-line hover:bg-white/80"
+              >
+                <PhosphorIcon name="file-plus" size={16} />
+                <span>New post</span>
+              </Link>
+              <Link
+                href="/admin/blog/new?kind=note"
+                className="inline-flex items-center gap-2 border border-line bg-white/50 px-4 py-2 text-sm text-gray-700 transition-colors hover:border-line hover:bg-white/80"
+              >
+                <span>New note</span>
+              </Link>
+            </div>
           </div>
 
           <nav aria-label="Filter posts" className="mb-4 flex flex-wrap gap-x-5 gap-y-1 text-sm">
@@ -89,6 +97,9 @@ export default async function AdminBlogPage({ searchParams }: { searchParams: Pr
                     <p className="truncate font-medium text-gray-900">{post.title}</p>
                     <p className="mt-0.5 text-xs text-gray-500">
                       {post.pinned && <span className="text-mauve-500">Pinned · </span>}
+                      {post.kind === "note"
+                        ? `Note · ${[post.subject, post.topic].filter(Boolean).join(" / ") || "unsorted"} · `
+                        : ""}
                       {formatDate(post.created_at)} · {post.published ? "Published" : "Draft"}
                     </p>
                   </div>
@@ -99,7 +110,7 @@ export default async function AdminBlogPage({ searchParams }: { searchParams: Pr
                       </button>
                     </form>
                     {post.published && (
-                      <Link href={`/blog/${post.slug}`} className="text-sm text-gray-500 transition-colors hover:text-gray-900">
+                      <Link href={`/${post.kind === "note" ? "notes" : "blog"}/${post.slug}`} className="text-sm text-gray-500 transition-colors hover:text-gray-900">
                         View
                       </Link>
                     )}
