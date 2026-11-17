@@ -1,6 +1,13 @@
 import Link from "next/link";
 import CommandPalette from "@/components/layout/CommandPalette";
+import MobileMenu from "@/components/layout/MobileMenu";
 import { getSearchablePosts } from "@/lib/blog";
+
+const NAV_LINKS = [
+  { href: "/blog", label: "Blog" },
+  { href: "/notes", label: "Notes" },
+  { href: "/design", label: "Design" },
+];
 
 export default async function Navbar() {
   const posts = await getSearchablePosts();
@@ -12,15 +19,12 @@ export default async function Navbar() {
       </Link>
       <div className="flex items-center gap-3 sm:gap-5">
         <CommandPalette posts={posts} />
-        <Link href="/blog" className="text-sm font-bold transition-opacity hover:opacity-80">
-          Blog
-        </Link>
-        <Link href="/notes" className="text-sm font-bold transition-opacity hover:opacity-80">
-          Notes
-        </Link>
-        <Link href="/design" className="text-sm font-bold transition-opacity hover:opacity-80">
-          Design
-        </Link>
+        {NAV_LINKS.map((link) => (
+          <Link key={link.href} href={link.href} className="hidden text-sm font-bold transition-opacity hover:opacity-80 sm:inline">
+            {link.label}
+          </Link>
+        ))}
+        <MobileMenu links={NAV_LINKS} />
       </div>
     </nav>
   );
