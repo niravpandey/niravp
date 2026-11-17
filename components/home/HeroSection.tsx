@@ -52,7 +52,7 @@ export default function HeroSection({ headshots }: { headshots: string[] }) {
             It fades in, small, in the bottom-right corner while "Kathmandu, Nepal" is hovered. */}
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-x-0 bottom-0 aspect-[506/119] w-full bg-skyline opacity-0 transition-opacity duration-500 ease-out group-has-[.kathmandu:hover]/letter:opacity-[0.07] motion-reduce:transition-none"
+          className="pointer-events-none absolute inset-x-0 bottom-0 aspect-[506/119] w-full bg-skyline opacity-0 transition-opacity duration-500 ease-out group-has-[.kathmandu:hover]/letter:opacity-[0.12] motion-reduce:transition-none"
           style={{
             maskImage: "url(/kathmandu_skyline.svg)",
             maskSize: "100% 100%",
