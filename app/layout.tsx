@@ -3,7 +3,6 @@ import { VT323 } from "next/font/google";
 // KaTeX first so globals.css can override its sizing.
 import "katex/dist/katex.min.css";
 import "./globals.css";
-import "phosphor-icons/src/css/icons.css";
 import Navbar from "@/components/layout/Navbar";
 import Splash from "@/components/layout/Splash";
 

@@ -74,9 +74,6 @@ importers:
       nodemailer:
         specifier: ^9.0.3
         version: 9.0.3
-      phosphor-icons:
-        specifier: ^1.4.2
-        version: 1.4.2
       react:
         specifier: 19.2.4
         version: 19.2.4
@@ -2759,9 +2756,6 @@ packages:
 
   path-parse@1.0.7:
     resolution: {integrity: sha512-LDJzPVEEEPR+y48z93A0Ed0yXb8pAByGWo/k5YYdYgpY2/2EsOsksJrq7lOHxryrVOn1ejG6oAp8ahvOIQD8sw==}
-
-  phosphor-icons@1.4.2:
-    resolution: {integrity: sha512-vDyuRWLSEb87dxpoOGpP1GCjr/TFzA0Ljt0TtJcwXO7/iPdSZW0e/2m1jsANH1ML5ZyZXcjeWx6pzT0A0tgYDA==}
 
   picocolors@1.1.1:
     resolution: {integrity: sha512-xceH2snhtb5M9liqDsmEw56le376mTZkEX/jEb/RxNFyegNul7eNslCXP9FDj/Lcu0X8KEyMceP2ntpaHrDEVA==}
@@ -6607,8 +6601,6 @@ snapshots:
   path-key@3.1.1: {}
 
   path-parse@1.0.7: {}
-
-  phosphor-icons@1.4.2: {}
 
   picocolors@1.1.1: {}
 
