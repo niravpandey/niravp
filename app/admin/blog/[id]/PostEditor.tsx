@@ -23,6 +23,8 @@ import {
   DEFAULT_POMODORO_SESSIONS,
   clamp,
   compressImage,
+  downloadLinkedImage,
+  ImageLinkUnreadableError,
   formatFileSize,
   getFileExtension,
   getImageMdxSnippet,
@@ -242,6 +244,35 @@ export default function PostEditor({ post, initialKind, noteTaxonomy }: Props) {
     }
   }
 
+  /** Compresses an image when it's over the size cap, then uploads it to the Blog bucket. */
+  async function uploadImageFile(file: File) {
+    setImageStatus(`Compressing ${file.name}...`);
+
+    const uploadFile = await compressImage(file);
+    const fileExt = getFileExtension(uploadFile);
+    const baseName = uploadFile.name.replace(/\.[^/.]+$/, "");
+    const safeBaseName = baseName
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/(^-|-$)/g, "")
+      .slice(0, 60);
+    const fileName = `${Date.now()}-${safeBaseName || "image"}.${fileExt}`;
+
+    setImageStatus(`Uploading ${uploadFile.name} (${formatFileSize(file.size)} -> ${formatFileSize(uploadFile.size)})...`);
+
+    const { error: uploadError } = await supabase.storage
+      .from(BLOG_BUCKET_NAME)
+      .upload(fileName, uploadFile, {
+        cacheControl: "3600",
+        contentType: uploadFile.type,
+        upsert: false,
+      });
+
+    if (uploadError) {
+      throw new Error(uploadError.message);
+    }
+  }
+
   async function handleImageUpload(event: React.ChangeEvent<HTMLInputElement>) {
     const files = event.target.files;
 
@@ -255,30 +286,7 @@ export default function PostEditor({ post, initialKind, noteTaxonomy }: Props) {
 
     try {
       for (const file of Array.from(files)) {
-        setImageStatus(`Compressing ${file.name}...`);
-
-        const uploadFile = await compressImage(file);
-        const fileExt = getFileExtension(uploadFile);
-        const baseName = uploadFile.name.replace(/\.[^/.]+$/, "");
-        const safeBaseName = baseName
-          .toLowerCase()
-          .replace(/[^a-z0-9]+/g, "-")
-          .replace(/(^-|-$)/g, "");
-        const fileName = `${Date.now()}-${safeBaseName || "image"}.${fileExt}`;
-
-        setImageStatus(`Uploading ${uploadFile.name} (${formatFileSize(file.size)} -> ${formatFileSize(uploadFile.size)})...`);
-
-        const { error: uploadError } = await supabase.storage
-          .from(BLOG_BUCKET_NAME)
-          .upload(fileName, uploadFile, {
-            cacheControl: "3600",
-            contentType: uploadFile.type,
-            upsert: false,
-          });
-
-        if (uploadError) {
-          throw new Error(uploadError.message);
-        }
+        await uploadImageFile(file);
       }
 
       setImageStatus("Image upload complete.");
@@ -287,6 +295,47 @@ export default function PostEditor({ post, initialKind, noteTaxonomy }: Props) {
       setImageError(cause instanceof Error ? cause.message : "Failed to upload image.");
     } finally {
       event.target.value = "";
+      setImagesLoading(false);
+    }
+  }
+
+  /**
+   * Copies a linked image into the Blog bucket, so posts never hotlink. The browser downloads it
+   * first (and compresses it like an upload); only when the site blocks cross-origin reads does the
+   * server fetch it instead.
+   */
+  async function handleImageImport(url: string) {
+    setImagesLoading(true);
+    setImageError(null);
+    setImageStatus("Downloading linked image...");
+
+    try {
+      try {
+        await uploadImageFile(await downloadLinkedImage(url));
+      } catch (cause: unknown) {
+        if (!(cause instanceof ImageLinkUnreadableError)) throw cause;
+
+        setImageStatus("The browser can't read that site, so the server is fetching it...");
+        const response = await fetch("/api/admin/blog-images", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ url }),
+        });
+        const result = (await response.json().catch(() => null)) as { error?: string } | null;
+
+        if (!response.ok) {
+          throw new Error(result?.error ?? "Failed to import that image.");
+        }
+      }
+
+      setImageStatus("Linked image added.");
+      await refreshBlogImages();
+      return true;
+    } catch (cause: unknown) {
+      setImageStatus(null);
+      setImageError(cause instanceof Error ? cause.message : "Failed to import that image.");
+      return false;
+    } finally {
       setImagesLoading(false);
     }
   }
@@ -368,6 +417,30 @@ export default function PostEditor({ post, initialKind, noteTaxonomy }: Props) {
     requestAnimationFrame(() => {
       textarea?.focus();
       textarea?.setSelectionRange(caret, caret);
+    });
+  }
+
+  /**
+   * Inserts a ```mermaid block (left-to-right flowchart starter), or wraps the selected text in one.
+   * The starter body is selected so typing replaces it.
+   */
+  function insertDiagram() {
+    const textarea = contentTextareaRef.current;
+    const start = textarea?.selectionStart ?? content.length;
+    const end = textarea?.selectionEnd ?? content.length;
+    const before = content.slice(0, start);
+    const after = content.slice(end);
+    const selected = content.slice(start, end).trim();
+    const prefix = before.length === 0 || before.endsWith("\n\n") ? "" : before.endsWith("\n") ? "\n" : "\n\n";
+    const suffix = after.length === 0 || after.startsWith("\n\n") ? "" : after.startsWith("\n") ? "\n" : "\n\n";
+    const open = "```mermaid\n";
+    const body = selected || "flowchart LR\n  A[Start] --> B{Choice}\n  B -->|yes| C[This]\n  B -->|no| D[That]";
+    const bodyStart = before.length + prefix.length + open.length;
+
+    setContent(`${before}${prefix}${open}${body}\n\`\`\`${suffix}${after}`);
+    requestAnimationFrame(() => {
+      textarea?.focus();
+      textarea?.setSelectionRange(bodyStart, bodyStart + body.length);
     });
   }
 
@@ -1057,6 +1130,15 @@ export default function PostEditor({ post, initialKind, noteTaxonomy }: Props) {
                   <div className="flex items-center justify-between border-t border-line px-4 py-2 text-xs text-gray-500">
                     <span className="flex items-center gap-3">
                       <span>{importedFileName ? `Markdown editor · loaded ${importedFileName}` : "Markdown editor"}</span>
+                      <button
+                        type="button"
+                        onMouseDown={(event) => event.preventDefault()}
+                        onClick={insertDiagram}
+                        title="Insert a Mermaid diagram, or wrap the selected text in one"
+                        className="text-gray-700 underline decoration-gray-300 underline-offset-4 transition-colors hover:decoration-gray-700"
+                      >
+                        + diagram
+                      </button>
                       {isNote && (
                         <button
                           type="button"
@@ -1093,6 +1175,7 @@ export default function PostEditor({ post, initialKind, noteTaxonomy }: Props) {
                   tags={tags}
                   title={title}
                   sourceText={previewSourceText}
+                  liveSource={content}
                   activeOffset={editorCaret}
                   onJumpToSource={jumpToSource}
                   canEditInline={previewSourceText === content && !previewLoading}
@@ -1117,6 +1200,7 @@ export default function PostEditor({ post, initialKind, noteTaxonomy }: Props) {
             inputRef={imageInputRef}
             onToggleOpen={() => toggleTool("images")}
             onUploadChange={handleImageUpload}
+            onImportUrl={handleImageImport}
             onInsertImage={insertImageMarkdown}
             onSelectCoverImage={(image) => {
               setCoverImage(image.publicUrl);

@@ -3,6 +3,8 @@ import rehypeKatex from "rehype-katex";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import BlogImage from "@/components/blog/BlogImage";
+import Mermaid from "@/components/blog/Mermaid";
+import { mermaidSource } from "@/components/blog/mermaidSource";
 import { cn } from "@/lib/utils";
 
 /** MDX compile options shared by blog posts and notes: GFM plus KaTeX maths. */
@@ -24,12 +26,20 @@ export const mdxComponents = {
       {...props}
     />
   ),
-  pre: ({ className, ...props }: ComponentPropsWithoutRef<"pre">) => (
-    <pre
-      className={cn("overflow-x-auto bg-transparent px-0 py-3 font-mono text-[0.85rem] leading-7 text-gray-700", className)}
-      {...props}
-    />
-  ),
+  pre: ({ className, children, ...props }: ComponentPropsWithoutRef<"pre">) => {
+    // ```mermaid blocks become diagrams.
+    const chart = mermaidSource(children);
+    if (chart) return <Mermaid chart={chart} {...props} />;
+
+    return (
+      <pre
+        className={cn("overflow-x-auto bg-transparent px-0 py-3 font-mono text-[0.85rem] leading-7 text-gray-700", className)}
+        {...props}
+      >
+        {children}
+      </pre>
+    );
+  },
   code: ({ className, ...props }: ComponentPropsWithoutRef<"code">) => {
     // Fenced code blocks carry a "language-*" class; inline code does not.
     const isBlockCode = className?.includes("language-");

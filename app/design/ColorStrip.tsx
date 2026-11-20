@@ -24,7 +24,7 @@ export default function ColorStrip({ colors }: { colors: Swatch[] }) {
   };
 
   return (
-    <div className="grid grid-cols-7">
+    <div className="grid" style={{ gridTemplateColumns: `repeat(${colors.length}, minmax(0, 1fr))` }}>
       {colors.map((color) => (
         <button
           key={color.token}

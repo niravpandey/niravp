@@ -291,6 +291,59 @@ samp {
   font-style: normal;
 }
 
+/*
+ * KaTeX. Its default 1.21em makes maths tower over the text; Verdana's big x-height needs only a nudge,
+ * and in notes the text is already KaTeX_Main, so maths there matches it 1:1.
+ * Fraction bars / overlines are borders, so undo the site-wide `border-color: var(--line)`.
+ */
+html .katex {
+  font-size: 1.05em;
+  overflow-wrap: normal;
+  word-break: normal;
+  text-rendering: geometricPrecision;
+}
+html .notes-body .katex,
+html .font-cm .katex {
+  font-size: 1em;
+}
+.katex *,
+.katex *::before,
+.katex *::after {
+  border-color: currentColor;
+}
+html .katex-display {
+  margin-block: 1em;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-block: 0.125em; /* keeps tall glyphs from being clipped by the scroll box */
+}
+html .katex-display > .katex {
+  font-size: 1.05em;
+}
+html .notes-body .katex-display > .katex {
+  font-size: 1em;
+}
+
+/*
+ * Maths inside Mermaid labels. Mermaid always typesets display-style and wraps each line in a flex row
+ * (which eats the space in "mean $x$"), so: no display margins, maths inline with its text.
+ * Targeted by the svg id (not the wrapper) because Mermaid first measures labels in a copy attached to <body>;
+ * #katex-temp is another hidden sizing element. Both need the same rules or boxes come out tall.
+ */
+html svg[id^="mermaid-"] .katex-display,
+html #katex-temp .katex-display {
+  display: inline-block;
+  vertical-align: middle;
+  margin: 0;
+  padding: 0;
+  overflow: visible;
+}
+html svg[id^="mermaid-"] foreignObject div[style*="display: flex"],
+html #katex-temp div[style*="display: flex"] {
+  display: block !important;
+  text-align: center;
+}
+
 /* Glowing titles. Unlayered so it applies alongside the `text-heading` color utility. */
 .text-heading {
   text-shadow: var(--heading-glow);

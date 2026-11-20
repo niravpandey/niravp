@@ -34,6 +34,7 @@ const COLORS: Swatch[] = [
   { name: "Navy", token: "--walk", hex: "#1c2f5e" },
   { name: "Sage", token: "--line", hex: "#9cbf86" },
   { name: "Ink", token: "--ink", hex: "#222222" },
+  { name: "Letter", token: "--letter", hex: "#fdf6dc", dark: true },
   { name: "Paper", token: "--paper", hex: "#e9eff5", dark: true },
 ];
 

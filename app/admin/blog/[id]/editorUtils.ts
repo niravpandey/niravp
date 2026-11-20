@@ -3,6 +3,7 @@
 import imageCompression from "browser-image-compression";
 import { createClient } from "@/lib/supabase/client";
 import type { MDXRemoteSerializeResult } from "next-mdx-remote";
+import { INSERTED_IMAGE_DEFAULTS, serializeImage } from "./imageSource";
 
 export type ImportedFrontmatter = {
   title?: string;
@@ -105,22 +106,72 @@ export function getImageAltText(name: string) {
     .trim() || "Blog image";
 }
 
-function escapeMdxAttribute(value: string) {
-  return value.replace(/&/g, "&amp;").replace(/"/g, "&quot;");
-}
-
 /** Drag data type for sidebar images; the editor reads the image path from it on drop. */
 export const BLOG_IMAGE_DRAG_TYPE = "application/x-blog-image";
 
 export function getImageMdxSnippet(image: BlogImage) {
-  return [
-    "<BlogImage",
-    `  src="${escapeMdxAttribute(image.publicUrl)}"`,
-    `  alt="${escapeMdxAttribute(getImageAltText(image.name))}"`,
-    '  width="50%"',
-    '  align="center"',
-    "/>",
-  ].join("\n");
+  return serializeImage(
+    { src: image.publicUrl, alt: getImageAltText(image.name), ...INSERTED_IMAGE_DEFAULTS, extra: [] },
+    { multiline: true },
+  );
+}
+
+/** The browser couldn't read the link: blocked by CORS, offline, or a bad address. */
+export class ImageLinkUnreadableError extends Error {}
+
+const LINKED_IMAGE_EXTENSIONS: Record<string, string> = {
+  "image/avif": "avif",
+  "image/bmp": "bmp",
+  "image/gif": "gif",
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+};
+
+/**
+ * Downloads a linked image in the browser, as the person viewing it would, so sites that turn
+ * away server requests still work. Needs the site to allow cross-origin reads (CORS).
+ */
+export async function downloadLinkedImage(link: string) {
+  let url: URL;
+  try {
+    url = new URL(link);
+  } catch {
+    throw new Error("That isn't a valid link.");
+  }
+  if (url.protocol !== "https:" && url.protocol !== "http:") {
+    throw new Error("Only http(s) links can be added.");
+  }
+
+  let response: Response;
+  try {
+    response = await fetch(url, { mode: "cors", credentials: "omit", referrerPolicy: "no-referrer" });
+  } catch {
+    throw new ImageLinkUnreadableError("The browser couldn't read that link.");
+  }
+
+  if (!response.ok) {
+    throw new Error(
+      response.status === 429
+        ? "That site is rate-limiting downloads (429). Wait a minute, or save the image and use “upload images”."
+        : `That link answered with ${response.status}.`,
+    );
+  }
+
+  const blob = await response.blob();
+  const type = blob.type.split(";")[0].trim().toLowerCase();
+  const extension = LINKED_IMAGE_EXTENSIONS[type];
+
+  if (!extension) {
+    throw new Error(
+      type === "image/svg+xml"
+        ? "SVG links aren't supported."
+        : "That link isn't an image. Use the image's own address (right-click → copy image address).",
+    );
+  }
+
+  const lastSegment = decodeURIComponent(url.pathname.split("/").pop() ?? "").replace(/\.[^/.]+$/, "");
+  return new File([blob], `${lastSegment || "linked-image"}.${extension}`, { type, lastModified: Date.now() });
 }
 
 export async function compressImage(file: File) {

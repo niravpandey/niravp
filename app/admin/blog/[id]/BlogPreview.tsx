@@ -1,11 +1,16 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { MDXRemote } from "next-mdx-remote";
+import { useEffect, useMemo, useRef, useState } from "react";
+import * as jsxRuntime from "react/jsx-runtime";
+import * as jsxDevRuntime from "react/jsx-dev-runtime";
+import { MDXProvider, useMDXComponents } from "@mdx-js/react";
 import BlogImage from "@/components/blog/BlogImage";
+import Mermaid from "@/components/blog/Mermaid";
+import { mermaidSource } from "@/components/blog/mermaidSource";
 import { mathEnvironments } from "@/components/notes/MathEnvironments";
 import type { PostKind } from "@/lib/blog";
 import type { PreviewSource } from "./editorUtils";
+import ImageControls from "./ImageControls";
 import {
   INLINE_EDITABLE_SELECTOR,
   beginInlineEdit,
@@ -27,17 +32,25 @@ const previewMdxComponents = {
       {...props}
     />
   ),
-  pre: ({ className, ...props }: React.ComponentPropsWithoutRef<"pre">) => (
-    <pre
-      className={[
-        "overflow-x-auto bg-transparent px-0 py-3 font-mono text-[0.85rem] leading-7 text-gray-700",
-        className,
-      ]
-        .filter(Boolean)
-        .join(" ")}
-      {...props}
-    />
-  ),
+  pre: ({ className, children, ...props }: React.ComponentPropsWithoutRef<"pre">) => {
+    // Keep the data-src-* props so clicking a diagram still jumps to its source.
+    const chart = mermaidSource(children);
+    if (chart) return <Mermaid chart={chart} {...props} />;
+
+    return (
+      <pre
+        className={[
+          "overflow-x-auto bg-transparent px-0 py-3 font-mono text-[0.85rem] leading-7 text-gray-700",
+          className,
+        ]
+          .filter(Boolean)
+          .join(" ")}
+        {...props}
+      >
+        {children}
+      </pre>
+    );
+  },
   code: ({ className, ...props }: React.ComponentPropsWithoutRef<"code">) => {
     const isBlockCode = className?.includes("language-");
 
@@ -95,6 +108,24 @@ function formatPreviewDate(value: string) {
   });
 }
 
+type MdxContent = (props: Record<string, unknown>) => React.ReactNode;
+
+/** Turns compiled MDX into its content function (what MDXRemote does internally). */
+function evaluateMdx(compiledSource: string): MdxContent {
+  const run = new Function(compiledSource) as (scope: Record<string, unknown>) => { default: MdxContent };
+  return run({ ...jsxRuntime, ...jsxDevRuntime, useMDXComponents }).default;
+}
+
+/**
+ * Renders compiled MDX by *calling* its content function rather than mounting it as a component.
+ * Every compile yields a new function, so MDXRemote remounts the whole preview (images reload,
+ * layout collapses for a frame); called like this, React reconciles the elements and only updates
+ * what changed. The hooks inside are only context reads, the same on every render.
+ */
+function PreviewContent({ content }: { content: MdxContent }) {
+  return <>{content({})}</>;
+}
+
 /** Notes also get the theorem/proof environments, matching the public /notes page. */
 const notePreviewMdxComponents = { ...previewMdxComponents, ...mathEnvironments };
 
@@ -109,6 +140,8 @@ type BlogPreviewProps = {
   createdAt: string;
   /** The markdown the current preview was compiled from (offsets refer to this). */
   sourceText: string;
+  /** The editor's markdown right now (ahead of `sourceText` until the preview re-renders). */
+  liveSource: string;
   /** Editor caret; the preview element it falls in is marked. */
   activeOffset: number | null;
   onJumpToSource: (range: SourceRange) => void;
@@ -127,6 +160,7 @@ export default function BlogPreview({
   tags,
   createdAt,
   sourceText,
+  liveSource,
   activeOffset,
   onJumpToSource,
   canEditInline,
@@ -140,6 +174,14 @@ export default function BlogPreview({
   const [editedAgainst, setEditedAgainst] = useState<PreviewSource | null>(null);
   const mdxKey = editedAgainst !== null && compiledSource === editedAgainst ? remountCount - 1 : remountCount;
   const scrollRef = useRef<HTMLDivElement | null>(null);
+  const content = useMemo(() => {
+    if (!compiledSource) return null;
+    try {
+      return evaluateMdx(compiledSource.compiledSource);
+    } catch {
+      return null;
+    }
+  }, [compiledSource]);
   const bodyRef = useRef<HTMLDivElement | null>(null);
   // True right after a preview selection jumped the editor: the text is already on screen here.
   const jumpedFromPreviewRef = useRef(false);
@@ -194,6 +236,9 @@ export default function BlogPreview({
     if (!body || !selection) return;
 
     setNotice(null);
+
+    // Images are handled by ImageControls (opens its bar and selects the image's markdown).
+    if (event.target instanceof Element && event.target.closest("figure")?.querySelector("img[data-src-start]")) return;
 
     if (editMode && canEditInline && event.target instanceof Element) {
       if (event.target.closest("[data-src-editing]")) return;
@@ -253,7 +298,7 @@ export default function BlogPreview({
       </div>
       {notice && <p className="border-b border-line bg-white px-4 py-1.5 text-xs text-red-700">{notice}</p>}
 
-      <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto p-4">
+      <div ref={scrollRef} className="relative min-h-0 flex-1 overflow-y-auto p-4">
         <article className={kind === "note" ? "font-cm" : undefined}>
           <header className="border-b border-line pb-6 text-center">
             <p className="text-xs text-gray-400">{formatPreviewDate(createdAt)}</p>
@@ -288,17 +333,34 @@ export default function BlogPreview({
                     ? "[&_:is(p,li,h1,h2,h3,h4,h5,h6,td,th)]:cursor-text [&_:is(p,li,h1,h2,h3,h4,h5,h6,td,th):hover]:outline-1 [&_:is(p,li,h1,h2,h3,h4,h5,h6,td,th):hover]:outline-dashed [&_:is(p,li,h1,h2,h3,h4,h5,h6,td,th):hover]:outline-gray-300"
                     : "",
                   kind === "note" ? "notes-body prose-headings:font-cm" : "",
+                  "[&_figure:has(img[data-src-start])]:cursor-pointer [&_figure:has(img[data-src-start]):hover]:outline-1 [&_figure:has(img[data-src-start]):hover]:outline-offset-4 [&_figure:has(img[data-src-start]):hover]:outline-dashed [&_figure:has(img[data-src-start]):hover]:outline-gray-300 [&_figure]:max-w-full",
                   "[&_[data-src-editing]]:bg-white [&_[data-src-editing]]:outline-dashed! [&_[data-src-editing]]:outline-1 [&_[data-src-editing]]:outline-blue-900!",
                   "prose prose-gray [&_[data-src-atomic]]:cursor-pointer [&_[data-src-active]]:bg-mauve-500/10 [&_[data-src-active]]:outline-2 [&_[data-src-active]]:outline-offset-2 [&_[data-src-active]]:outline-mauve-500/30 max-w-none prose-headings:scroll-mt-24 prose-headings:font-medium prose-headings:text-gray-900 prose-h1:text-4xl prose-h2:border-b prose-h2:border-line prose-h2:pb-2 prose-a:no-underline prose-p:leading-7 prose-li:leading-7 prose-code:before:content-none prose-code:after:content-none prose-pre:my-6 prose-pre:rounded-none prose-pre:bg-transparent prose-img:my-8 prose-img:rounded-none",
                 ].join(" ")}
               >
-                <MDXRemote key={mdxKey} {...compiledSource} components={kind === "note" ? notePreviewMdxComponents : previewMdxComponents} />
+                {content && (
+                  <MDXProvider components={kind === "note" ? notePreviewMdxComponents : previewMdxComponents}>
+                    <PreviewContent key={mdxKey} content={content} />
+                  </MDXProvider>
+                )}
               </div>
             ) : (
               <p className="text-sm text-gray-400">Start writing to preview the post.</p>
             )}
           </div>
         </article>
+
+        {compiledSource && !error && (
+          <ImageControls
+            bodyRef={bodyRef}
+            containerRef={scrollRef}
+            sourceText={sourceText}
+            liveSource={liveSource}
+            renderKey={compiledSource}
+            onEditSource={onEditSource}
+            onJumpToSource={onJumpToSource}
+          />
+        )}
       </div>
     </aside>
   );

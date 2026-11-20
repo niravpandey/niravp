@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { BLOG_IMAGE_DRAG_TYPE, BLOG_IMAGE_LIMIT, getImageAltText, type BlogImage } from "./editorUtils";
 import { ToolLink, ToolSection } from "./WritingToolsSidebar";
 
@@ -14,6 +15,8 @@ type BlogImagesToolProps = {
   inputRef: React.RefObject<HTMLInputElement | null>;
   onToggleOpen: () => void;
   onUploadChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  /** Imports an image from a link into the bucket; resolves true when it worked. */
+  onImportUrl: (url: string) => Promise<boolean>;
   onInsertImage: (image: BlogImage) => void;
   onDeleteImage: (image: BlogImage) => void;
   onSelectCoverImage: (image: BlogImage) => void;
@@ -30,10 +33,20 @@ export default function BlogImagesTool({
   inputRef,
   onToggleOpen,
   onUploadChange,
+  onImportUrl,
   onInsertImage,
   onDeleteImage,
   onSelectCoverImage,
 }: BlogImagesToolProps) {
+  const [linkUrl, setLinkUrl] = useState("");
+
+  async function handleLinkSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const url = linkUrl.trim();
+    if (!url || loading) return;
+    if (await onImportUrl(url)) setLinkUrl("");
+  }
+
   return (
     <ToolSection title="Images" meta={`latest ${BLOG_IMAGE_LIMIT}`} open={open} onToggleOpen={onToggleOpen}>
       <input ref={inputRef} type="file" accept="image/*" multiple className="hidden" onChange={onUploadChange} />
@@ -42,6 +55,25 @@ export default function BlogImagesTool({
       <ToolLink onClick={() => inputRef.current?.click()} disabled={loading} className="mb-3">
         {loading ? "working..." : "+ upload images"}
       </ToolLink>
+
+      <form onSubmit={handleLinkSubmit} className="mb-3 flex items-baseline gap-2">
+        <input
+          type="url"
+          value={linkUrl}
+          onChange={(event) => setLinkUrl(event.target.value)}
+          placeholder="or paste an image link"
+          aria-label="Image link to add"
+          disabled={loading}
+          className="min-w-0 flex-1 border-b border-line bg-transparent py-0.5 text-xs text-gray-700 outline-none placeholder:text-gray-400 focus:border-gray-500"
+        />
+        <button
+          type="submit"
+          disabled={loading || !linkUrl.trim()}
+          className="text-xs text-blue-900 underline decoration-gray-300 underline-offset-2 hover:decoration-current disabled:text-gray-400 disabled:no-underline"
+        >
+          add
+        </button>
+      </form>
 
       {error && <p className="mb-2 text-xs text-red-600">{error}</p>}
       {status && <p className="mb-2 text-xs text-gray-500">{status}</p>}
