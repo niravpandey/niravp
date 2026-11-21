@@ -144,7 +144,6 @@
   --font-sans: Verdana, Geneva, Tahoma, sans-serif;
   --font-serif: "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
   --font-mono: "Courier New", Courier, monospace;
-  --font-crt: var(--font-vt323);
   /* Computer Modern for notes. KaTeX_Main is CM and already loaded by katex.min.css, so text matches the maths. */
   --font-cm: "KaTeX_Main", "CMU Serif", "Latin Modern Roman", "Computer Modern", serif;
 
@@ -337,6 +336,14 @@ html #katex-temp .katex-display {
   margin: 0;
   padding: 0;
   overflow: visible;
+}
+/*
+ * Safari gets MathML in Mermaid labels (see isWebKit in Mermaid.tsx). KaTeX's stylesheet still makes the
+ * wrapper `position: relative`, and WebKit draws positioned content in a <foreignObject> at the svg's
+ * origin, piling every label into the top-left corner. Only MathML-only labels (no .katex-html) need it off.
+ */
+html svg[id^="mermaid-"] foreignObject .katex:not(:has(.katex-html)) {
+  position: static;
 }
 html svg[id^="mermaid-"] foreignObject div[style*="display: flex"],
 html #katex-temp div[style*="display: flex"] {

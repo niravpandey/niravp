@@ -5,7 +5,7 @@ import ColorStrip, { type Swatch } from "./ColorStrip";
 
 export const metadata: Metadata = {
   title: "Design · Nirav Pandey",
-  description: "The fonts and colors this site uses.",
+  description: "The fonts, colors, design choices and styling tools this site uses.",
 };
 
 const SERIF = "font-serif font-bold";
@@ -37,6 +37,25 @@ const COLORS: Swatch[] = [
   { name: "Letter", token: "--letter", hex: "#fdf6dc", dark: true },
   { name: "Paper", token: "--paper", hex: "#e9eff5", dark: true },
 ];
+
+// The choices behind the look, in plain words.
+const CHOICES = [
+  "The few icons are Phosphor, drawn as inline SVGs instead of loading an icon font.",
+  "Maths is typeset with KaTeX and diagrams with Mermaid, both coloured from the same palette.",
+];
+
+type Credit = { name: string; href: string; use: string };
+
+// The open-source styling pieces behind the look.
+const CREDITS: Credit[] = [
+  { name: "Tailwind CSS", href: "https://tailwindcss.com", use: "styling" },
+  { name: "Tailwind Typography", href: "https://github.com/tailwindlabs/tailwindcss-typography", use: "blog and note text" },
+  { name: "KaTeX", href: "https://katex.org", use: "maths typesetting and the Computer Modern font" },
+  { name: "Mermaid", href: "https://mermaid.js.org", use: "diagrams" },
+  { name: "Phosphor Icons", href: "https://phosphoricons.com", use: "icons" },
+];
+
+const LINK = "text-blue-700 underline decoration-gray-300 underline-offset-4 transition-colors hover:decoration-blue-700";
 
 export default function DesignPage() {
   return (
@@ -85,6 +104,29 @@ export default function DesignPage() {
 
           <div className="mt-6 border border-gray-200 bg-white p-4 sm:p-6">
             <ColorStrip colors={COLORS} />
+          </div>
+
+          <div className="mt-6 border border-gray-200 bg-white p-4 text-sm leading-6 text-gray-700 sm:p-6">
+            <h2 className="font-serif text-lg font-bold text-heading">Design choices</h2>
+            <ul className="mt-2 list-disc space-y-1 pl-5">
+              {CHOICES.map((choice) => (
+                <li key={choice}>{choice}</li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="mt-6 border border-gray-200 bg-white p-4 text-sm leading-6 text-gray-700 sm:p-6">
+            <h2 className="font-serif text-lg font-bold text-heading">Built with</h2>
+            <ul className="mt-2 space-y-0.5">
+              {CREDITS.map((item) => (
+                <li key={item.name}>
+                  <a href={item.href} target="_blank" rel="noreferrer" className={LINK}>
+                    {item.name}
+                  </a>
+                  <span className="text-gray-500"> · {item.use}</span>
+                </li>
+              ))}
+            </ul>
           </div>
         </section>
       </main>

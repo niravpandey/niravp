@@ -7,24 +7,21 @@ import GallerySection from "@/components/home/GallerySection";
 import HeroSection from "@/components/home/HeroSection";
 import ProjectSection from "@/components/home/ProjectSection";
 import SkillSection from "@/components/home/SkillSection";
-import StudentMapSection from "@/components/home/StudentMapSection";
 import Footer from "@/components/layout/Footer";
 import type { PostSummary } from "@/lib/blog";
 import type { Experience } from "@/lib/experience";
 import type { Project } from "@/lib/projects";
 import type { SkillCategory } from "@/lib/skills";
-import type { StudentMapData } from "@/lib/student-map";
 
 type HomeClientProps = {
   posts: PostSummary[];
   projects: Project[];
   skillCategories: SkillCategory[];
   experiences: Experience[];
-  studentMap: StudentMapData | null;
   headshots: string[];
 };
 
-export default function HomeClient({ posts, projects, skillCategories, experiences, studentMap, headshots }: HomeClientProps) {
+export default function HomeClient({ posts, projects, skillCategories, experiences, headshots }: HomeClientProps) {
   const [projectIndex, setProjectIndex] = useState(0);
 
   return (
@@ -45,10 +42,6 @@ export default function HomeClient({ posts, projects, skillCategories, experienc
         <div className="grid w-full grid-cols-1 gap-8 lg:grid-cols-2 [&>*]:min-w-0">
           <ExperienceSection experiences={experiences} />
           <BlogSection posts={posts} />
-        </div>
-
-        <div className="w-full">
-          <StudentMapSection map={studentMap} />
         </div>
       </main>
       <Footer />

@@ -4,7 +4,6 @@ import { getSkillCategories } from "@/lib/skills";
 import { getExperiences } from "@/lib/experience";
 import { getHomeBlogLimit } from "@/lib/site-settings";
 import { getHeadshotUrls } from "@/lib/headshots";
-import { getStudentMapData } from "@/lib/student-map";
 import HomeClient from "@/components/HomeClient";
 
 export default async function Home() {
@@ -23,7 +22,6 @@ export default async function Home() {
       projects={projects}
       skillCategories={skillCategories}
       experiences={experiences}
-      studentMap={getStudentMapData()}
       headshots={headshots}
     />
   );

@@ -42,6 +42,16 @@ async function loadFonts(chart: string) {
   await document.fonts.ready;
 }
 
+/**
+ * Safari (and every iOS browser, which all use WebKit) misplaces HTML inside an SVG <foreignObject> when it's
+ * relatively positioned, and KaTeX's HTML is all relative/offset spans, so labelled maths scatters across the
+ * diagram. WebKit renders MathML natively and well, so it gets that instead.
+ */
+function isWebKit() {
+  const ua = navigator.userAgent;
+  return /AppleWebKit/.test(ua) && !/(Chrome|Chromium|Edg)\//.test(ua);
+}
+
 let renderQueue: Promise<unknown> = Promise.resolve();
 
 export default function Mermaid({ chart, ...props }: { chart: string } & HTMLAttributes<HTMLElement>) {
@@ -74,8 +84,9 @@ export default function Mermaid({ chart, ...props }: { chart: string } & HTMLAtt
         mermaid.initialize({
           startOnLoad: false,
           securityLevel: "strict",
-        // Typeset $$…$$ with KaTeX's own HTML + the stylesheet the site already loads, not browser MathML.
-        forceLegacyMathML: true,
+        // Typeset $$…$$ with KaTeX's own HTML + the stylesheet the site already loads, not browser MathML,
+        // except on WebKit (see isWebKit).
+        forceLegacyMathML: !isWebKit(),
           theme: "base",
           fontFamily,
           themeVariables: {
