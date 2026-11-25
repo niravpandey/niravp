@@ -5,10 +5,16 @@ import { MDXRemote } from "next-mdx-remote/rsc";
 import { mdxComponents, mdxOptions } from "@/components/blog/mdxComponents";
 import Footer from "@/components/layout/Footer";
 import { mathEnvironments } from "@/components/notes/MathEnvironments";
-import { getPublishedNote, getTopicSiblings, UNSORTED } from "@/lib/notes";
+import { getPublishedNote, getPublishedNotes, getTopicSiblings, UNSORTED } from "@/lib/notes";
 import { formatDate } from "@/lib/utils";
 
 const noteComponents = { ...mdxComponents, ...mathEnvironments };
+
+/** Prerender every published note at build; notes published later render on first visit, then stay cached. */
+export async function generateStaticParams() {
+  const notes = await getPublishedNotes();
+  return notes.map((note) => ({ slug: note.slug }));
+}
 
 export async function generateMetadata(props: PageProps<"/notes/[slug]">): Promise<Metadata> {
   const { slug } = await props.params;

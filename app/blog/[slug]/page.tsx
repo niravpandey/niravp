@@ -7,13 +7,19 @@ import BlogCoverImage from "@/components/blog/BlogCoverImage";
 import { mdxComponents, mdxOptions } from "@/components/blog/mdxComponents";
 import Footer from "@/components/layout/Footer";
 import PhosphorIcon from "@/components/ui/PhosphorIcon";
-import { getPublishedPost } from "@/lib/blog";
+import { getPublishedPost, getPublishedPosts } from "@/lib/blog";
 import { getAuthorProfile } from "@/lib/site-settings";
 import { formatDate } from "@/lib/utils";
 
 type BlogPostPageProps = {
   params: Promise<{ slug: string }>;
 };
+
+/** Prerender every published post at build; posts published later render on first visit, then stay cached. */
+export async function generateStaticParams() {
+  const posts = await getPublishedPosts();
+  return posts.map((post) => ({ slug: post.slug }));
+}
 
 export async function generateMetadata(props: BlogPostPageProps): Promise<Metadata> {
   const { slug } = await props.params;

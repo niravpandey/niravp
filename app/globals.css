@@ -291,6 +291,38 @@ samp {
 }
 
 /*
+ * Task lists (`- [ ] …`): revision checklists readers can tick. No bullets; the checkbox hangs in the
+ * gutter so wrapped lines align with the text, and ticked items fade so what's left stands out.
+ */
+.prose ul.contains-task-list {
+  list-style: none;
+  padding-left: 0;
+}
+.prose ul.contains-task-list ul.contains-task-list {
+  padding-left: 1.6em;
+}
+.prose li.task-list-item {
+  padding-left: 1.6em;
+}
+.prose li.task-list-item::marker {
+  content: none;
+}
+.task-label {
+  cursor: pointer;
+}
+.task-checkbox {
+  width: 1em;
+  height: 1em;
+  margin: 0 0.6em 0 -1.6em;
+  vertical-align: -0.125em;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+.task-label:has(.task-checkbox:checked) {
+  color: color-mix(in srgb, currentColor 50%, transparent);
+}
+
+/*
  * KaTeX. Its default 1.21em makes maths tower over the text; Verdana's big x-height needs only a nudge,
  * and in notes the text is already KaTeX_Main, so maths there matches it 1:1.
  * Fraction bars / overlines are borders, so undo the site-wide `border-color: var(--line)`.
@@ -412,7 +444,11 @@ html #katex-temp div[style*="display: flex"] {
 }
 
 .splash {
-  animation: splash-failsafe 0.5s ease-out 6s forwards;
+  animation: splash-failsafe 0.4s ease-out 3s forwards;
+}
+/* Already seen this session (script in app/layout.tsx): never show it. */
+[data-splash-seen] .splash {
+  display: none;
 }
 
 /* Resume (app/resume/page.tsx): print / "Save as PDF" gives a single clean A4 page with only the sheet. */

@@ -27,15 +27,12 @@ export type PostFormData = {
   position: string;
 };
 
-/** Every public page a post or note appears on, so saves and deletes refresh them all. */
-function revalidatePublicPages(slug?: string) {
-  revalidatePath("/admin/blog");
-  revalidatePath("/blog");
-  revalidatePath("/notes");
-  if (slug) {
-    revalidatePath(`/blog/${slug}`);
-    revalidatePath(`/notes/${slug}`);
-  }
+/**
+ * Refreshes every cached public page after a save or delete. Posts show up on the home page, the blog and
+ * notes indexes, their own page, the navbar search and the sitemap, so the whole site is revalidated.
+ */
+function revalidatePublicPages() {
+  revalidatePath("/", "layout");
 }
 
 async function requireUser() {
@@ -106,7 +103,7 @@ export async function savePost(data: PostFormData) {
     redirect(`/admin/blog/${inserted.id}`);
   }
 
-  revalidatePublicPages(data.slug);
+  revalidatePublicPages();
 }
 
 /** Pins or unpins a post so it stays at the top of the admin list. */
@@ -124,9 +121,9 @@ export async function setPostPinned(id: string, pinned: boolean) {
 export async function deletePost(id: string) {
   const supabase = await requireUser();
 
-  const { data: post, error: loadError } = await supabase
+  const { error: loadError } = await supabase
     .from("posts")
-    .select("slug")
+    .select("id")
     .eq("id", id)
     .single();
 
@@ -143,7 +140,7 @@ export async function deletePost(id: string) {
     throw new Error(error.message);
   }
 
-  revalidatePublicPages(post.slug);
+  revalidatePublicPages();
 
   redirect("/admin/blog");
 }

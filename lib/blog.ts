@@ -1,4 +1,5 @@
 import { cache } from "react";
+import { createPublicClient } from "@/lib/supabase/public";
 import { createClient } from "@/lib/supabase/server";
 
 export type Post = {
@@ -11,7 +12,6 @@ export type Post = {
   published: boolean;
   created_at: string;
   cover_image: string | null;
-  embedding: number[] | string | null;
   /** "post" for the blog, "note" for /notes. Both live in the posts table. */
   kind: PostKind;
   subject: string | null;
@@ -24,11 +24,11 @@ export type PostKind = "post" | "note";
 
 export type PostSummary = Omit<Post, "content" | "kind" | "subject" | "topic" | "position" | "updated_at">;
 
-const SUMMARY_COLUMNS = "id, title, slug, description, tags, published, created_at, cover_image, embedding";
+const SUMMARY_COLUMNS = "id, title, slug, description, tags, published, created_at, cover_image";
 
 /** All published blog posts, newest first. */
 export async function getPublishedPosts(): Promise<PostSummary[]> {
-  const supabase = await createClient();
+  const supabase = createPublicClient();
   const { data, error } = await supabase
     .from("posts")
     .select(SUMMARY_COLUMNS)
@@ -42,7 +42,7 @@ export async function getPublishedPosts(): Promise<PostSummary[]> {
 
 /** A single published post, or null if it doesn't exist or isn't published. Cached per request. */
 export const getPublishedPost = cache(async (slug: string): Promise<PostSummary & Pick<Post, "content"> | null> => {
-  const supabase = await createClient();
+  const supabase = createPublicClient();
   const { data, error } = await supabase
     .from("posts")
     .select(`${SUMMARY_COLUMNS}, content`)
@@ -59,7 +59,7 @@ export type SearchablePost = Pick<Post, "title" | "slug" | "description" | "tags
 
 /** Lightweight list of published posts for the site-wide search. Never throws: search just shows nothing. */
 export async function getSearchablePosts(): Promise<SearchablePost[]> {
-  const supabase = await createClient();
+  const supabase = createPublicClient();
   const { data, error } = await supabase
     .from("posts")
     .select("title, slug, description, tags, created_at")
@@ -114,7 +114,7 @@ function countWords(source: string) {
 
 /** Word counts for published posts, keyed by post id. Never throws: the stats just show nothing. */
 export async function getPublishedWordCounts(): Promise<Record<string, number>> {
-  const supabase = await createClient();
+  const supabase = createPublicClient();
   const { data, error } = await supabase.from("posts").select("id, content").eq("kind", "post").eq("published", true);
 
   if (error) {

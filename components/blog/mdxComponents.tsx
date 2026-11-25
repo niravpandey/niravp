@@ -5,18 +5,23 @@ import remarkMath from "remark-math";
 import BlogImage from "@/components/blog/BlogImage";
 import Mermaid from "@/components/blog/Mermaid";
 import { mermaidSource } from "@/components/blog/mermaidSource";
+import rehypeTaskList from "@/components/blog/rehypeTaskList";
+import TaskCheckbox from "@/components/blog/TaskCheckbox";
 import { cn } from "@/lib/utils";
 
-/** MDX compile options shared by blog posts and notes: GFM plus KaTeX maths. */
+/** MDX compile options shared by blog posts and notes: GFM, tickable task lists, KaTeX maths. */
 export const mdxOptions = {
   mdxOptions: {
     remarkPlugins: [remarkGfm, remarkMath],
-    rehypePlugins: [rehypeKatex],
+    // rehypeTaskList must run before katex so item ids come from the TeX source.
+    rehypePlugins: [rehypeTaskList, rehypeKatex],
   },
 };
 
 /** Element overrides shared by blog posts and notes. */
 export const mdxComponents = {
+  input: (props: ComponentPropsWithoutRef<"input">) =>
+    props.type === "checkbox" ? <TaskCheckbox {...props} /> : <input {...props} />,
   a: ({ className, ...props }: ComponentPropsWithoutRef<"a">) => (
     <a
       className={cn(

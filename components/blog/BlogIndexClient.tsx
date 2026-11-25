@@ -4,19 +4,17 @@ import { useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import BlogCategoryDistribution from "@/components/blog/BlogCategoryDistribution";
-import BlogSemanticMap from "@/components/blog/BlogSemanticMap";
 import BlogTimeline from "@/components/blog/BlogTimeline";
 import BlogWords from "@/components/blog/BlogWords";
 import type { PostSummary } from "@/lib/blog";
 import { cn, formatDate } from "@/lib/utils";
 
-type Tab = "topics" | "map" | "timeline" | "words";
+type Tab = "topics" | "timeline" | "words";
 
 const POSTS_PER_PAGE = 5;
 
 const TABS: { id: Tab; label: string }[] = [
   { id: "topics", label: "topics" },
-  { id: "map", label: "map" },
   { id: "timeline", label: "timeline" },
   { id: "words", label: "words" },
 ];
@@ -94,7 +92,6 @@ export default function BlogIndexClient({ posts, wordCounts }: BlogIndexClientPr
             {activeTab === "topics" && (
               <BlogCategoryDistribution posts={posts} selectedCategory={selectedCategory} onSelectCategory={toggleCategory} />
             )}
-            {activeTab === "map" && <BlogSemanticMap posts={posts} selectedCategory={selectedCategory} />}
             {activeTab === "timeline" && <BlogTimeline posts={posts} selectedCategory={selectedCategory} />}
             {activeTab === "words" && (
               <BlogWords posts={posts} wordCounts={wordCounts} selectedCategory={selectedCategory} />

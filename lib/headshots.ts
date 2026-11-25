@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createPublicClient } from "@/lib/supabase/public";
 import { getAssetUrl } from "@/lib/supabase/storage";
 
 /** Folder in the "Assets" bucket holding the home page headshots. */
@@ -35,7 +35,7 @@ export function orderHeadshotFiles<T extends { name: string }>(files: T[]): T[] 
 
 /** Every headshot in the folder, in display order. */
 export async function getHeadshots(): Promise<Headshot[]> {
-  const supabase = await createClient();
+  const supabase = createPublicClient();
   const { data, error } = await supabase.storage
     .from("Assets")
     .list(HEADSHOTS_FOLDER, { limit: 100, sortBy: { column: "created_at", order: "asc" } });

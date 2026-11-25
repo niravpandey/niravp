@@ -1,4 +1,5 @@
 import { cache } from "react";
+import { createPublicClient } from "@/lib/supabase/public";
 import { createClient } from "@/lib/supabase/server";
 import type { Post } from "@/lib/blog";
 
@@ -19,7 +20,7 @@ export const UNSORTED = "Unsorted";
 
 /** All published notes, ordered for reading: subject, then topic, then position. */
 export const getPublishedNotes = cache(async (): Promise<NoteSummary[]> => {
-  const supabase = await createClient();
+  const supabase = createPublicClient();
   const { data, error } = await supabase
     .from("posts")
     .select(NOTE_COLUMNS)
@@ -36,7 +37,7 @@ export const getPublishedNotes = cache(async (): Promise<NoteSummary[]> => {
 
 /** A single published note, or null. Cached per request. */
 export const getPublishedNote = cache(async (slug: string): Promise<Note | null> => {
-  const supabase = await createClient();
+  const supabase = createPublicClient();
   const { data, error } = await supabase
     .from("posts")
     .select(`${NOTE_COLUMNS}, content`)

@@ -106,7 +106,7 @@ export async function saveHomeBlogLimitAction(formData: FormData) {
   );
   if (error) throw new Error(error.message);
 
-  revalidatePath("/");
+  revalidatePath("/", "layout");
   revalidatePath("/admin/settings");
 }
 
@@ -127,7 +127,7 @@ export async function uploadHeadshotAction(formData: FormData) {
     const fileName = Number.isFinite(position) ? headshotFileName(position, uploadExtension(image)) : undefined;
     await uploadAsset(image, "headshots", 1024 * 1024, fileName);
     await removeAssets([replaces]);
-    revalidatePath("/", "page");
+    revalidatePath("/", "layout");
     revalidatePath("/admin/settings", "page");
     return;
   }
@@ -141,7 +141,7 @@ export async function uploadHeadshotAction(formData: FormData) {
   const nextPosition = Math.max(lastPosition, files.length) + 1;
   await uploadAsset(image, "headshots", 1024 * 1024, headshotFileName(nextPosition, uploadExtension(image)));
 
-  revalidatePath("/", "page");
+  revalidatePath("/", "layout");
   revalidatePath("/admin/settings", "page");
 }
 
@@ -171,7 +171,7 @@ export async function reorderHeadshotsAction(paths: string[]) {
     if (error) throw new Error(`Could not reorder headshots: ${error.message}`);
   }
 
-  revalidatePath("/", "page");
+  revalidatePath("/", "layout");
   revalidatePath("/admin/settings", "page");
 }
 
@@ -182,7 +182,7 @@ export async function deleteHeadshotAction(path: string) {
 
   await removeAssets([path]);
 
-  revalidatePath("/", "page");
+  revalidatePath("/", "layout");
   revalidatePath("/admin/settings", "page");
 }
 
@@ -221,8 +221,7 @@ export async function saveAuthorProfileAction(formData: FormData) {
     throw cause;
   }
 
-  revalidatePath("/", "page");
-  revalidatePath("/blog", "page");
+  revalidatePath("/", "layout");
   revalidatePath("/admin/settings", "page");
 }
 

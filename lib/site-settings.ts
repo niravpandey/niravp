@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createPublicClient } from "@/lib/supabase/public";
 import { getAssetUrl } from "@/lib/supabase/storage";
 
 const DEFAULT_HOME_BLOG_LIMIT = 4;
@@ -14,7 +14,7 @@ export type AuthorProfile = {
 
 /** How many posts the home page lists. Falls back to a default if the setting is missing or invalid. */
 export async function getHomeBlogLimit() {
-  const supabase = await createClient();
+  const supabase = createPublicClient();
   const { data, error } = await supabase
     .from("site_settings")
     .select("value")
@@ -30,7 +30,7 @@ export async function getHomeBlogLimit() {
 
 /** The author card shown under each blog post, with defaults for any missing field. */
 export async function getAuthorProfile(): Promise<AuthorProfile> {
-  const supabase = await createClient();
+  const supabase = createPublicClient();
   const { data, error } = await supabase
     .from("author_profile")
     .select("bio, headshot_path")

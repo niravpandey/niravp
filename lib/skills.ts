@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createPublicClient } from "@/lib/supabase/public";
 import { getOptionalAssetUrl } from "@/lib/supabase/storage";
 
 export type Skill = {
@@ -18,7 +18,7 @@ export type SkillCategory = {
 };
 
 export async function getSkillCategories(): Promise<SkillCategory[]> {
-  const supabase = await createClient();
+  const supabase = createPublicClient();
 
   const [categoriesResult, skillsResult] = await Promise.all([
     supabase

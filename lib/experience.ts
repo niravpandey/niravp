@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createPublicClient } from "@/lib/supabase/public";
 import { getOptionalAssetUrl } from "@/lib/supabase/storage";
 
 export type Experience = {
@@ -19,7 +19,7 @@ export type Experience = {
 const MISSING_TABLE_CODES = new Set(["42P01", "PGRST205"]);
 
 export async function getExperiences(): Promise<Experience[]> {
-  const supabase = await createClient();
+  const supabase = createPublicClient();
   const { data, error } = await supabase
     .from("experiences")
     .select("id, title, subtitle, organization, date_range, description, logo_path, logo_bg, sort_order")

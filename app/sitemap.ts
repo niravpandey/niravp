@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { createClient } from "@/lib/supabase/server";
+import { createPublicClient } from "@/lib/supabase/public";
 import { SITE_URL } from "@/lib/site-url";
 
 /** Public pages that aren't backed by a post. Admin, login and API routes are left out (see robots.ts). */
@@ -7,7 +7,7 @@ const STATIC_PAGES = ["", "/blog", "/notes", "/resume", "/subscribe", "/design"]
 
 /** /sitemap.xml: the fixed pages plus every published blog post and note, newest edit as lastModified. */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const supabase = await createClient();
+  const supabase = createPublicClient();
   const { data } = await supabase
     .from("posts")
     .select("slug, kind, created_at, updated_at")

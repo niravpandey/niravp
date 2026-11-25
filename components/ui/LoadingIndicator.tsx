@@ -1,4 +1,4 @@
-// "Loading…" title over a small sliding bar in the palette gradient. Used by app/loading.tsx and the splash screen.
+// "Loading…" title over a small sliding bar in the palette gradient. Used by the splash screen.
 export default function LoadingIndicator() {
   return (
     <div className="flex flex-col items-center gap-4" role="status" aria-live="polite">

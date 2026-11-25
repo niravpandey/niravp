@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createPublicClient } from "@/lib/supabase/public";
 import { getOptionalAssetUrl } from "@/lib/supabase/storage";
 
 export type ProjectSkill = {
@@ -26,7 +26,7 @@ export type Project = {
 // Postgres / PostgREST codes for "column does not exist".
 const MISSING_COLUMN_CODES = new Set(["42703", "PGRST204"]);
 
-type SupabaseClient = Awaited<ReturnType<typeof createClient>>;
+type SupabaseClient = ReturnType<typeof createPublicClient>;
 
 type ProjectRow = Omit<Project, "image_path" | "image_alt" | "image_url" | "skill_ids" | "skills"> & {
   image_path?: string | null;
@@ -64,7 +64,7 @@ async function fetchProjectRows(supabase: SupabaseClient): Promise<ProjectRow[]>
 }
 
 export async function getProjects(): Promise<Project[]> {
-  const supabase = await createClient();
+  const supabase = createPublicClient();
 
   const [rows, linksResult] = await Promise.all([
     fetchProjectRows(supabase),
