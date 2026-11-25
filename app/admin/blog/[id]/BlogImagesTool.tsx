@@ -105,7 +105,7 @@ export default function BlogImagesTool({
                   ].join(" ")}
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={image.publicUrl} alt={alt} draggable={false} className="absolute inset-0 h-full w-full object-cover" />
+                  <img src={image.publicUrl} alt={alt} draggable={false} loading="lazy" decoding="async" className="absolute inset-0 h-full w-full object-cover" />
                   {(isCover || inPost) && (
                     <span className="absolute left-0 top-0 bg-white/90 px-1 text-[10px] text-gray-700">
                       {[isCover && "cover", inPost && "in post"].filter(Boolean).join(" · ")}

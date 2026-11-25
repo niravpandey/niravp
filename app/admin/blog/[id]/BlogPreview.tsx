@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
 import * as jsxRuntime from "react/jsx-runtime";
 import * as jsxDevRuntime from "react/jsx-dev-runtime";
 import { MDXProvider, useMDXComponents } from "@mdx-js/react";
@@ -121,10 +121,13 @@ function evaluateMdx(compiledSource: string): MdxContent {
  * Every compile yields a new function, so MDXRemote remounts the whole preview (images reload,
  * layout collapses for a frame); called like this, React reconciles the elements and only updates
  * what changed. The hooks inside are only context reads, the same on every render.
+ *
+ * Memoised: it only re-runs when a new compile arrives, not on every keystroke or caret move in the
+ * editor (re-running it rebuilds the whole post's element tree, KaTeX and all).
  */
-function PreviewContent({ content }: { content: MdxContent }) {
+const PreviewContent = memo(function PreviewContent({ content }: { content: MdxContent }) {
   return <>{content({})}</>;
-}
+});
 
 /** Notes also get the theorem/proof environments, matching the public /notes page. */
 const notePreviewMdxComponents = { ...previewMdxComponents, ...mathEnvironments };
@@ -185,6 +188,7 @@ export default function BlogPreview({
   const bodyRef = useRef<HTMLDivElement | null>(null);
   // True right after a preview selection jumped the editor: the text is already on screen here.
   const jumpedFromPreviewRef = useRef(false);
+  const activeElementRef = useRef<Element | null>(null);
 
   // Mark the element under the editor caret, and keep it in view.
   useEffect(() => {
@@ -192,13 +196,19 @@ export default function BlogPreview({
     const scroller = scrollRef.current;
     if (!body || !scroller) return;
 
-    body.querySelectorAll("[data-src-active]").forEach((element) => element.removeAttribute("data-src-active"));
-    if (activeOffset === null) return;
+    if (activeOffset === null) {
+      activeElementRef.current?.removeAttribute("data-src-active");
+      activeElementRef.current = null;
+      return;
+    }
 
     const element = findElementAtOffset(body, activeOffset);
+    if (element !== activeElementRef.current) {
+      activeElementRef.current?.removeAttribute("data-src-active");
+      element?.setAttribute("data-src-active", "");
+      activeElementRef.current = element;
+    }
     if (!element) return;
-
-    element.setAttribute("data-src-active", "");
 
     if (jumpedFromPreviewRef.current) {
       jumpedFromPreviewRef.current = false;

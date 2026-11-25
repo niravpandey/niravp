@@ -10,17 +10,13 @@ import BlogPreview from "./BlogPreview";
 import BlogImagesTool from "./BlogImagesTool";
 import DrawingPadTool from "./DrawingPadTool";
 import EditorStage from "./EditorStage";
-import FocusOverlays from "./FocusOverlays";
-import PomodoroTool from "./PomodoroTool";
+import PomodoroPanel from "./PomodoroPanel";
 import ResizeDivider from "./ResizeDivider";
 import WritingToolsSidebar from "./WritingToolsSidebar";
 import { lineGapAtPoint, scrollTextareaToOffset, type SourceRange } from "./sourceSync";
 import {
   BLOG_BUCKET_NAME,
   BLOG_IMAGE_DRAG_TYPE,
-  BREAK_SECONDS,
-  DEFAULT_POMODORO_MINUTES,
-  DEFAULT_POMODORO_SESSIONS,
   clamp,
   compressImage,
   downloadLinkedImage,
@@ -78,16 +74,7 @@ export default function PostEditor({ post, initialKind, noteTaxonomy }: Props) {
   const [detailsDone, setDetailsDone] = useState(Boolean(post?.description && post?.tags?.length));
   const [coverDone, setCoverDone] = useState(Boolean(post?.cover_image));
   const [placementDone, setPlacementDone] = useState(Boolean(post?.subject && post?.topic));
-  const [pomodoroMinutes, setPomodoroMinutes] = useState(DEFAULT_POMODORO_MINUTES);
-  const [pomodoroTargetSessions, setPomodoroTargetSessions] = useState(DEFAULT_POMODORO_SESSIONS);
-  const [pomodoroCompletedSessions, setPomodoroCompletedSessions] = useState(0);
-  const [pomodoroSeconds, setPomodoroSeconds] = useState(DEFAULT_POMODORO_MINUTES * 60);
-  const [pomodoroRunning, setPomodoroRunning] = useState(false);
-  const [breakSeconds, setBreakSeconds] = useState(BREAK_SECONDS);
-  const [breakOpen, setBreakOpen] = useState(false);
-  const [breakRunning, setBreakRunning] = useState(false);
-  const [congratsOpen, setCongratsOpen] = useState(false);
-  const [drawing, setDrawing] = useState(false);
+  const drawingRef = useRef(false);
   const [drawingUploading, setDrawingUploading] = useState(false);
   const [drawingExpanded, setDrawingExpanded] = useState(false);
   const [importedFileName, setImportedFileName] = useState<string | null>(null);
@@ -516,47 +503,6 @@ export default function PostEditor({ post, initialKind, noteTaxonomy }: Props) {
     }));
   }
 
-  function resetPomodoro() {
-    setPomodoroRunning(false);
-    setBreakRunning(false);
-    setBreakOpen(false);
-    setCongratsOpen(false);
-    setBreakSeconds(BREAK_SECONDS);
-    setPomodoroCompletedSessions(0);
-    setPomodoroSeconds(pomodoroMinutes * 60);
-  }
-
-  function cancelBreak() {
-    setBreakRunning(false);
-    setBreakOpen(false);
-    setBreakSeconds(BREAK_SECONDS);
-    setPomodoroSeconds(pomodoroMinutes * 60);
-  }
-
-  function skipBreak() {
-    setBreakRunning(false);
-    setBreakOpen(false);
-    setBreakSeconds(BREAK_SECONDS);
-    setPomodoroSeconds(pomodoroMinutes * 60);
-    setPomodoroRunning(true);
-  }
-
-  function adjustPomodoroMinutes(delta: number) {
-    const nextMinutes = clamp(pomodoroMinutes + delta, 1, 120);
-
-    setPomodoroMinutes(nextMinutes);
-    if (!pomodoroRunning) {
-      setPomodoroSeconds(nextMinutes * 60);
-    }
-  }
-
-  function handlePomodoroSessionsChange(value: string) {
-    const nextSessions = clamp(Number.parseInt(value, 10) || 2, 2, 10);
-
-    setPomodoroTargetSessions(nextSessions);
-    setPomodoroCompletedSessions((completed) => Math.min(completed, nextSessions));
-  }
-
   function getCanvasPoint(event: React.PointerEvent<HTMLCanvasElement>) {
     const canvas = drawingCanvasRef.current;
 
@@ -586,7 +532,7 @@ export default function PostEditor({ post, initialKind, noteTaxonomy }: Props) {
       return;
     }
 
-    setDrawing(true);
+    drawingRef.current = true;
     event.currentTarget.setPointerCapture(event.pointerId);
     context.strokeStyle = "#1f2937";
     context.lineWidth = 4;
@@ -600,7 +546,7 @@ export default function PostEditor({ post, initialKind, noteTaxonomy }: Props) {
     const canvas = drawingCanvasRef.current;
     const point = getCanvasPoint(event);
 
-    if (!drawing || !canvas || !point) {
+    if (!drawingRef.current || !canvas || !point) {
       return;
     }
 
@@ -615,7 +561,7 @@ export default function PostEditor({ post, initialKind, noteTaxonomy }: Props) {
   }
 
   function handleDrawingPointerUp(event: React.PointerEvent<HTMLCanvasElement>) {
-    setDrawing(false);
+    drawingRef.current = false;
 
     if (event.currentTarget.hasPointerCapture(event.pointerId)) {
       event.currentTarget.releasePointerCapture(event.pointerId);
@@ -773,67 +719,6 @@ export default function PostEditor({ post, initialKind, noteTaxonomy }: Props) {
       window.clearTimeout(timeoutId);
     };
   }, [content]);
-
-  useEffect(() => {
-    if (!pomodoroRunning) {
-      return;
-    }
-
-    const intervalId = window.setInterval(() => {
-      setPomodoroSeconds((current) => {
-        if (current <= 1) {
-          window.clearInterval(intervalId);
-          setPomodoroRunning(false);
-          setPomodoroCompletedSessions((completed) => {
-            const nextCompleted = Math.min(completed + 1, pomodoroTargetSessions);
-
-            if (nextCompleted >= pomodoroTargetSessions) {
-              setBreakOpen(false);
-              setBreakRunning(false);
-              setCongratsOpen(true);
-            } else {
-              setBreakSeconds(BREAK_SECONDS);
-              setBreakOpen(true);
-              setBreakRunning(true);
-            }
-
-            return nextCompleted;
-          });
-          return 0;
-        }
-
-        return current - 1;
-      });
-    }, 1000);
-
-    return () => {
-      window.clearInterval(intervalId);
-    };
-  }, [pomodoroRunning, pomodoroTargetSessions]);
-
-  useEffect(() => {
-    if (!breakOpen || !breakRunning) {
-      return;
-    }
-
-    const intervalId = window.setInterval(() => {
-      setBreakSeconds((current) => {
-        if (current <= 1) {
-          window.clearInterval(intervalId);
-          setBreakRunning(false);
-          setBreakOpen(false);
-          setPomodoroSeconds(pomodoroMinutes * 60);
-          return BREAK_SECONDS;
-        }
-
-        return current - 1;
-      });
-    }, 1000);
-
-    return () => {
-      window.clearInterval(intervalId);
-    };
-  }, [breakOpen, breakRunning, pomodoroMinutes]);
 
   return (
     <div className="mx-auto w-full max-w-7xl">
@@ -1209,38 +1094,7 @@ export default function PostEditor({ post, initialKind, noteTaxonomy }: Props) {
             onDeleteImage={(image) => void handleImageDelete(image)}
           />
 
-          <PomodoroTool
-            open={openTools.timer}
-            seconds={pomodoroSeconds}
-            minutes={pomodoroMinutes}
-            running={pomodoroRunning}
-            completedSessions={pomodoroCompletedSessions}
-            targetSessions={pomodoroTargetSessions}
-            onToggleOpen={() => toggleTool("timer")}
-            onAdjustMinutes={adjustPomodoroMinutes}
-            onTargetSessionsChange={handlePomodoroSessionsChange}
-            onStartPause={() => {
-              setCongratsOpen(false);
-              setBreakOpen(false);
-              setBreakRunning(false);
-              setPomodoroRunning((running) => {
-                if (running) {
-                  return false;
-                }
-
-                if (pomodoroCompletedSessions >= pomodoroTargetSessions) {
-                  setPomodoroCompletedSessions(0);
-                }
-
-                if (pomodoroSeconds <= 0) {
-                  setPomodoroSeconds(pomodoroMinutes * 60);
-                }
-
-                return true;
-              });
-            }}
-            onReset={resetPomodoro}
-          />
+          <PomodoroPanel open={openTools.timer} onToggleOpen={() => toggleTool("timer")} />
 
           <DrawingPadTool
             open={openTools.drawing}
@@ -1257,17 +1111,6 @@ export default function PostEditor({ post, initialKind, noteTaxonomy }: Props) {
           />
         </WritingToolsSidebar>
       </div>
-
-      <FocusOverlays
-        breakOpen={breakOpen}
-        breakSeconds={breakSeconds}
-        congratsOpen={congratsOpen}
-        targetSessions={pomodoroTargetSessions}
-        onCancelBreak={cancelBreak}
-        onSkipBreak={skipBreak}
-        onCloseCongrats={() => setCongratsOpen(false)}
-        onResetPomodoro={resetPomodoro}
-      />
     </div>
   );
 }
